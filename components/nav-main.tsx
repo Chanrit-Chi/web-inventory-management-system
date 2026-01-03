@@ -57,7 +57,7 @@ export function NavMain({ items }: NavMainProps) {
               asChild
               defaultOpen={item.isActive || isActive || hasActiveSubItem}
             >
-              <SidebarMenuItem>
+              <SidebarMenuItem className="group/collapsible">
                 {item.items?.length ? (
                   <>
                     <CollapsibleTrigger asChild>
@@ -72,10 +72,10 @@ export function NavMain({ items }: NavMainProps) {
                         <span className="transition-all duration-200 ease-in-out">
                           {item.title}
                         </span>
-                        <ChevronRight className="ml-auto transition-all duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
+                        <ChevronRight className="ml-auto transition-transform duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="transition-all duration-300 ease-in-out">
+                    <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden">
                       <SidebarMenuSub>
                         {item.items?.map((subItem) => {
                           const isSubItemActive = pathname === subItem.url;

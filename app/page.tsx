@@ -9,6 +9,13 @@ import { Spinner } from "@/components/ui/spinner";
 export default function Home() {
   const { data: session, isPending } = useSession();
 
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">

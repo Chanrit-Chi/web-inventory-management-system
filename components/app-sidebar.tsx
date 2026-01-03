@@ -54,23 +54,23 @@ const data = {
       items: [
         {
           title: "All Sale",
-          url: "/sale/all-sale",
+          url: "/sales/all-sale",
         },
         {
           title: "New Sale",
-          url: "/sale/new-sale",
+          url: "/sales/new-sale",
         },
         {
           title: "Invoice",
-          url: "/sale/invoice",
+          url: "/sales/invoice",
         },
         {
           title: "Quotation",
-          url: "/sale/quotation",
+          url: "/sales/quotation",
         },
         {
           title: "POS",
-          url: "/sale/pos",
+          url: "/sales/pos",
         },
       ],
     },

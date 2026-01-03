@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -12,14 +12,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!isPending && !session) {
+    if (
+      !isPending &&
+      !session &&
+      pathname !== "/user_auth" &&
+      !pathname.startsWith("/api")
+    ) {
       router.push("/user_auth");
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, pathname]);
 
-  if (isPending) {
+  if (isPending && pathname !== "/user_auth") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-lg">
@@ -29,7 +35,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session) {
+  if (!session && pathname !== "/user_auth") {
     return null;
   }
 

@@ -4,12 +4,9 @@ import { SharedLayout } from "@/components/shared-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";
 
-type User = {
-  role?: string;
-};
 export default function SaleDashboardPage() {
   const { data: session, isPending } = useSession();
-  const role = (session?.user as User)?.role || "Unknown";
+  const role = (session?.user as { role?: string })?.role || "Unknown";
 
   if (isPending) {
     return <Spinner className="size-8" />;
@@ -53,7 +50,7 @@ export default function SaleDashboardPage() {
         </div>
 
         {/* Quick Actions & Recent Activity */}
-        <div className="bg-muted/50 min-h-[400px] flex-1 rounded-xl p-6">
+        <div className="bg-muted/50 min-h-100 flex-1 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Quick Actions</h3>
           </div>

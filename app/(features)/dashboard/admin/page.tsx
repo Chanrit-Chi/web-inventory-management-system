@@ -4,36 +4,25 @@ import DashboardOverview from "@/components/admin/dashboard-overview";
 import ProductInfo from "@/components/admin/product-info";
 import ChartBarStacked from "@/components/admin/sale-statistic-chart";
 import { SharedLayout } from "@/components/shared-layout";
+import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";
-import { redirect } from "next/navigation";
-
-type UserWithRole = {
-  id: string;
-  name: string;
-  email: string;
-  role?: string;
-};
 
 export default function DashboardPage() {
-  const { data: session, isPending } = useSession();
-  const role = (session?.user as UserWithRole)?.role || "Unknown";
-  const name = session?.user?.name || "Unknown";
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string })?.role || "Unknown";
 
-  if (isPending) {
-    return null;
+  if (!session) {
+    return <Spinner className="size-8" />; // Or handle loading state
   }
 
-  if (role !== "ADMIN") {
-    redirect("/unauthorized");
-  }
-
+  const user = session.user;
   return (
     <SharedLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <div className="text-sm text-muted-foreground">
-            Welcome back, {name} ({role})
+            Welcome back, {user.name} ({role})
           </div>
         </div>
 
