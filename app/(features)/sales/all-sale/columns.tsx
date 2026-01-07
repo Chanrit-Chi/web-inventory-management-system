@@ -1,7 +1,6 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { saleSchema } from "@/types/saleType";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Order } from "@/schemas/type-export.schema";
 
-export const columns: ColumnDef<typeof saleSchema>[] = [
+export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "index",
     header: ({ column }) => {

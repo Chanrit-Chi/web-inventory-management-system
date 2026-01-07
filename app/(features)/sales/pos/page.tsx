@@ -194,29 +194,27 @@ const POSOrderPage = () => {
 
   return (
     <SharedLayout>
-      <div className="flex flex-col lg:flex-row h-screen bg-gray-50">
+      <div className="flex flex-col lg:flex-row h-screen">
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Products Section */}
           <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             <div className="mb-4 md:mb-6">
               <div className="flex items-center justify-between mb-4 gap-2">
-                <h2 className="text-lg md:text-xl font-semibold text-slate-800">
-                  Product
-                </h2>
+                <h2 className="text-lg md:text-xl font-semibold">Product</h2>
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="relative hidden sm:block">
                     <Search
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
                       size={18}
                     />
                     <input
                       type="text"
                       placeholder="Search..."
-                      className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 w-32 md:w-auto"
+                      className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 bg-background w-32 md:w-auto"
                     />
                   </div>
-                  <button className="p-2 border border-slate-200 rounded-lg hover:bg-gray-50">
+                  <button className="p-2 border rounded-lg hover:bg-accent">
                     <Filter size={18} />
                   </button>
                 </div>
@@ -229,8 +227,8 @@ const POSOrderPage = () => {
                     onClick={() => setActiveCategory(category)}
                     className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                       activeCategory === category
-                        ? "bg-slate-800 text-white"
-                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-foreground border hover:bg-accent"
                     }`}
                   >
                     {category}
@@ -243,9 +241,9 @@ const POSOrderPage = () => {
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-card rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow border"
                 >
-                  <div className="bg-gray-100 rounded-lg mb-2 md:mb-3 h-32 sm:h-40 lg:h-48 flex items-center justify-center">
+                  <div className="bg-muted rounded-lg mb-2 md:mb-3 h-32 sm:h-40 lg:h-48 flex items-center justify-center">
                     <Image
                       src={product.image}
                       width={200}
@@ -254,10 +252,10 @@ const POSOrderPage = () => {
                       className="w-full h-full object-cover rounded-lg"
                     />
                   </div>
-                  <h3 className="font-medium text-slate-800 text-xs sm:text-sm mb-1 md:mb-2 line-clamp-2 truncate">
+                  <h3 className="font-medium text-xs sm:text-sm mb-1 md:mb-2 line-clamp-2 truncate">
                     {product.name}
                   </h3>
-                  <div className="text-base md:text-lg font-bold text-slate-900 mb-2 md:mb-3">
+                  <div className="text-base md:text-lg font-bold mb-2 md:mb-3">
                     ${product.price}
                   </div>
                   <div className="flex flex-wrap gap-0.5 md:gap-1 mb-2 md:mb-3">
@@ -267,8 +265,8 @@ const POSOrderPage = () => {
                         onClick={() => handleSizeSelect(product.id, size)}
                         className={`flex-1 min-w-[28px] md:min-w-[32px] py-0 md:py-0.5 text-[9px] md:text-[10px] border rounded cursor-pointer transition-colors ${
                           selectedSizes[product.id] === size
-                            ? "bg-slate-500 text-white border-slate-600"
-                            : "border-slate-200 hover:bg-slate-600 hover:text-white"
+                            ? "bg-green-500 text-white"
+                            : "hover:bg-accent hover:text-accent-foreground"
                         }`}
                       >
                         {size}
@@ -277,7 +275,7 @@ const POSOrderPage = () => {
                   </div>
                   <Button
                     onClick={() => addToCart(product)}
-                    className="w-full bg-primary text-white py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-1 md:gap-2 cursor-pointer"
+                    className="w-full py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 cursor-pointer"
                   >
                     <Plus size={14} className="md:hidden" />
                     <Plus size={16} className="hidden md:block" />
@@ -293,7 +291,7 @@ const POSOrderPage = () => {
         <div className="lg:hidden fixed bottom-4 right-4 z-50">
           <Sheet>
             <SheetTrigger asChild>
-              <Button className="rounded-full h-14 w-14 shadow-lg bg-slate-800 hover:bg-slate-700">
+              <Button className="rounded-full h-14 w-14 shadow-lg">
                 <div className="relative">
                   <ShoppingCart size={24} />
                   {cart.length > 0 && (
@@ -322,7 +320,7 @@ const POSOrderPage = () => {
         </div>
 
         {/* Desktop Order Details Sidebar */}
-        <div className="hidden lg:flex w-96 bg-white border-l flex-col">
+        <div className="hidden lg:flex w-96 bg-card border-l flex-col">
           <OrderDetailsSidebar
             cart={cart}
             customer={customer}
@@ -351,22 +349,20 @@ const OrderDetailsSidebar = ({
   <>
     <div className="p-4 md:p-6 border-b">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg md:text-xl font-semibold text-slate-800">
-          Order Details
-        </h2>
-        <span className="text-sm text-slate-500">#666</span>
+        <h2 className="text-lg md:text-xl font-semibold">Order Details</h2>
+        <span className="text-sm text-muted-foreground">#666</span>
       </div>
 
-      <div className="bg-gray-50 rounded-lg p-3 md:p-4">
-        <div className="text-xs md:text-sm text-slate-600 mb-2">
+      <div className="bg-muted rounded-lg p-3 md:p-4">
+        <div className="text-xs md:text-sm text-muted-foreground mb-2">
           Customer Information
         </div>
         <div className="flex items-center gap-3 justify-between">
           <div>
-            <div className="font-medium text-sm md:text-base text-slate-800">
+            <div className="font-medium text-sm md:text-base">
               {customer[0].name}
             </div>
-            <div className="text-xs md:text-sm text-slate-500">
+            <div className="text-xs md:text-sm text-muted-foreground">
               Tel: {customer[0].phone}
             </div>
           </div>
@@ -380,11 +376,11 @@ const OrderDetailsSidebar = ({
     </div>
 
     <div className="flex-1 overflow-auto p-4 md:p-6">
-      <h3 className="font-semibold text-slate-800 mb-4">Items</h3>
+      <h3 className="font-semibold mb-4">Items</h3>
       <div className="space-y-4">
         {cart.map((item: any) => (
           <div key={item.id} className="flex gap-3">
-            <div className="w-12 h-16 md:w-16 md:h-20 bg-gray-100 rounded-lg shrink-0">
+            <div className="w-12 h-16 md:w-16 md:h-20 bg-muted rounded-lg shrink-0">
               <Image
                 src={item.image}
                 width={200}
@@ -394,18 +390,18 @@ const OrderDetailsSidebar = ({
               />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-xs md:text-sm text-slate-800 mb-1">
+              <h4 className="font-medium text-xs md:text-sm mb-1 truncate">
                 {item.name}
               </h4>
-              <div className="text-xs text-slate-500 mb-2">
+              <div className="text-xs text-muted-foreground mb-2">
                 Size {item.size}
               </div>
-              <div className="font-bold text-sm md:text-base text-slate-900">
+              <div className="font-bold text-sm md:text-base">
                 ${item.price}
               </div>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <div className="flex items-center justify-center gap-1 md:gap-2 bg-gray-100 rounded-full p-0.5">
+              <div className="flex items-center justify-center gap-1 md:gap-2 bg-muted rounded-full p-0.5">
                 <Button
                   onClick={() => updateQuantity(item.id, -1)}
                   className="rounded-full size-6 md:size-8 p-0"
@@ -433,34 +429,32 @@ const OrderDetailsSidebar = ({
     <div className="border-t p-4 md:p-6">
       <div className="space-y-3 mb-4">
         <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-slate-600">Item</span>
+          <span className="text-muted-foreground">Item</span>
           <span className="font-medium">{cart.length} Items</span>
         </div>
         <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-slate-600">Sub Total</span>
+          <span className="text-muted-foreground">Sub Total</span>
           <span className="font-medium">${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-slate-600">Membership Discount</span>
-          <span className="font-medium text-red-500">
+          <span className="text-muted-foreground">Membership Discount</span>
+          <span className="font-medium text-red-500 dark:text-red-400">
             -${discount.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-slate-600">Tax (10%)</span>
+          <span className="text-muted-foreground">Tax (10%)</span>
           <span className="font-medium">${tax.toFixed(2)}</span>
         </div>
         <div className="border-t pt-3 flex justify-between">
-          <span className="font-semibold text-sm md:text-base text-slate-800">
-            Total
-          </span>
-          <span className="font-bold text-lg md:text-xl text-slate-900">
+          <span className="font-semibold text-sm md:text-base">Total</span>
+          <span className="font-bold text-lg md:text-xl">
             ${total.toFixed(2)}
           </span>
         </div>
       </div>
 
-      <Button className="w-full bg-slate-800 text-white py-2.5 md:py-3 rounded-lg text-sm md:text-base font-semibold hover:bg-slate-700 transition-colors">
+      <Button className="w-full py-2.5 md:py-3 rounded-lg text-sm md:text-base font-semibold transition-colors">
         Process Transaction
       </Button>
     </div>

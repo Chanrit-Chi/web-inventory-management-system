@@ -9,7 +9,15 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = new Set(["/", "/user_auth"]);
 
   // Define API routes that don't require authentication
-  const publicApiRoutes = new Set(["/api/auth", "/api/sales"]);
+  const publicApiRoutes = new Set([
+    "/api/auth",
+    "/api/customers",
+    "/api/sales",
+    "/api/products",
+    "/api/suppliers",
+    "/api/categories",
+    "/api/reports",
+  ]);
 
   const isPublicApiRoute = (path: string) =>
     Array.from(publicApiRoutes).some((route) => path.startsWith(route));

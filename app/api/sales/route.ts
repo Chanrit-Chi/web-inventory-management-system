@@ -33,3 +33,19 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const data = await request.json();
+    const { id, ...updateData } = data;
+    console.log("Received sale update data:", JSON.stringify(data, null, 2));
+    const sale = await saleService.updateSale(id, updateData);
+    return NextResponse.json(sale);
+  } catch (error) {
+    console.error("Error updating sale:", error);
+    return NextResponse.json(
+      { error: "Failed to update sale" },
+      { status: 500 }
+    );
+  }
+}

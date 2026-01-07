@@ -14,7 +14,11 @@ import {
   CustomerSchema,
   CustomerUpdateSchema,
 } from "./customer.schema";
-import { OrderCreateSchema, OrderSchema } from "./order.schema";
+import {
+  OrderCreateSchema,
+  OrderSchema,
+  OrderUpdateSchema,
+} from "./order.schema";
 import {
   InvoiceWithItemsSchema,
   OrderWithDetailsSchema,
@@ -27,10 +31,19 @@ import {
   PurchaseOrderCreateSchema,
   PurchaseOrderSchema,
 } from "./purchase-order.schema";
+import {
+  ProductVariantCreateSchema,
+  ProductVariantSchema,
+  ProductVariantUpdateSchema,
+} from "./product-variant.schema";
 
 export type Product = z.infer<typeof ProductSchema>;
 export type ProductCreate = z.infer<typeof ProductCreateSchema>;
 export type ProductUpdate = z.infer<typeof ProductUpdateSchema>;
+
+export type ProductVariant = z.infer<typeof ProductVariantSchema>;
+export type ProductVariantCreate = z.infer<typeof ProductVariantCreateSchema>;
+export type ProductVariantUpdate = z.infer<typeof ProductVariantUpdateSchema>;
 
 export type Supplier = z.infer<typeof SupplierSchema>;
 export type SupplierCreate = z.infer<typeof SupplierCreateSchema>;
@@ -43,6 +56,7 @@ export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
 export type Order = z.infer<typeof OrderSchema>;
 export type OrderCreate = z.infer<typeof OrderCreateSchema>;
 export type OrderWithDetails = z.infer<typeof OrderWithDetailsSchema>;
+export type OrderUpdate = z.infer<typeof OrderUpdateSchema>;
 
 export type Invoice = z.infer<typeof InvoiceSchema>;
 export type InvoiceCreate = z.infer<typeof InvoiceCreateSchema>;

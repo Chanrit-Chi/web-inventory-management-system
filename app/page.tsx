@@ -8,6 +8,46 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function Home() {
   const { data: session, isPending } = useSession();
+  const role = (session?.user as { role?: string })?.role || "Unknown";
+
+  let dashboardLink: React.ReactNode = null;
+  if (role === "ADMIN" || role === "MANAGER") {
+    dashboardLink = (
+      <Link href="/dashboard/admin">
+        <Button size="lg">Go to Dashboard</Button>
+      </Link>
+    );
+  } else if (role === "SELLER") {
+    dashboardLink = (
+      <Link href="/dashboard/sale">
+        <Button size="lg">Go to Dashboard</Button>
+      </Link>
+    );
+  }
+
+  const mainContent = session ? (
+    <div className="space-y-6">
+      <h2 className="text-4xl font-bold">Welcome back, {session.user.name}!</h2>
+      <p className="text-xl text-muted-foreground">
+        You are successfully logged in to the Inventory Management System
+      </p>
+      <div className="flex justify-center gap-4">{dashboardLink}</div>
+    </div>
+  ) : (
+    <div className="space-y-6">
+      <h2 className="text-4xl font-bold">
+        Welcome to Inventory Management System
+      </h2>
+      <p className="text-xl text-muted-foreground">
+        Manage your inventory efficiently with our comprehensive solution
+      </p>
+      <div className="flex justify-center gap-4">
+        <Link href="/user_auth">
+          <Button size="lg">Get Started</Button>
+        </Link>
+      </div>
+    </div>
+  );
 
   if (isPending) {
     return (
@@ -32,43 +72,7 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          {isPending ? (
-            <div className="text-lg">
-              <Spinner className="size-8" />
-            </div>
-          ) : session ? (
-            <div className="space-y-6">
-              <h2 className="text-4xl font-bold">
-                Welcome back, {session.user.name}!
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                You are successfully logged in to the Inventory Management
-                System
-              </p>
-              <div className="flex justify-center gap-4">
-                <Link href="/dashboard/admin">
-                  <Button size="lg">Go to Dashboard</Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-4xl font-bold">
-                Welcome to Inventory Management System
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Manage your inventory efficiently with our comprehensive
-                solution
-              </p>
-              <div className="flex justify-center gap-4">
-                <Link href="/user_auth">
-                  <Button size="lg">Get Started</Button>
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+        <div className="mx-auto max-w-3xl text-center">{mainContent}</div>
       </main>
     </div>
   );

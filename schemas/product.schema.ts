@@ -6,7 +6,7 @@ export const ProductSchema = z.object({
   id: cuidSchema,
   sku: z.string().min(1, "SKU is required"),
   name: z.string().min(1, "Product name is required"),
-  image: z.url().nullable().optional(),
+  image: z.string().nullable().optional(),
   description: z.string().min(1, "Description is required"),
   costPrice: moneySchema,
   sellingPrice: moneySchema,

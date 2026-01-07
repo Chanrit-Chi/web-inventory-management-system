@@ -1,6 +1,6 @@
 "use client";
 
-import { useSale } from "@/hooks/useSale";
+import { useGetSales } from "@/hooks/useSale";
 import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
 import { columns } from "./columns";
@@ -9,7 +9,7 @@ import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function Sale() {
-  const { data: sales, isLoading, isFetching, error, refetch } = useSale();
+  const { data: sales, isLoading, isFetching, error, refetch } = useGetSales();
 
   if (isLoading)
     return (

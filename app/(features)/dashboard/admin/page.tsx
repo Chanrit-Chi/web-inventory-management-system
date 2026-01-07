@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const role = (session?.user as { role?: string })?.role || "Unknown";
 
   if (!session) {
-    return <Spinner className="size-8" />; // Or handle loading state
+    return <Spinner className="size-8" />;
   }
 
   const user = session.user;

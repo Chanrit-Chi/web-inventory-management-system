@@ -161,20 +161,20 @@ export default function ProductInfo() {
   const getStatusStyles = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
       case "canceled":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-800";
     }
   };
 
   return (
     <div>
       <div className="grid auto-rows-min gap-4 lg:grid-cols-3 mt-4">
-        <div className="p-4 bg-background rounded-lg border">
+        <div className="p-4 bg-card rounded-lg border">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <Boxes className="h-4 w-4 text-red-400" />
@@ -220,7 +220,7 @@ export default function ProductInfo() {
             ))}
           </div>
         </div>
-        <div className="p-4 bg-background rounded-lg border">
+        <div className="p-4 bg-card rounded-lg border">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <CircleAlert className="h-4 w-4 text-yellow-400" />
@@ -259,7 +259,7 @@ export default function ProductInfo() {
             ))}
           </div>
         </div>
-        <div className="p-4 bg-background rounded-lg border">
+        <div className="p-4 bg-card rounded-lg border">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <Boxes className="h-4 w-4 text-red-400" />

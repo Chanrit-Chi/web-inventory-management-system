@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import {
   ColumnDef,
@@ -25,19 +26,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Plus } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-  searchPlaceholder?: string;
-  searchKey?: string;
-  showAddNew?: boolean;
-  addNewLabel?: string;
-  onAddNew?: () => void;
-  addNewHref?: string;
-  showSearch?: boolean;
-  showPagination?: boolean;
+  readonly columns: ColumnDef<TData, TValue>[];
+  readonly data: TData[];
+  readonly searchPlaceholder?: string;
+  readonly searchKey?: string;
+  readonly showAddNew?: boolean;
+  readonly addNewLabel?: string;
+  readonly onAddNew?: () => void;
+  readonly addNewHref?: string;
+  readonly showSearch?: boolean;
+  readonly showPagination?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -81,7 +81,7 @@ export function DataTable<TData, TValue>({
     if (onAddNew) {
       onAddNew();
     } else if (addNewHref) {
-      window.location.href = addNewHref;
+      globalThis.location.href = addNewHref;
     }
   };
 
@@ -95,18 +95,12 @@ export function DataTable<TData, TValue>({
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(String(event.target.value))}
               className="max-w-sm"
-              type={undefined}
             />
           )}
 
           {showAddNew && (
-            <Button
-              onClick={handleAddNew}
-              className="ml-auto"
-              variant={undefined}
-              size={undefined}
-            >
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={handleAddNew} className="ml-auto cursor-pointer">
+              {/* <Plus className="mr-2 h-4 w-4" /> */}
               {addNewLabel}
             </Button>
           )}

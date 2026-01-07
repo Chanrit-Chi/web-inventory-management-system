@@ -370,9 +370,9 @@ model QuotationItem {
   quotationId String
 
   productId   String
-  productName String // Snapshot
+  productName String
   variantId   Int?
-  sku         String // Snapshot
+  sku         String
 
   quantity  Int
   unitPrice Decimal @db.Decimal(10, 2)
@@ -401,12 +401,6 @@ enum StockMovementType {
   ADJUSTMENT
   RETURN
   DAMAGE
-}
-
-enum OrderStatus {
-  PENDING
-  COMPLETED
-  CANCELLED
 }
 
 enum PaymentStatus {

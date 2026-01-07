@@ -1,22 +1,8 @@
-import { OrderCreateSchema, OrderSchema } from "@/schemas/order.schema";
-import { z } from "zod";
-
-// Infer TypeScript types from Zod schemas
-type Order = z.infer<typeof OrderSchema>;
-type OrderCreate = z.infer<typeof OrderCreateSchema>;
-
-// Type for creating a complete sale with order details
-type SaleCreate = OrderCreate & {
-  orderDetails: {
-    productId: string;
-    variantId: number;
-    quantity: number;
-    unitPrice: number;
-  }[];
-};
+import { OrderCreateSchema } from "@/schemas/order.schema";
+import { Order, OrderWithDetails } from "@/schemas/type-export.schema";
 
 export const saleApiService = {
-  AddSale: async (sale: SaleCreate) => {
+  AddSale: async (sale: OrderWithDetails): Promise<OrderWithDetails> => {
     try {
       // Validate order header
       const validatedOrder = OrderCreateSchema.parse({
@@ -70,6 +56,39 @@ export const saleApiService = {
       return await res.json();
     } catch (error) {
       console.error("Error fetching sales:", error);
+      throw error;
+    }
+  },
+
+  GetSaleById: async (id: number): Promise<Order> => {
+    try {
+      const res = await fetch(`/api/sales/${id}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return await res.json();
+    } catch (error) {
+      console.error(`Error fetching sale with id ${id}:`, error);
+      throw error;
+    }
+  },
+
+  UpdateSale: async (
+    id: number,
+    sale: Partial<OrderWithDetails>
+  ): Promise<OrderWithDetails> => {
+    try {
+      const res = await fetch(`/api/sales/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sale),
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return await res.json();
+    } catch (error) {
+      console.error(`Error updating sale with id ${id}:`, error);
       throw error;
     }
   },
