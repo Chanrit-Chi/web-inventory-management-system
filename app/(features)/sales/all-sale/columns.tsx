@@ -11,9 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Order } from "@/schemas/type-export.schema";
+import { OrderWithRelations } from "@/schemas/type-export.schema";
 
-export const columns: ColumnDef<Order>[] = [
+export const columns: ColumnDef<OrderWithRelations>[] = [
   {
     accessorKey: "index",
     header: ({ column }) => {
@@ -30,7 +30,7 @@ export const columns: ColumnDef<Order>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div>{row.index + 1}</div>;
+      return <div className="px-4">{row.index + 1}</div>;
     },
   },
   {
@@ -48,12 +48,15 @@ export const columns: ColumnDef<Order>[] = [
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return <div className="px-4">{row.original.customer?.name}</div>;
+    },
   },
   {
     accessorKey: "totalPrice",
     header: "Total",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("totalPrice"));
+      const amount = Number.parseFloat(row.getValue("totalPrice"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
@@ -65,7 +68,7 @@ export const columns: ColumnDef<Order>[] = [
     accessorKey: "discountAmount",
     header: "Discount",
     cell: ({ row }) => {
-      const discountAmount = parseFloat(row.getValue("discountAmount"));
+      const discountAmount = Number.parseFloat(row.getValue("discountAmount"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
@@ -108,6 +111,7 @@ export const columns: ColumnDef<Order>[] = [
   },
   {
     accessorKey: "paymentMethod.name",
+    id: "paymentMethod.name",
     header: ({ column }) => {
       return (
         <Button
@@ -120,6 +124,12 @@ export const columns: ColumnDef<Order>[] = [
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
+    },
+    cell: ({ row }) => {
+      return <div className="px-4">{row.original.paymentMethod?.name}</div>;
+    },
+    filterFn: (row, id, value) => {
+      return row.original.paymentMethod?.name === value;
     },
   },
   {

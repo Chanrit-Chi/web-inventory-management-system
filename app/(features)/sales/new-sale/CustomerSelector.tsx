@@ -69,8 +69,8 @@ export const CustomerSelector = ({
       </Label>
       <div className="flex gap-2 items-center">
         <Select>
-          <SelectTrigger className="w-[180px] text-gray-700 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2  focus:border-transparent outline-none">
-            <SelectValue placeholder="Select Customer" />
+          <SelectTrigger className="w-[180px] border border-gray-300 rounded-lg px-3 py-2 focus:ring-2  focus:border-transparent outline-none">
+            <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -96,9 +96,6 @@ export const CustomerSelector = ({
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Customer</DialogTitle>
-              <DialogDescription>
-                Create a new customer. Click save when you&apos;re done.
-              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">

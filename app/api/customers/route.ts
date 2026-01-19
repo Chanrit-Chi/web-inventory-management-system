@@ -48,35 +48,3 @@ export async function PUT(request: Request) {
     );
   }
 }
-
-export async function DELETE(request: Request) {
-  try {
-    const { id } = await request.json();
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing customer ID" },
-        { status: 400 }
-      );
-    }
-    const customer = await customerService.deleteCustomer(id);
-    return NextResponse.json(customer);
-  } catch (error) {
-    console.error("Error deleting customer:", error);
-
-    // Handle foreign key constraint violation
-    if (
-      error instanceof Error &&
-      error.message.includes("Foreign key constraint")
-    ) {
-      return NextResponse.json(
-        { error: "Cannot delete customer with existing orders." },
-        { status: 409 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to delete customer" },
-      { status: 500 }
-    );
-  }
-}

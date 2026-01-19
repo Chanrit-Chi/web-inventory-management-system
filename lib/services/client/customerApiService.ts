@@ -1,97 +1,91 @@
-import { CustomerSchema } from "@/schemas/customer.schema";
-import { Customer, CustomerCreate } from "@/schemas/type-export.schema";
+import {
+  CustomerCreateSchema,
+  CustomerUpdateSchema,
+} from "@/schemas/customer.schema";
+import {
+  Customer,
+  CustomerCreate,
+  CustomerUpdate,
+} from "@/schemas/type-export.schema";
 
 export const customerApiService = {
   AddCustomer: async (customer: CustomerCreate): Promise<Customer> => {
-    try {
-      const validateCustomer = CustomerSchema.parse({
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-      });
-      const res = await fetch("/api/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validateCustomer),
-      });
+    const validateCustomer = CustomerCreateSchema.parse({ customer });
+    const res = await fetch("/api/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validateCustomer),
+    });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-
-      return await res.json();
-    } catch (error) {
-      console.error("Error adding customer:", error);
-      throw error;
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to add customer" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
   GetCustomers: async (): Promise<Customer[]> => {
-    try {
-      const res = await fetch("/api/customers");
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-      throw error;
+    const res = await fetch("/api/customers");
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to fetch customers" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
   GetCustomerById: async (id: string): Promise<Customer> => {
-    try {
-      const res = await fetch(`/api/customers/${id}`);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching customer by ID:", error);
-      throw error;
+    const res = await fetch(`/api/customers/${id}`);
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Customer not found" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
   UpdateCustomer: async (
     id: string,
-    customer: Partial<Customer>
+    customer: CustomerUpdate
   ): Promise<Customer> => {
-    try {
-      const validateCustomer = CustomerSchema.partial().parse(customer);
-      const res = await fetch("/api/customers", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...validateCustomer }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      throw error;
+    const validateCustomer = CustomerUpdateSchema.parse(customer);
+    const res = await fetch("/api/customers", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...validateCustomer }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to update customer" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
   DeleteCustomer: async (id: string): Promise<void> => {
-    try {
-      const res = await fetch("/api/customers", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      throw error;
+    const res = await fetch("/api/customers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to delete customer" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
   },
 };

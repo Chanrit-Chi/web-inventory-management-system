@@ -32,7 +32,7 @@ export const customerService = {
 
   updateCustomer: async (
     id: string,
-    data: Partial<CustomerUpdate>
+    data: CustomerUpdate
   ): Promise<Customer> => {
     return prisma.customer.update({
       where: { id },

@@ -198,12 +198,12 @@ const POSOrderPage = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Products Section */}
-          <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+          <div className="flex-1 overflow-auto md:pt-2">
             <div className="mb-4 md:mb-6">
               <div className="flex items-center justify-between mb-4 gap-2">
                 <h2 className="text-lg md:text-xl font-semibold">Product</h2>
-                <div className="flex items-center gap-2 md:gap-4">
-                  <div className="relative hidden sm:block">
+                <div className="flex items-center gap-2 mt-2 md:gap-4">
+                  <div className="relative">
                     <Search
                       className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
                       size={18}
@@ -215,7 +215,7 @@ const POSOrderPage = () => {
                     />
                   </div>
                   <button className="p-2 border rounded-lg hover:bg-accent">
-                    <Filter size={18} />
+                    <Filter size={24} />
                   </button>
                 </div>
               </div>
@@ -348,7 +348,7 @@ const OrderDetailsSidebar = ({
 }: any) => (
   <>
     <div className="p-4 md:p-6 border-b">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between my-4">
         <h2 className="text-lg md:text-xl font-semibold">Order Details</h2>
         <span className="text-sm text-muted-foreground">#666</span>
       </div>
@@ -393,32 +393,36 @@ const OrderDetailsSidebar = ({
               <h4 className="font-medium text-xs md:text-sm mb-1 truncate">
                 {item.name}
               </h4>
-              <div className="text-xs text-muted-foreground mb-2">
-                Size {item.size}
-              </div>
-              <div className="font-bold text-sm md:text-base">
-                ${item.price}
-              </div>
-            </div>
-            <div className="flex flex-col items-center justify-center">
-              <div className="flex items-center justify-center gap-1 md:gap-2 bg-muted rounded-full p-0.5">
-                <Button
-                  onClick={() => updateQuantity(item.id, -1)}
-                  className="rounded-full size-6 md:size-8 p-0"
-                >
-                  <Minus size={12} className="md:hidden" />
-                  <Minus size={14} className="hidden md:block" />
-                </Button>
-                <span className="text-xs md:text-sm font-medium w-5 md:w-6 text-center">
-                  {item.quantity}
-                </span>
-                <Button
-                  onClick={() => updateQuantity(item.id, 1)}
-                  className="rounded-full size-6 md:size-8 p-0"
-                >
-                  <Plus size={12} className="md:hidden" />
-                  <Plus size={14} className="hidden md:block" />
-                </Button>
+              <div className="flex justify-between items-center">
+                <div className="flex flex-col">
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Size {item.size}
+                  </div>
+                  <div className="flex justify-between font-bold text-sm md:text-base">
+                    ${item.price}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-center gap-1 md:gap-2 bg-muted rounded-full p-0.5">
+                    <Button
+                      onClick={() => updateQuantity(item.id, -1)}
+                      className="rounded-full size-6 md:size-8 p-0"
+                    >
+                      <Minus size={12} className="md:hidden" />
+                      <Minus size={14} className="hidden md:block" />
+                    </Button>
+                    <span className="text-xs md:text-sm font-medium w-5 md:w-6 text-center">
+                      {item.quantity}
+                    </span>
+                    <Button
+                      onClick={() => updateQuantity(item.id, 1)}
+                      className="rounded-full size-6 md:size-8 p-0"
+                    >
+                      <Plus size={12} className="md:hidden" />
+                      <Plus size={14} className="hidden md:block" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

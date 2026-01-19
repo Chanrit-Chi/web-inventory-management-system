@@ -14,4 +14,9 @@ export const CategoryCreateSchema = CategorySchema.omit({
   updatedAt: true,
 });
 
-export const CategoryUpdateSchema = CategoryCreateSchema.partial();
+export const CategoryUpdateSchema = CategoryCreateSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  {
+    message: "At least one field must be provided for update",
+  }
+);

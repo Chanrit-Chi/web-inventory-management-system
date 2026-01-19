@@ -1,95 +1,89 @@
-import { OrderCreateSchema } from "@/schemas/order.schema";
+import { OrderCreateSchema, OrderUpdateSchema } from "@/schemas/order.schema";
 import { Order, OrderWithDetails } from "@/schemas/type-export.schema";
 
 export const saleApiService = {
-  AddSale: async (sale: OrderWithDetails): Promise<OrderWithDetails> => {
-    try {
-      // Validate order header
-      const validatedOrder = OrderCreateSchema.parse({
-        customerId: sale.customerId,
-        paymentMethodId: sale.paymentMethodId,
-        totalPrice: sale.totalPrice,
-        status: sale.status,
-        discountPercent: sale.discountPercent,
-        discountAmount: sale.discountAmount,
-        taxPercent: sale.taxPercent,
-        taxAmount: sale.taxAmount,
-      });
+  AddSale: async (sale: OrderWithDetails): Promise<Order> => {
+    // Validate order header
+    const validatedOrder = OrderCreateSchema.parse({ sale });
 
-      // Include orderDetails in the payload
-      const payload = {
-        ...validatedOrder,
-        orderDetails: sale.orderDetails,
-      };
+    // Include orderDetails in the payload
+    const payload = {
+      ...validatedOrder,
+      orderDetails: sale.orderDetails,
+    };
 
-      const res = await fetch("/api/sales", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch("/api/sales", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-
-      return await res.json();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      console.error("Sale submission error:", {
-        message: errorMessage,
-        saleData: sale,
-        errorStack: errorStack,
-      });
-      throw error;
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to create sale" }));
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
-  GetSales: async (): Promise<Order[]> => {
-    try {
-      const res = await fetch("/api/sales");
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching sales:", error);
-      throw error;
+  GetSales: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    filters?: Record<string, string>
+  ) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
     }
+
+    if (filters) {
+      if (filters.status) params.append("status", filters.status);
+      if (filters["paymentMethod.name"]) {
+        params.append("paymentMethod", filters["paymentMethod.name"]);
+      }
+    }
+
+    const res = await fetch(`/api/sales?${params.toString()}`);
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    return res.json();
   },
 
   GetSaleById: async (id: number): Promise<Order> => {
-    try {
-      const res = await fetch(`/api/sales/${id}`);
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error(`Error fetching sale with id ${id}:`, error);
-      throw error;
+    const res = await fetch(`/api/sales/${id}`);
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 
   UpdateSale: async (
     id: number,
-    sale: Partial<OrderWithDetails>
+    sale: OrderWithDetails
   ): Promise<OrderWithDetails> => {
-    try {
-      const res = await fetch(`/api/sales/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sale),
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return await res.json();
-    } catch (error) {
-      console.error(`Error updating sale with id ${id}:`, error);
-      throw error;
+    const validateSale = OrderUpdateSchema.parse(sale);
+    const res = await fetch(`/api/sales/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validateSale),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
+
+    return res.json();
   },
 };

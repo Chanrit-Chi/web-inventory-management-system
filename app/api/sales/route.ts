@@ -2,9 +2,28 @@
 import { saleService } from "@/lib/services/db/saleDbService";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const sales = await saleService.fetchSale();
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(
+      1,
+      Number.parseInt(searchParams.get("page") || "1", 10)
+    );
+    const limit = Math.max(
+      1,
+      Math.min(100, Number.parseInt(searchParams.get("limit") || "10", 10))
+    );
+    const search = searchParams.get("search") || undefined;
+
+    // Parse filters from query params
+    const filters: Record<string, string> = {};
+    const status = searchParams.get("status");
+    const paymentMethod = searchParams.get("paymentMethod");
+
+    if (status) filters.status = status;
+    if (paymentMethod) filters["paymentMethod.name"] = paymentMethod;
+
+    const sales = await saleService.fetchSale(page, limit, search, filters);
     console.log("Fetched sales successfully:", sales);
     return NextResponse.json(sales);
   } catch (error) {

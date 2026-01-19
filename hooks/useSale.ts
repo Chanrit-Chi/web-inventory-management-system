@@ -2,8 +2,17 @@ import { saleApiService } from "@/lib/services/client/saleApiService";
 import { OrderUpdate, OrderWithDetails } from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useGetSales = () =>
-  useQuery({ queryKey: ["sales"], queryFn: saleApiService.GetSales });
+// Query hooks
+export const useGetSales = (
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  filters?: Record<string, string>
+) =>
+  useQuery({
+    queryKey: ["sales", page, limit, search, filters],
+    queryFn: () => saleApiService.GetSales(page, limit, search, filters),
+  });
 
 export const useGetSaleById = (id: number) =>
   useQuery({
@@ -12,27 +21,25 @@ export const useGetSaleById = (id: number) =>
     enabled: !!id,
   });
 
-export const useAddSale = () => {
+// Mutation hooks - centralized queryClient
+export const useSaleMutations = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const addSale = useMutation({
     mutationFn: (data: OrderWithDetails) => saleApiService.AddSale(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
     },
   });
-};
 
-export const useUpdateSale = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const updateSale = useMutation({
     mutationFn: ({ id, ...data }: OrderUpdate) =>
-      saleApiService.UpdateSale(id, data),
+      saleApiService.UpdateSale(id, data as OrderWithDetails),
     onSuccess: (_, sale) => {
-      // Invalidate both the list and the specific sale
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["sales", sale.id] });
     },
   });
+
+  return { addSale, updateSale };
 };

@@ -5,8 +5,7 @@ import { CustomerSelector } from "./CustomerSelector";
 import { ProductSearch } from "./ProductSearch";
 import { OrderDetailsTable } from "./OrderDetailsTable";
 import { OrderSummary } from "./OrderSummary";
-import { useAddSale } from "@/hooks/useSale";
-import { useGetCustomers, useAddCustomer } from "@/hooks/useCustomer";
+import { useCustomerMutations, useGetCustomers } from "@/hooks/useCustomer";
 import { useRouter } from "next/navigation";
 import type { CustomerCreate } from "@/schemas/type-export.schema";
 import { SharedLayout } from "@/components/shared-layout";
@@ -19,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSaleMutations } from "@/hooks/useSale";
+import Decimal from "decimal.js";
 
 // Local types for UI state only
 interface ProductForSale {
@@ -45,8 +46,8 @@ interface SaleOrderDetail {
 
 function NewSalePage() {
   const router = useRouter();
-  const { mutate: addSale, isPending } = useAddSale();
-  const { mutate: createCustomer } = useAddCustomer();
+  const { mutate: addSale, isPending } = useSaleMutations().addSale;
+  const { mutate: createCustomer } = useCustomerMutations().addCustomer;
   const { data: customers = [], isLoading: isLoadingCustomers } =
     useGetCustomers();
 
@@ -150,14 +151,14 @@ function NewSalePage() {
     }
 
     const saleData = {
-      customerId: customerId!,
+      customerId: customerId,
       status: "COMPLETED" as const,
       paymentMethodId,
-      totalPrice: calculateTotal(),
+      totalPrice: new Decimal(calculateTotal()),
       discountPercent,
-      discountAmount: calculateDiscount(),
+      discountAmount: new Decimal(calculateDiscount()),
       taxPercent,
-      taxAmount: calculateTax(),
+      taxAmount: new Decimal(calculateTax()),
       orderDetails: orderDetails.map((detail) => ({
         productId: detail.productId,
         variantId: detail.variantId,
@@ -185,7 +186,7 @@ function NewSalePage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">New Sale</h1>

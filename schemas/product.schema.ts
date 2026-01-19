@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cuidSchema, moneySchema } from "./common.schema";
+import { cuidSchema } from "./common.schema";
 import { ProductStatusEnum } from "./enums.schema";
 
 export const ProductSchema = z.object({
@@ -8,13 +8,11 @@ export const ProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   image: z.string().nullable().optional(),
   description: z.string().min(1, "Description is required"),
-  costPrice: moneySchema,
-  sellingPrice: moneySchema,
   unit: z.string().min(1, "Unit is required"),
   categoryId: z.number().int().positive("Category is required"),
   isActive: ProductStatusEnum.default("ACTIVE"),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const ProductCreateSchema = ProductSchema.omit({
@@ -23,4 +21,9 @@ export const ProductCreateSchema = ProductSchema.omit({
   updatedAt: true,
 });
 
-export const ProductUpdateSchema = ProductCreateSchema.partial();
+export const ProductUpdateSchema = ProductCreateSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  {
+    message: "At least one field must be updated",
+  }
+);

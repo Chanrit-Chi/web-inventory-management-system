@@ -1,7 +1,8 @@
 import { customerApiService } from "@/lib/services/client/customerApiService";
-import { Customer } from "@/schemas/type-export.schema";
+import { CustomerCreate, CustomerUpdate } from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Query hooks
 export const useGetCustomers = () =>
   useQuery({
     queryKey: ["customers"],
@@ -14,37 +15,33 @@ export const useGetCustomerById = (id: string) =>
     queryFn: () => customerApiService.GetCustomerById(id),
   });
 
-export const useAddCustomer = () => {
+// Mutation hooks - centralized queryClient
+export const useCustomerMutations = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+
+  const addCustomer = useMutation({
     mutationFn: customerApiService.AddCustomer,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
-};
 
-export const useUpdateCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      customer,
-    }: {
-      id: string;
-      customer: Partial<Customer>;
-    }) => customerApiService.UpdateCustomer(id, customer),
-    onSuccess: () => {
+  const updateCustomer = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CustomerUpdate }) =>
+      customerApiService.UpdateCustomer(id, data),
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", id] });
     },
   });
-};
-export const useDeleteCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => customerApiService.DeleteCustomer(id),
-    onSuccess: () => {
+
+  const deleteCustomer = useMutation({
+    mutationFn: customerApiService.DeleteCustomer,
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", id] });
     },
   });
+
+  return { addCustomer, updateCustomer, deleteCustomer };
 };

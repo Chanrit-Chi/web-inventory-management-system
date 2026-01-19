@@ -97,19 +97,24 @@ const data = {
       items: [
         {
           title: "View All Products",
-          url: "/product/all-products",
+          url: "/products/product-list",
         },
         {
           title: "New Product",
-          url: "/product/new",
+          url: "/products/new",
         },
         {
+          title: "Category",
+          url: "/products/category/all-categories",
+        },
+
+        {
           title: "Product Variant",
-          url: "/product/variant",
+          url: "/products/variant",
         },
         {
           title: "Barcode",
-          url: "/product/barcode",
+          url: "/products/barcode",
         },
       ],
     },

@@ -1,10 +1,19 @@
 import { z } from "zod";
+import Decimal from "decimal.js";
 
-// Prisma Decimal → use number at input boundary
+// Prisma Decimal → maintain precision with Decimal.js
 export const moneySchema = z
-  .number()
-  .min(0, "Value must be non-negative")
-  .default(0);
+  .union([z.number(), z.string()])
+  .refine((val) => {
+    try {
+      const dec = new Decimal(val);
+      return dec.isFinite() && dec.greaterThanOrEqualTo(0);
+    } catch {
+      return false;
+    }
+  }, "Value must be a valid non-negative number")
+  .transform((val) => new Decimal(val))
+  .default(new Decimal(0));
 
 export const cuidSchema = z.string().min(10);
 export const uuidSchema = z.uuid();

@@ -3,20 +3,24 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
+import { Switch } from "./ui/switch";
 
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+  const toggleTheme = (checked: boolean) => {
+    setTheme(checked ? "dark" : "light");
   };
 
   return (
-    <Button onClick={toggleTheme} variant="outline" size="icon">
-      <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+    <div className="flex items-center gap-2">
+      <Sun className="h-[1.2rem] w-[1.2rem] transition-all duration-700 ease-in-out dark:scale-75 dark:opacity-50 scale-100 opacity-100" />
+      <Switch
+        id="dark-mode-toggle"
+        checked={theme === "dark"}
+        onCheckedChange={toggleTheme}
+      />
+      <Moon className="h-[1.2rem] w-[1.2rem] transition-all duration-700 ease-in-out dark:scale-100 dark:opacity-100 scale-75 opacity-50" />
+    </div>
   );
 }

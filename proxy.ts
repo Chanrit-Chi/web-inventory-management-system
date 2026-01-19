@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
     "/api/suppliers",
     "/api/categories",
     "/api/reports",
+    "/api/uploadthing",
   ]);
 
   const isPublicApiRoute = (path: string) =>

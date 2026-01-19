@@ -1,4 +1,4 @@
-import { productService } from "@/lib/services/db/productDbService";
+import { productDbService } from "@/lib/services/db/productDbService";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -12,17 +12,25 @@ export async function GET(request: Request) {
       1,
       Math.min(100, Number.parseInt(searchParams.get("limit") || "10", 10))
     );
+    const search = searchParams.get("search") || undefined;
 
-    const products = await productService.fetchProducts(page, limit);
+    // Parse filters from query params
+    const filters: Record<string, string> = {};
+    const status = searchParams.get("isActive");
+    const category = searchParams.get("category");
+
+    if (status) filters.isActive = status;
+    if (category) filters.category = category;
+
+    const products = await productDbService.fetchProducts(
+      page,
+      limit,
+      search,
+      filters
+    );
     console.log("Fetched products successfully:", products);
 
-    return NextResponse.json({
-      data: products,
-      pagination: {
-        page,
-        limit,
-      },
-    });
+    return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json(
@@ -36,12 +44,28 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
     console.log("Received product data:", JSON.stringify(data, null, 2));
-    const product = await productService.createProduct(data);
+    const product = await productDbService.createProduct(data);
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json(
       { error: "Failed to create product" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const data = await request.json();
+    const { id, ...updateData } = data;
+    console.log("Received product update data:", JSON.stringify(data, null, 2));
+    const product = await productDbService.updateProduct(id, updateData);
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json(
+      { error: "Failed to update product" },
       { status: 500 }
     );
   }
