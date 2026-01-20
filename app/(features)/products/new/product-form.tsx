@@ -1,14 +1,12 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useProductMutations } from "@/hooks/useProduct";
 import { ProductCreateSchema } from "@/schemas/product.schema";
 import { ProductCreate } from "@/schemas/type-export.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { uploadFiles } from "@/utils/uploadthing";
 import {
   Accordion,
   AccordionContent,
@@ -28,17 +26,18 @@ import { useGetCategories } from "@/hooks/useCategory";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { CreateCategoryDialog } from "../category/all-categories/category-dialogs";
-import { useDropzone } from "react-dropzone";
-import Image from "next/image";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { ImageDropzone } from "@/components/ImageDropzone";
+import { FormField } from "@/components/FormField";
+import { VariantForm } from "./components/variant-form";
 
 export default function ProductSectionForm() {
   const { addProduct } = useProductMutations();
   const categories = useGetCategories();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [openCreateCategory, setOpenCreateCategory] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [imageKey, setImageKey] = useState<string | null>(null);
+  const { imagePreview, uploading, uploadImage, resetImage, imageKey } =
+    useImageUpload();
 
   const {
     register,
@@ -61,86 +60,66 @@ export default function ProductSectionForm() {
   const onSubmit = async (data: ProductCreate) => {
     try {
       await addProduct.mutateAsync(data);
+
+      // Confirm upload only after successful product creation
       if (imageKey) {
-        await fetch("/api/uploadthing/confirm", {
-          method: "POST",
-          body: JSON.stringify({ key: imageKey }),
-          headers: { "Content-Type": "application/json" },
-        });
+        await confirmImageUpload(imageKey);
       }
+
       toast.success("Product added successfully");
-      reset();
-      setImagePreview(null);
-      setImageKey(null);
+      resetForm();
     } catch (error) {
       toast.error("Failed to add product");
       console.error("Failed to add product:", error);
+
+      // Cancel upload if product creation failed
+      if (imageKey) {
+        await cancelImageUpload(imageKey);
+      }
     }
+  };
+
+  const resetForm = () => {
+    reset();
+    resetImage();
   };
 
   const handleCancel = async () => {
     if (imageKey) {
-      try {
-        await fetch("/api/uploadthing/cancel", {
-          method: "POST",
-          body: JSON.stringify({ key: imageKey }),
-          headers: { "Content-Type": "application/json" },
-        });
-        toast.info("Upload cancelled");
-      } catch (error) {
-        console.error("Failed to cancel upload:", error);
-      }
+      await cancelImageUpload(imageKey);
     }
-    reset();
-    setImagePreview(null);
-    setImageKey(null);
+    resetForm();
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
-    multiple: false,
-    onDrop: (acceptedFiles) => {
-      (async () => {
-        const file = acceptedFiles[0];
-        if (!file) return;
+  const handleImageUpload = async (file: File) => {
+    try {
+      const { url } = await uploadImage(file);
+      setValue("image", url, { shouldValidate: true });
+    } catch (error) {
+      console.error("Image upload failed:", error);
+    }
+  };
 
-        const localPreview = URL.createObjectURL(file);
-        setImagePreview(localPreview);
-        setUploading(true);
+  // Helper functions
+  const confirmImageUpload = async (key: string) => {
+    await fetch("/api/uploadthing/confirm", {
+      method: "POST",
+      body: JSON.stringify({ key }),
+      headers: { "Content-Type": "application/json" },
+    });
+  };
 
-        try {
-          const res = await uploadFiles("imageUploader", {
-            files: [file],
-          });
-
-          const uploadedUrl = res?.[0]?.ufsUrl;
-          const uploadedKey = res?.[0]?.key;
-
-          if (!uploadedUrl || !uploadedKey) throw new Error("Upload failed");
-
-          // store the key for two-phase upload
-          setImageKey(uploadedKey);
-
-          URL.revokeObjectURL(localPreview);
-          setImagePreview(uploadedUrl);
-
-          // save URL to react-hook-form
-          setValue("image", uploadedUrl, {
-            shouldValidate: true,
-            shouldDirty: true,
-          });
-        } catch (err) {
-          console.error(err);
-          toast.error("Image upload failed");
-          setImagePreview(null);
-          setImageKey(null);
-          setValue("image", null);
-        } finally {
-          setUploading(false);
-        }
-      })();
-    },
-  });
+  const cancelImageUpload = async (key: string) => {
+    try {
+      await fetch("/api/uploadthing/cancel", {
+        method: "POST",
+        body: JSON.stringify({ key }),
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Failed to cancel upload:", error);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -172,48 +151,40 @@ export default function ProductSectionForm() {
             <form onSubmit={handleSubmit(onSubmit)}>
               {
                 <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      SKU <span className="text-red-500">*</span>
-                    </Label>
+                  {/* SKU Field */}
+                  <FormField label="SKU" required error={errors.sku?.message}>
                     <Input type="text" {...register("sku")} />
-                    {errors.sku && (
-                      <p className="text-red-500">{errors.sku.message}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      Product Name <span className="text-red-500">*</span>
-                    </Label>
+                  </FormField>
+
+                  {/* Product Name Field */}
+                  <FormField
+                    label="Product Name"
+                    required
+                    error={errors.name?.message}
+                  >
                     <Input type="text" {...register("name")} />
-                    {errors.name && (
-                      <p className="text-red-500">{errors.name.message}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      Description <span className="text-red-500">*</span>
-                    </Label>
+                  </FormField>
+
+                  {/* Description Field */}
+                  <FormField
+                    label="Description"
+                    required
+                    error={errors.description?.message}
+                  >
                     <Input type="text" {...register("description")} />
-                    {errors.description && (
-                      <p className="text-red-500">
-                        {errors.description.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      Unit <span className="text-red-500">*</span>
-                    </Label>
+                  </FormField>
+
+                  {/* Unit Field */}
+                  <FormField label="Unit" required error={errors.unit?.message}>
                     <Input type="text" {...register("unit")} />
-                    {errors.unit && (
-                      <p className="text-red-500">{errors.unit.message}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      Category <span className="text-red-500">*</span>
-                    </Label>
+                  </FormField>
+
+                  {/* Category Field */}
+                  <FormField
+                    label="Category"
+                    required
+                    error={errors.categoryId?.message}
+                  >
                     <div className="flex flex-row items-center gap-2">
                       <Select
                         value={selectedCategory}
@@ -247,17 +218,23 @@ export default function ProductSectionForm() {
                         onOpenChange={setOpenCreateCategory}
                       />
                     </div>
-                    {errors.categoryId && (
-                      <p className="text-red-500">
-                        {errors.categoryId.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">
-                      Active Status <span className="text-red-500">*</span>
-                    </Label>
-                    <Select defaultValue="true" {...register("isActive")}>
+                  </FormField>
+
+                  {/* Active Status Field */}
+                  <FormField
+                    label="Active Status"
+                    required
+                    error={errors.isActive?.message}
+                  >
+                    <Select
+                      defaultValue="true"
+                      onValueChange={(value) =>
+                        setValue(
+                          "isActive",
+                          value === "ACTIVE" ? "ACTIVE" : "INACTIVE",
+                        )
+                      }
+                    >
                       <SelectTrigger className="w-45">
                         <SelectValue placeholder="Select Status" />
                       </SelectTrigger>
@@ -269,50 +246,18 @@ export default function ProductSectionForm() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    {errors.isActive && (
-                      <p className="text-red-500">{errors.isActive.message}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col p-2">
-                    <Label className="mb-2">Product Image</Label>
-
-                    <div
-                      {...getRootProps()}
-                      className={`border-dashed border-2 p-6 rounded-lg text-center cursor-pointer transition
-        ${isDragActive ? "border-blue-500" : "border-gray-300"}`}
-                    >
-                      <input {...getInputProps()} />
-
-                      {uploading && (
-                        <p className="text-sm text-muted-foreground">
-                          Uploading image…
-                        </p>
-                      )}
-
-                      {!uploading && imagePreview && (
-                        <div className="flex justify-center">
-                          <Image
-                            src={imagePreview}
-                            alt="Product preview"
-                            width={200}
-                            height={200}
-                            className="rounded-md object-cover"
-                          />
-                        </div>
-                      )}
-
-                      {!uploading && !imagePreview && (
-                        <p className="text-sm text-muted-foreground">
-                          Drag & drop image, or click to upload
-                        </p>
-                      )}
-                    </div>
-                    {errors.image && (
-                      <p className="text-red-500 text-sm">
-                        {errors.image.message}
-                      </p>
-                    )}
-                  </div>
+                  </FormField>
+                  <FormField
+                    label="Product Image"
+                    error={errors.image?.message}
+                  >
+                    <ImageDropzone
+                      onImageUpload={handleImageUpload}
+                      imagePreview={imagePreview}
+                      uploading={uploading}
+                      error={errors.image?.message}
+                    />
+                  </FormField>
                 </div>
               }
               {/* Submit button */}
@@ -334,6 +279,28 @@ export default function ProductSectionForm() {
                 </Button>
               </div>
             </form>
+          </AccordionContent>
+        </div>
+      </AccordionItem>
+      <AccordionItem value="pricingAndStocks" className="p-4 m-4">
+        <div className="border rounded-lg p-4">
+          <AccordionTrigger>Pricing and Stocks</AccordionTrigger>
+          <AccordionContent>
+            {/* Additional details form fields can go here */}
+            <div className="text-sm text-gray-500">
+              <VariantForm />
+            </div>
+          </AccordionContent>
+        </div>
+      </AccordionItem>
+      <AccordionItem value="supplier" className="p-4 m-4">
+        <div className="border rounded-lg p-4">
+          <AccordionTrigger>Supplier</AccordionTrigger>
+          <AccordionContent>
+            {/* Additional details form fields can go here */}
+            <div className="text-sm text-gray-500">
+              Additional details section is under construction.
+            </div>
           </AccordionContent>
         </div>
       </AccordionItem>
