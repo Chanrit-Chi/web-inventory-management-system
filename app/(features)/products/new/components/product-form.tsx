@@ -3,16 +3,13 @@
 import { Input } from "@/components/ui/input";
 import { useProductMutations } from "@/hooks/useProduct";
 import { ProductCreateSchema } from "@/schemas/product.schema";
-import { ProductCreate } from "@/schemas/type-export.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  ProductCreate,
+  ProductWithVariants,
+} from "@/schemas/type-export.schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -30,8 +27,9 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { FormField } from "@/components/FormField";
 import { VariantForm } from "./variant-form";
+import { ProductWithVariantsSchema } from "@/schemas/complex.schema";
 
-export default function ProductSectionForm() {
+export default function ProductForm() {
   const { addProduct } = useProductMutations();
   const categories = useGetCategories();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -39,14 +37,8 @@ export default function ProductSectionForm() {
   const { imagePreview, uploading, uploadImage, resetImage, imageKey } =
     useImageUpload();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm({
-    resolver: zodResolver(ProductCreateSchema),
+  const method = useForm({
+    resolver: zodResolver(ProductWithVariantsSchema),
     defaultValues: {
       name: "",
       sku: "",
@@ -54,10 +46,19 @@ export default function ProductSectionForm() {
       unit: "",
       categoryId: 0,
       image: null,
+      variants: [],
     },
   });
 
-  const onSubmit = async (data: ProductCreate) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = method;
+
+  const onSubmit = async (data: ProductWithVariants) => {
     try {
       await addProduct.mutateAsync(data);
 
@@ -138,148 +139,155 @@ export default function ProductSectionForm() {
   }, [selectedCategory, setValue]);
 
   return (
-    <div className="w-full space-y-6">
-      {/* Product Information */}
-      <section className="p-4 m-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-4">Product Information</h2>
+    <div>
+      <div className="w-full space-y-6">
+        {/* Product Information */}
+        <section className="p-4 m-4 border rounded-lg">
+          <h2 className="text-lg font-semibold mb-4">Product Information</h2>
+          <FormProvider {...method}>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <FormField label="SKU" required error={errors.sku?.message}>
+                  <Input type="text" {...register("sku")} />
+                </FormField>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <FormField label="SKU" required error={errors.sku?.message}>
-              <Input type="text" {...register("sku")} />
-            </FormField>
-
-            <FormField
-              label="Product Name"
-              required
-              error={errors.name?.message}
-            >
-              <Input type="text" {...register("name")} />
-            </FormField>
-
-            <FormField
-              label="Description"
-              required
-              error={errors.description?.message}
-            >
-              <Input type="text" {...register("description")} />
-            </FormField>
-
-            <FormField label="Unit" required error={errors.unit?.message}>
-              <Input type="text" {...register("unit")} />
-            </FormField>
-
-            <FormField
-              label="Category"
-              required
-              error={errors.categoryId?.message}
-            >
-              <div className="flex flex-row items-center gap-2">
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
+                <FormField
+                  label="Product Name"
+                  required
+                  error={errors.name?.message}
                 >
-                  <SelectTrigger className="w-45">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Categories</SelectLabel>
-                      {categories.data?.map((category) => (
-                        <SelectItem
-                          key={category.id}
-                          value={category.id.toString()}
-                        >
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  <Input type="text" {...register("name")} />
+                </FormField>
+
+                <FormField
+                  label="Description"
+                  required
+                  error={errors.description?.message}
+                >
+                  <Input type="text" {...register("description")} />
+                </FormField>
+
+                <FormField label="Unit" required error={errors.unit?.message}>
+                  <Input type="text" {...register("unit")} />
+                </FormField>
+
+                <FormField
+                  label="Category"
+                  required
+                  error={errors.categoryId?.message}
+                >
+                  <div className="flex flex-row items-center gap-2">
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={setSelectedCategory}
+                    >
+                      <SelectTrigger className="w-45">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Categories</SelectLabel>
+                          {categories.data?.map((category) => (
+                            <SelectItem
+                              key={category.id}
+                              value={category.id.toString()}
+                            >
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      type="button"
+                      onClick={() => setOpenCreateCategory(true)}
+                    >
+                      Add Category
+                    </Button>
+
+                    <CreateCategoryDialog
+                      open={openCreateCategory}
+                      onOpenChange={setOpenCreateCategory}
+                    />
+                  </div>
+                </FormField>
+
+                <FormField
+                  label="Active Status"
+                  required
+                  error={errors.isActive?.message}
+                >
+                  <Select
+                    defaultValue="true"
+                    onValueChange={(value) =>
+                      setValue(
+                        "isActive",
+                        value === "ACTIVE" ? "ACTIVE" : "INACTIVE",
+                      )
+                    }
+                  >
+                    <SelectTrigger className="w-45">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Status</SelectLabel>
+                        <SelectItem value="true">ACTIVE</SelectItem>
+                        <SelectItem value="false">INACTIVE</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+
+                <FormField label="Product Image" error={errors.image?.message}>
+                  <ImageDropzone
+                    onImageUpload={handleImageUpload}
+                    imagePreview={imagePreview}
+                    uploading={uploading}
+                    error={errors.image?.message}
+                  />
+                </FormField>
+              </div>
+
+              <div className="flex sm:flex-col lg:flex-row gap-6">
+                {/* Pricing and Stocks */}
+                <section className="w-full p-4 m-4 border rounded-lg">
+                  <h2 className="text-lg font-semibold mb-4">
+                    Pricing and Stocks
+                  </h2>
+                  <div>
+                    <VariantForm />
+                  </div>
+                </section>
+              </div>
+
+              {/* Supplier */}
+              <section className="p-4 m-4 border rounded-lg">
+                <h2 className="text-lg font-semibold mb-4">Supplier</h2>
+
+                <div className="text-sm text-gray-500">
+                  Additional details section is under construction.
+                </div>
+              </section>
+              <div className="mt-4 flex justify-end">
+                <Button type="submit" disabled={addProduct.isPending}>
+                  {addProduct.isPending ? "Saving..." : "Save Product"}
+                </Button>
 
                 <Button
                   type="button"
-                  onClick={() => setOpenCreateCategory(true)}
+                  variant="outline"
+                  className="ml-2"
+                  onClick={handleCancel}
                 >
-                  Add Category
+                  Cancel
                 </Button>
-
-                <CreateCategoryDialog
-                  open={openCreateCategory}
-                  onOpenChange={setOpenCreateCategory}
-                />
               </div>
-            </FormField>
-
-            <FormField
-              label="Active Status"
-              required
-              error={errors.isActive?.message}
-            >
-              <Select
-                defaultValue="true"
-                onValueChange={(value) =>
-                  setValue(
-                    "isActive",
-                    value === "ACTIVE" ? "ACTIVE" : "INACTIVE",
-                  )
-                }
-              >
-                <SelectTrigger className="w-45">
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Status</SelectLabel>
-                    <SelectItem value="true">ACTIVE</SelectItem>
-                    <SelectItem value="false">INACTIVE</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </FormField>
-
-            <FormField label="Product Image" error={errors.image?.message}>
-              <ImageDropzone
-                onImageUpload={handleImageUpload}
-                imagePreview={imagePreview}
-                uploading={uploading}
-                error={errors.image?.message}
-              />
-            </FormField>
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            <Button type="submit" disabled={addProduct.isPending}>
-              {addProduct.isPending ? "Saving..." : "Save Product"}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="ml-2"
-              onClick={handleCancel}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      {/* Pricing and Stocks */}
-      <section className="p-4 m-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-4">Pricing and Stocks</h2>
-
-        <VariantForm />
-      </section>
-
-      {/* Supplier */}
-      <section className="p-4 m-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-4">Supplier</h2>
-
-        <div className="text-sm text-gray-500">
-          Additional details section is under construction.
-        </div>
-      </section>
+            </form>
+          </FormProvider>
+        </section>
+      </div>
     </div>
   );
 }

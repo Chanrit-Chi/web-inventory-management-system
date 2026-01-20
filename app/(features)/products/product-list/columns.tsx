@@ -74,6 +74,8 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         <div className="flex items-center gap-3">
           {product.image ? (
             <Image
+              width={60}
+              height={60}
               src={product.image}
               alt={product.name}
               className="w-10 h-10 rounded object-cover"

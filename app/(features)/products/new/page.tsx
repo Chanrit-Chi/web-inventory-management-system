@@ -1,10 +1,10 @@
 import { SharedLayout } from "@/components/shared-layout";
-import NewProductForm from "./components/form";
+import ProductForm from "./components/product-form";
 
 export function NewProduct() {
   return (
     <div>
-      <NewProductForm />
+      <ProductForm />
     </div>
   );
 }

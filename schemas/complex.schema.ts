@@ -69,7 +69,7 @@ export const ProductAttributeWithValuesSchema =
       .array(
         z.object({
           value: z.string().min(1, "Attribute value is required"),
-        })
+        }),
       )
       .min(1, "At least one attribute value is required"),
   });
