@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { positiveInt, cuidSchema, moneySchema } from "./common.schema";
+import { positiveInt, moneySchema, cuidSchema } from "./common.schema";
 
 export const ProductVariantSchema = z.object({
   id: z.number().int(),
@@ -20,11 +20,20 @@ export const ProductVariantCreateSchema = ProductVariantSchema.omit({
   id: true,
 });
 
+export const VariantAttributeInputSchema = z.object({
+  valueId: z.number().int(),
+});
+
+export const ProductVariantCreateInputSchema =
+  ProductVariantCreateSchema.extend({
+    attributes: z.array(VariantAttributeInputSchema).optional(),
+  });
+
 export const ProductVariantUpdateSchema = ProductVariantCreateSchema.partial()
   .extend({
     id: z.number().int(),
   })
   .refine(
     (data) => Object.keys(data).length > 1,
-    "At least one field must be provided for update"
+    "At least one field must be provided for update",
   );

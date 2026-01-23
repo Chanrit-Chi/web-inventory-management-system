@@ -7,8 +7,6 @@ import { QuotationCreateSchema } from "./quotation.schema";
 import { QuotationItemCreateSchema } from "./quotation-items.schema";
 import { PurchaseOrderDetailCreateSchema } from "./purchase-order-detials.schema";
 import { PurchaseOrderCreateSchema } from "./purchase-order.schema";
-import { ProductVariantCreateSchema } from "./product-variant.schema";
-import { ProductCreateSchema } from "./product.schema";
 import { ProductAttributeCreateSchema } from "./product-attribute.schema";
 
 export const OrderWithDetailsSchema = OrderCreateSchema.extend({
@@ -57,10 +55,10 @@ const VariantAttributeInputSchema = z.object({
   valueId: z.number().int(), // Direct reference to attribute value
 });
 
-export const ProductVariantWithAttributesSchema =
-  ProductVariantCreateSchema.extend({
-    attributes: z.array(VariantAttributeInputSchema).optional(),
-  });
+// export const ProductVariantWithAttributesSchema =
+//   ProductVariantCreateSchema.extend({
+//     attributes: z.array(VariantAttributeInputSchema).optional(),
+//   });
 
 // Product Attribute with its values (global attribute definition)
 export const ProductAttributeWithValuesSchema =
@@ -71,19 +69,27 @@ export const ProductAttributeWithValuesSchema =
           value: z.string().min(1, "Attribute value is required"),
         }),
       )
-      .min(1, "At least one attribute value is required"),
+      .min(1, "At least one attribute value is required")
+      .refine(
+        (values) => {
+          new Set(values.map((v) => v.value)).size === values.length;
+        },
+        {
+          message: "Duplicate attribute values are not allowed",
+        },
+      ),
   });
 
 // Product with variants (attributes are assigned separately via ProductOnAttribute)
-export const ProductWithVariantsSchema = ProductCreateSchema.extend({
-  variants: z
-    .array(ProductVariantWithAttributesSchema)
-    .min(1, "At least one product variant is required"),
-  attributeIds: z.array(z.number().int()).optional(), // IDs of global attributes this product uses
-});
+// export const ProductWithVariantsSchema = ProductCreateSchema.extend({
+//   variants: z
+//     .array(ProductVariantWithAttributesSchema)
+//     .min(1, "At least one product variant is required"),
+//   attributeIds: z.array(z.number().int()).optional(), // IDs of global attributes this product uses
+// });
 
 // For updating/linking variant attributes
-export const VariantWithAttributeLinksSchema = z.object({
-  variantId: z.number().int(),
-  valueIds: z.array(z.number().int()).min(1, "At least one value is required"), // Array of ProductAttributeValue IDs
-});
+// export const VariantWithAttributeLinksSchema = z.object({
+//   variantId: z.number().int(),
+//   valueIds: z.array(z.number().int()).min(1, "At least one value is required"), // Array of ProductAttributeValue IDs
+// });

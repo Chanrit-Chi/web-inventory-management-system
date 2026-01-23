@@ -16,7 +16,7 @@ export const ProductAttributeUpdateSchema =
     (data) => Object.keys(data).length > 0,
     {
       message: "At least one field must be updated",
-    }
+    },
   );
 
 export const ProductAttributeValueSchema = z.object({
@@ -35,27 +35,27 @@ export const ProductAttributeValueUpdateSchema =
     (data) => Object.keys(data).length > 0,
     {
       message: "At least one field must be updated",
-    }
+    },
   );
 
-export const ProductVariantAttributeSchema = z.object({
-  id: z.number().int(),
-  variantId: z.number().int(),
-  valueId: z.number().int(),
-});
+// export const ProductVariantAttributeSchema = z.object({
+//   id: z.number().int(),
+//   variantId: z.number().int(),
+//   valueId: z.number().int(),
+// });
 
-export const ProductVariantAttributeCreateSchema =
-  ProductVariantAttributeSchema.omit({
-    id: true,
-  });
+// export const ProductVariantAttributeCreateSchema =
+//   ProductVariantAttributeSchema.omit({
+//     id: true,
+//   });
 
-export const ProductVariantAttributeUpdateSchema =
-  ProductVariantAttributeCreateSchema.partial().refine(
-    (data) => Object.keys(data).length > 0,
-    {
-      message: "At least one field must be updated",
-    }
-  );
+// export const ProductVariantAttributeUpdateSchema =
+//   ProductVariantAttributeCreateSchema.partial().refine(
+//     (data) => Object.keys(data).length > 0,
+//     {
+//       message: "At least one field must be updated",
+//     }
+//   );
 
 // Link between product and attribute (which attributes a product uses)
 export const ProductOnAttributeSchema = z.object({

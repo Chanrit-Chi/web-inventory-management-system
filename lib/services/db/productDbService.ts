@@ -4,13 +4,13 @@ import {
   ProductCreateSchema,
   ProductUpdateSchema,
 } from "@/schemas/product.schema";
-import { ProductWithVariantsSchema } from "@/schemas/complex.schema";
 import {
   Product,
   ProductCreate,
   ProductUpdate,
-  ProductWithVariants,
 } from "@/schemas/type-export.schema";
+import { ProductCreateUtils } from "@/utils/productCreate";
+import { ProductWithVariantsCommand } from "@/schemas/commands/product-with-variants.command";
 
 const selectProductFields = {
   id: true,
@@ -53,44 +53,29 @@ export const productDbService = {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    filters?: Record<string, string>
+    filters?: Record<string, string>,
   ) => {
     const skip = (page - 1) * limit;
 
     // Build where clause for filtering
-    const where: any = {};
+    const where: Prisma.ProductWhereInput = {};
 
     // Add search filter
-    if (search && search.trim()) {
-      const searchUpper = search.toUpperCase();
-      const statusMatch = ["ACTIVE", "INACTIVE"].find((s) =>
-        s.includes(searchUpper)
-      );
-
-      const orConditions: any[] = [
+    if (search?.trim()) {
+      where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { sku: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
         { category: { name: { contains: search, mode: "insensitive" } } },
       ];
-
-      // Add status to search if it matches
-      if (statusMatch) {
-        orConditions.push({ isActive: statusMatch });
-      }
-
-      where.OR = orConditions;
     }
 
     // Add column filters
-    if (filters) {
-      if (filters.isActive) {
-        where.isActive = filters.isActive;
-      }
-      if (filters.category) {
-        where.categoryId = parseInt(filters.category);
-      }
+    if (filters?.isActive !== undefined) {
+      if (filters.isActive === "true") where.isActive = "ACTIVE";
+      else if (filters.isActive === "false") where.isActive = "INACTIVE";
     }
+    if (filters?.category) where.categoryId = Number(filters.category);
 
     console.log("Product search query:", search);
     console.log("Product filters:", filters);
@@ -133,60 +118,49 @@ export const productDbService = {
     });
   },
 
-  //for bulk create product with variants and attributes--import product with variants schema
   createProductWithVariants: async (
-    data: ProductWithVariants
+    command: ProductWithVariantsCommand,
   ): Promise<Product> => {
-    const validated = ProductWithVariantsSchema.parse(data);
-    const { variants, attributeIds, ...productData } = validated;
+    const { variants, attributeIds, ...productData } = command;
 
-    return await prisma.$transaction(async (tx) => {
-      // 1. Create the product
+    return prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: productData,
       });
 
-      // 2. Link product to attributes (ProductOnAttribute)
-      if (attributeIds && attributeIds.length > 0) {
-        for (const attributeId of attributeIds) {
-          await tx.productOnAttribute.create({
-            data: {
-              productId: product.id,
-              attributeId,
-            },
-          });
-        }
+      if (attributeIds?.length) {
+        await tx.productOnAttribute.createMany({
+          data: attributeIds.map((attributeId) => ({
+            productId: product.id,
+            attributeId,
+          })),
+        });
       }
 
-      // 3. Create variants with their attributes
-      for (const variantData of variants) {
-        const { attributes, ...variant } = variantData;
+      for (const variant of variants) {
+        const { attributes, ...variantData } = variant;
 
         const createdVariant = await tx.productVariant.create({
           data: {
-            ...variant,
+            ...variantData,
             productId: product.id,
           },
         });
 
-        // 4. Link variant to attribute values
-        if (attributes && attributes.length > 0) {
-          for (const attr of attributes) {
-            await tx.productVariantAttribute.create({
-              data: {
-                variantId: createdVariant.id,
-                valueId: attr.valueId,
-              },
-            });
-          }
+        if (attributes?.length) {
+          await tx.productVariantAttribute.createMany({
+            data: attributes.map((attr) => ({
+              variantId: createdVariant.id,
+              valueId: attr.valueId,
+            })),
+          });
         }
       }
 
-      // 5. Return the complete product with all relations
-      return tx.product.findUnique({
+      return tx.product.findUniqueOrThrow({
         where: { id: product.id },
         select: selectProductFields,
-      }) as Promise<Product>;
+      });
     });
   },
 
@@ -201,6 +175,97 @@ export const productDbService = {
   deleteProduct: async (id: string): Promise<Product> => {
     return prisma.product.delete({
       where: { id },
+    });
+  },
+
+  assignAttributeToProduct: async (
+    productId: string,
+    attributeIds: number[],
+  ): Promise<void> => {
+    if (attributeIds.length === 0) return;
+    await prisma.$transaction(async (tx) => {
+      await tx.productOnAttribute.deleteMany({
+        where: { productId },
+      });
+
+      for (const attributeId of attributeIds) {
+        await tx.productOnAttribute.create({
+          data: {
+            productId,
+            attributeId,
+          },
+        });
+      }
+    });
+  },
+
+  generateVariantsForProduct: async (
+    productId: string,
+    attributeValueMap: Record<number, number[]>,
+  ): Promise<void> => {
+    await prisma.$transaction(async (tx) => {
+      // 1. Fetch allowed attributes
+      const productAttributes = await tx.productOnAttribute.findMany({
+        where: { productId },
+        include: {
+          attribute: {
+            include: { values: true },
+          },
+        },
+      });
+
+      if (!productAttributes.length) {
+        throw new Error("Product has no attributes assigned");
+      }
+
+      // 2. Build value sets (validated)
+      const valueSets = productAttributes.map((pa) => {
+        const allowedValues = attributeValueMap[pa.attributeId] ?? [];
+
+        if (!allowedValues.length) {
+          throw new Error(
+            `No values provided for attribute ${pa.attribute.name}`,
+          );
+        }
+
+        return pa.attribute.values.filter((v) => allowedValues.includes(v.id));
+      });
+
+      // 3. Generate combinations
+      const combinations = ProductCreateUtils.cartesian(valueSets);
+
+      // 4. Create variants deterministically
+      for (const values of combinations) {
+        const exists = await tx.productVariant.findFirst({
+          where: {
+            productId,
+            attributes: {
+              every: {
+                valueId: { in: values.map((v) => v.id) },
+              },
+            },
+          },
+        });
+
+        if (exists) continue;
+
+        const skuSuffix = values
+          .map((v) => v.value)
+          .join("-")
+          .toUpperCase();
+
+        await tx.productVariant.create({
+          data: {
+            productId,
+            sku: `${productId}-${skuSuffix}`,
+            attributes: {
+              create: values.map((v) => ({
+                valueId: v.id,
+              })),
+            },
+          },
+        });
+      }
     });
   },
 } as const;

@@ -21,9 +21,23 @@ export const ProductCreateSchema = ProductSchema.omit({
   updatedAt: true,
 });
 
+export const AssignProductAttributesSchema = z.object({
+  productId: cuidSchema,
+  attributeIds: z.array(z.number().int()).min(1),
+});
+
+export const ProductVariantGenerationSchema = z.object({
+  productId: cuidSchema,
+
+  attributeValueMap: z.record(
+    z.number(), // attributeId
+    z.array(z.number().int()).min(1), // valueIds
+  ),
+});
+
 export const ProductUpdateSchema = ProductCreateSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
   {
     message: "At least one field must be updated",
-  }
+  },
 );

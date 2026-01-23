@@ -24,11 +24,8 @@ import {
   OrderWithDetailsSchema,
   OrderWithRelationsSchema,
   ProductAttributeWithValuesSchema,
-  ProductVariantWithAttributesSchema,
-  ProductWithVariantsSchema,
   PurchaseOrderWithDetailsSchema,
   QuotationWithItemsSchema,
-  VariantWithAttributeLinksSchema,
 } from "./complex.schema";
 import { InvoiceCreateSchema, InvoiceSchema } from "./invoice.schema";
 import { QuotationCreateSchema, QuotationSchema } from "./quotation.schema";
@@ -37,8 +34,7 @@ import {
   PurchaseOrderSchema,
 } from "./purchase-order.schema";
 import {
-  ProductVariantCreateSchema,
-  ProductVariantSchema,
+  ProductVariantCreateInputSchema,
   ProductVariantUpdateSchema,
 } from "./product-variant.schema";
 import {
@@ -50,9 +46,6 @@ import {
   ProductAttributeValueUpdateSchema,
   ProductOnAttributeCreateSchema,
   ProductOnAttributeSchema,
-  ProductVariantAttributeCreateSchema,
-  ProductVariantAttributeSchema,
-  ProductVariantAttributeUpdateSchema,
 } from "./product-attribute.schema";
 import {
   CategoryCreateSchema,
@@ -68,8 +61,6 @@ export type Product = z.infer<typeof ProductSchema>;
 export type ProductCreate = z.infer<typeof ProductCreateSchema>;
 export type ProductUpdate = z.infer<typeof ProductUpdateSchema>;
 
-export type ProductVariant = z.infer<typeof ProductVariantSchema>;
-export type ProductVariantCreate = z.infer<typeof ProductVariantCreateSchema>;
 export type ProductVariantUpdate = z.infer<typeof ProductVariantUpdateSchema>;
 
 export type ProductAttribute = z.infer<typeof ProductAttributeSchema>;
@@ -88,32 +79,19 @@ export type ProductAttributeValueUpdate = z.infer<
   typeof ProductAttributeValueUpdateSchema
 >;
 
-export type ProductVariantAttribute = z.infer<
-  typeof ProductVariantAttributeSchema
->;
-export type ProductVariantAttributeCreate = z.infer<
-  typeof ProductVariantAttributeCreateSchema
->;
-export type ProductVariantAttributeUpdate = z.infer<
-  typeof ProductVariantAttributeUpdateSchema
->;
-
 export type ProductOnAttribute = z.infer<typeof ProductOnAttributeSchema>;
 export type ProductOnAttributeCreate = z.infer<
   typeof ProductOnAttributeCreateSchema
 >;
 
 // Complex product types
-export type ProductWithVariants = z.infer<typeof ProductWithVariantsSchema>;
-export type ProductVariantWithAttributes = z.infer<
-  typeof ProductVariantWithAttributesSchema
->;
 export type ProductAttributeWithValues = z.infer<
   typeof ProductAttributeWithValuesSchema
 >;
-export type VariantWithAttributeLinks = z.infer<
-  typeof VariantWithAttributeLinksSchema
->;
+
+export type ProductVariantCreateInput = z.infer<
+  typeof ProductVariantCreateInputSchema
+>[];
 
 export type Supplier = z.infer<typeof SupplierSchema>;
 export type SupplierCreate = z.infer<typeof SupplierCreateSchema>;
