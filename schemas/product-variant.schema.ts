@@ -1,19 +1,28 @@
 import { z } from "zod";
-import { positiveInt, cuidSchema, moneySchema } from "./common.schema";
+import { positiveInt, moneySchema } from "./common.schema";
 
 export const ProductVariantSchema = z.object({
   id: z.number().int(),
+  productId: z.string(),
   sku: z.string().min(1, "Variant name is required"),
-  productId: cuidSchema,
   costPrice: moneySchema,
   sellingPrice: moneySchema,
   stock: positiveInt.min(0, "Stock cannot be negative").default(0),
+  isActive: z.boolean().default(true),
   reservedStock: positiveInt
     .min(0, "Reserved stock cannot be negative")
     .default(0),
   reorderLevel: positiveInt
     .min(0, "Reorder level cannot be negative")
     .default(0),
+  attributes: z
+    .array(
+      z.object({
+        valueId: z.number().int().positive("Attribute value is required"),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 export const ProductVariantCreateSchema = ProductVariantSchema.omit({
@@ -26,5 +35,5 @@ export const ProductVariantUpdateSchema = ProductVariantCreateSchema.partial()
   })
   .refine(
     (data) => Object.keys(data).length > 1,
-    "At least one field must be provided for update"
+    "At least one field must be provided for update",
   );

@@ -2,13 +2,16 @@
 
 import { Input } from "@/components/ui/input";
 import { useProductMutations } from "@/hooks/useProduct";
-import { ProductCreateSchema } from "@/schemas/product.schema";
-import {
-  ProductCreate,
-  ProductWithVariants,
-} from "@/schemas/type-export.schema";
+import { ProductCreateSchema } from "@/schemas/product.schema"; // Keep this import for ProductFormSchema
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormProvider, useForm } from "react-hook-form";
+import { z } from "zod";
+import {
+  FormProvider,
+  useForm,
+  Controller,
+  SubmitHandler,
+  Resolver,
+} from "react-hook-form";
 import { toast } from "sonner";
 import {
   Select,
@@ -27,26 +30,64 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { FormField } from "@/components/FormField";
 import { VariantForm } from "./variant-form";
-import { ProductWithVariantsSchema } from "@/schemas/complex.schema";
+import { useGetUnits } from "@/hooks/useUnit";
+import { CreateUnitDialog } from "../../unit/unit-dialogs";
+import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 
-export default function ProductForm() {
-  const { addProduct } = useProductMutations();
+const ProductFormSchema = ProductCreateSchema.extend({
+  attributeSelections: z.array(
+    z.object({
+      attributeId: z.number(),
+      attributeName: z.string(),
+      selectedValueIds: z.array(z.number()),
+      values: z.array(
+        z.object({
+          id: z.number(),
+          value: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type ProductFormValues = z.infer<typeof ProductFormSchema>;
+
+export default function ProductForm({
+  initialData,
+  isEdit = false,
+  productId,
+}: {
+  readonly initialData?: Partial<ProductFormValues>;
+  readonly isEdit?: boolean;
+  readonly productId?: string;
+}) {
+  const { addProduct, updateProduct } = useProductMutations();
   const categories = useGetCategories();
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const units = useGetUnits();
   const [openCreateCategory, setOpenCreateCategory] = useState(false);
-  const { imagePreview, uploading, uploadImage, resetImage, imageKey } =
-    useImageUpload();
+  const [openCreateUnit, setOpenCreateUnit] = useState(false);
+  const {
+    imagePreview,
+    uploading,
+    uploadImage,
+    resetImage,
+    imageKey,
+    setImagePreview,
+  } = useImageUpload();
 
-  const method = useForm({
-    resolver: zodResolver(ProductWithVariantsSchema),
+  const method = useForm<ProductFormValues>({
+    resolver: zodResolver(ProductFormSchema) as Resolver<ProductFormValues>,
     defaultValues: {
-      name: "",
-      sku: "",
-      description: "",
-      unit: "",
-      categoryId: 0,
-      image: null,
-      variants: [],
+      name: initialData?.name || "",
+      sku: initialData?.sku || "",
+      description: initialData?.description || "",
+      unitId: initialData?.unitId || 0,
+      categoryId: initialData?.categoryId || 0,
+      isActive: initialData?.isActive || "ACTIVE",
+      image: initialData?.image || null,
+      variants: initialData?.variants || [],
+      attributeSelections: initialData?.attributeSelections || [],
     },
   });
 
@@ -58,20 +99,67 @@ export default function ProductForm() {
     setValue,
   } = method;
 
-  const onSubmit = async (data: ProductWithVariants) => {
+  // Pre-fill fields when initialData changes (useful for async loading)
+  useEffect(() => {
+    if (!initialData) return;
+    const {
+      name,
+      sku,
+      description,
+      image,
+      isActive,
+      categoryId,
+      unitId,
+      variants,
+      attributeSelections,
+    } = initialData;
+
+    if (name) setValue("name", name);
+    if (sku) setValue("sku", sku);
+    if (description) setValue("description", description);
+
+    if (image) {
+      setValue("image", image);
+      setImagePreview(image);
+    }
+
+    if (isActive !== undefined) setValue("isActive", isActive);
+    if (categoryId) setValue("categoryId", categoryId);
+    if (unitId) setValue("unitId", unitId);
+    if (variants) setValue("variants", variants);
+    if (attributeSelections)
+      setValue("attributeSelections", attributeSelections);
+  }, [initialData, setValue, setImagePreview]);
+
+  const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     try {
-      await addProduct.mutateAsync(data);
+      const { attributeSelections, ...productData } = data;
 
-      // Confirm upload only after successful product creation
-      if (imageKey) {
-        await confirmImageUpload(imageKey);
+      if (isEdit && productId) {
+        await updateProduct.mutateAsync({
+          id: productId,
+          data: productData,
+        });
+        toast.success("Product updated successfully");
+      } else {
+        await addProduct.mutateAsync({
+          productData,
+          attributeSelections: attributeSelections || [],
+        });
+
+        // Confirm upload only after successful product creation
+        if (imageKey) {
+          await confirmImageUpload(imageKey);
+        }
+
+        toast.success("Product added successfully");
+        resetForm();
       }
-
-      toast.success("Product added successfully");
-      resetForm();
-    } catch (error) {
-      toast.error("Failed to add product");
-      console.error("Failed to add product:", error);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : `Failed to ${checkEdit}`,
+      );
+      console.error(`Failed to ${checkEdit} product:`, error);
 
       // Cancel upload if product creation failed
       if (imageKey) {
@@ -85,11 +173,24 @@ export default function ProductForm() {
     resetImage();
   };
 
+  const router = useRouter();
+  const back = () => {
+    router.push("/products/product-list");
+  };
+  const cancel = () => {
+    router.back();
+  };
+
   const handleCancel = async () => {
     if (imageKey) {
       await cancelImageUpload(imageKey);
     }
     resetForm();
+    if (isEdit) {
+      back();
+    } else {
+      cancel();
+    }
   };
 
   const handleImageUpload = async (file: File) => {
@@ -130,23 +231,20 @@ export default function ProductForm() {
     };
   }, [imagePreview]);
 
-  useEffect(() => {
-    if (selectedCategory) {
-      setValue("categoryId", Number(selectedCategory), {
-        shouldValidate: true,
-      });
-    }
-  }, [selectedCategory, setValue]);
+  const isPending = addProduct.isPending || updateProduct.isPending;
+  const checkEdit = isEdit ? "Update Product" : "Save Product";
+  const submitButtonText = isPending ? "Saving..." : checkEdit;
 
   return (
-    <div>
-      <div className="w-full space-y-6">
-        {/* Product Information */}
-        <section className="p-4 m-4 border rounded-lg">
+    <div className="w-full max-w-5xl mx-auto px-0 sm:px-6 lg:px-8 py-6">
+      <div className="space-y-6">
+        {/* Product Information Section */}
+        <section className="rounded-lg border p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">Product Information</h2>
           <FormProvider {...method}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Basic Info Grid */}
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <FormField label="SKU" required error={errors.sku?.message}>
                   <Input type="text" {...register("sku")} />
                 </FormField>
@@ -167,8 +265,49 @@ export default function ProductForm() {
                   <Input type="text" {...register("description")} />
                 </FormField>
 
-                <FormField label="Unit" required error={errors.unit?.message}>
-                  <Input type="text" {...register("unit")} />
+                <FormField label="Unit" required error={errors.unitId?.message}>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Controller
+                      name="unitId"
+                      control={method.control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString()}
+                          onValueChange={(val) => field.onChange(Number(val))}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Units</SelectLabel>
+                              {units.data?.map((unit) => (
+                                <SelectItem
+                                  key={unit.id}
+                                  value={unit.id.toString()}
+                                >
+                                  {unit.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+
+                    <Button
+                      type="button"
+                      onClick={() => setOpenCreateUnit(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      Add Unit
+                    </Button>
+
+                    <CreateUnitDialog
+                      open={openCreateUnit}
+                      onOpenChange={setOpenCreateUnit}
+                    />
+                  </div>
                 </FormField>
 
                 <FormField
@@ -176,32 +315,39 @@ export default function ProductForm() {
                   required
                   error={errors.categoryId?.message}
                 >
-                  <div className="flex flex-row items-center gap-2">
-                    <Select
-                      value={selectedCategory}
-                      onValueChange={setSelectedCategory}
-                    >
-                      <SelectTrigger className="w-45">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Categories</SelectLabel>
-                          {categories.data?.map((category) => (
-                            <SelectItem
-                              key={category.id}
-                              value={category.id.toString()}
-                            >
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Controller
+                      name="categoryId"
+                      control={method.control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString()}
+                          onValueChange={(val) => field.onChange(Number(val))}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Categories</SelectLabel>
+                              {categories.data?.map((category) => (
+                                <SelectItem
+                                  key={category.id}
+                                  value={category.id.toString()}
+                                >
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
 
                     <Button
                       type="button"
                       onClick={() => setOpenCreateCategory(true)}
+                      className="w-full sm:w-auto"
                     >
                       Add Category
                     </Button>
@@ -218,28 +364,32 @@ export default function ProductForm() {
                   required
                   error={errors.isActive?.message}
                 >
-                  <Select
-                    defaultValue="true"
-                    onValueChange={(value) =>
-                      setValue(
-                        "isActive",
-                        value === "ACTIVE" ? "ACTIVE" : "INACTIVE",
-                      )
-                    }
-                  >
-                    <SelectTrigger className="w-45">
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Status</SelectLabel>
-                        <SelectItem value="true">ACTIVE</SelectItem>
-                        <SelectItem value="false">INACTIVE</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="isActive"
+                    control={method.control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Status</SelectLabel>
+                            <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                            <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </FormField>
+              </div>
 
+              {/* Image Upload - Full Width */}
+              <div className="w-full">
                 <FormField label="Product Image" error={errors.image?.message}>
                   <ImageDropzone
                     onImageUpload={handleImageUpload}
@@ -250,38 +400,42 @@ export default function ProductForm() {
                 </FormField>
               </div>
 
-              <div className="flex sm:flex-col lg:flex-row gap-6">
-                {/* Pricing and Stocks */}
-                <section className="w-full p-4 m-4 border rounded-lg">
-                  <h2 className="text-lg font-semibold mb-4">
-                    Pricing and Stocks
-                  </h2>
-                  <div>
-                    <VariantForm />
-                  </div>
-                </section>
-              </div>
+              <Separator className="my-6" />
 
-              {/* Supplier */}
-              <section className="p-4 m-4 border rounded-lg">
+              {/* Pricing and Stocks Section */}
+              <section>
+                <h2 className="text-lg font-semibold mb-4">
+                  Pricing and Stocks
+                </h2>
+                <VariantForm />
+              </section>
+
+              <Separator className="my-6" />
+
+              {/* Supplier Section */}
+              <section>
                 <h2 className="text-lg font-semibold mb-4">Supplier</h2>
-
                 <div className="text-sm text-gray-500">
                   Additional details section is under construction.
                 </div>
               </section>
-              <div className="mt-4 flex justify-end">
-                <Button type="submit" disabled={addProduct.isPending}>
-                  {addProduct.isPending ? "Saving..." : "Save Product"}
-                </Button>
 
+              {/* Action Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="ml-2"
                   onClick={handleCancel}
+                  className="w-full sm:w-auto"
                 >
-                  Cancel
+                  {isEdit ? "Back" : "Cancel"}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full sm:w-auto"
+                >
+                  {submitButtonText}
                 </Button>
               </div>
             </form>

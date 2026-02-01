@@ -12,7 +12,80 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { ProductWithVariants } from "@/schemas/type-export.schema";
+import {
+  ProductWithVariants,
+  ViewProductDialog,
+  UpdateProductDialog,
+  DeleteProductDialog,
+} from "./product-dialogs";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+// Actions Cell Component (needs hooks, so separate from column definition)
+function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
+  const router = useRouter();
+  const [viewOpen, setViewOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0" size={undefined}>
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setViewOpen(true)}
+          >
+            View Details
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => router.push(`/products/edit/${product.id}`)}
+          >
+            Edit Product
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer text-muted-foreground"
+            onClick={() => setUpdateOpen(true)}
+          >
+            Quick Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer text-red-600"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Deactivate Product
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ViewProductDialog
+        product={product}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+      />
+      <UpdateProductDialog
+        product={product}
+        open={updateOpen}
+        onOpenChange={setUpdateOpen}
+      />
+      <DeleteProductDialog
+        product={product}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
+    </>
+  );
+}
 
 export const columns: ColumnDef<ProductWithVariants>[] = [
   {
@@ -181,7 +254,10 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         return <div className="px-4">0</div>;
 
       // Sum up stock from all variants
-      const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+      const totalStock = variants.reduce(
+        (sum: number, v) => sum + (v.stock || 0),
+        0,
+      );
       return <div className="px-4">{totalStock}</div>;
     },
   },
@@ -242,31 +318,8 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0" size={undefined}>
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="">
-            <DropdownMenuLabel className="" inset={undefined}>
-              Actions
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className={""} />
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              Edit Product
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              Manage Variants
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      const product = row.original;
+      return <ActionsCell product={product} />;
     },
   },
 ];

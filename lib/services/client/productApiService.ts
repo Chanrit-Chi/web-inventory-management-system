@@ -6,15 +6,19 @@ import {
   Product,
   ProductCreate,
   ProductUpdate,
+  ProductCreateRequest,
 } from "@/schemas/type-export.schema";
 
 export const productApiService = {
-  addProduct: async (product: ProductCreate): Promise<Product> => {
-    const validateProduct = ProductCreateSchema.parse(product);
+  addProduct: async (request: ProductCreateRequest): Promise<Product> => {
+    const validateProduct = ProductCreateSchema.parse(request.productData);
     const res = await fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(validateProduct),
+      body: JSON.stringify({
+        productData: validateProduct,
+        attributeSelections: request.attributeSelections,
+      }),
     });
 
     if (!res.ok) {

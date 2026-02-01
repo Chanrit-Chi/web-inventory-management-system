@@ -1,5 +1,8 @@
 import { productApiService } from "@/lib/services/client/productApiService";
-import { ProductUpdate } from "@/schemas/type-export.schema";
+import {
+  ProductUpdate,
+  ProductCreateRequest,
+} from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Query hooks
@@ -27,7 +30,7 @@ export const useProductMutations = () => {
   const queryClient = useQueryClient();
 
   const addProduct = useMutation({
-    mutationFn: productApiService.addProduct,
+    mutationFn: (data: ProductCreateRequest) => productApiService.addProduct(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },

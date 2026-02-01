@@ -3,15 +3,15 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, Eye, SquarePen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Category } from "@/schemas/type-export.schema";
+import { Unit } from "@/schemas/type-export.schema";
 import { useState } from "react";
 import {
-  ViewCategoryDialog,
-  UpdateCategoryDialog,
-  DeleteCategoryDialog,
-} from "./category-dialogs";
+  DeleteUnitDialog,
+  UpdateUnitDialog,
+  ViewUnitDialog,
+} from "./unit-dialogs";
 
-function ActionsCell({ category }: { readonly category: Category }) {
+function ActionsCell({ unit }: { readonly unit: Unit }) {
   const [viewOpen, setViewOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -33,18 +33,14 @@ function ActionsCell({ category }: { readonly category: Category }) {
         />
       </div>
 
-      <ViewCategoryDialog
-        category={category}
-        open={viewOpen}
-        onOpenChange={setViewOpen}
-      />
-      <UpdateCategoryDialog
-        category={category}
+      <ViewUnitDialog unit={unit} open={viewOpen} onOpenChange={setViewOpen} />
+      <UpdateUnitDialog
+        unit={unit}
         open={updateOpen}
         onOpenChange={setUpdateOpen}
       />
-      <DeleteCategoryDialog
-        category={category}
+      <DeleteUnitDialog
+        unit={unit}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
       />
@@ -52,7 +48,7 @@ function ActionsCell({ category }: { readonly category: Category }) {
   );
 }
 
-export const columns: ColumnDef<Category>[] = [
+export const columns: ColumnDef<Unit>[] = [
   {
     accessorKey: "index",
     header: ({ column }) => {
@@ -81,7 +77,7 @@ export const columns: ColumnDef<Category>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Customer
+          Unit
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -119,6 +115,6 @@ export const columns: ColumnDef<Category>[] = [
   {
     header: () => <div className="text-center">Actions</div>,
     id: "actions",
-    cell: ({ row }) => <ActionsCell category={row.original} />,
+    cell: ({ row }) => <ActionsCell unit={row.original} />,
   },
 ];

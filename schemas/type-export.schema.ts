@@ -25,7 +25,6 @@ import {
   OrderWithRelationsSchema,
   ProductAttributeWithValuesSchema,
   ProductVariantWithAttributesSchema,
-  ProductWithVariantsSchema,
   PurchaseOrderWithDetailsSchema,
   QuotationWithItemsSchema,
   VariantWithAttributeLinksSchema,
@@ -59,6 +58,7 @@ import {
   CategorySchema,
   CategoryUpdateSchema,
 } from "./category.schema";
+import { UnitCreateSchema, UnitSchema, UnitUpdateSchema } from "./unit.schema";
 
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryCreate = z.infer<typeof CategoryCreateSchema>;
@@ -104,10 +104,10 @@ export type ProductOnAttributeCreate = z.infer<
 >;
 
 // Complex product types
-export type ProductWithVariants = z.infer<typeof ProductWithVariantsSchema>;
-export type ProductVariantWithAttributes = z.infer<
-  typeof ProductVariantWithAttributesSchema
->;
+// export type ProductWithVariants = z.infer<typeof ProductWithVariantsSchema>;
+// export type ProductVariantWithAttributes = z.infer<
+//   typeof ProductVariantWithAttributesSchema
+// >;
 export type ProductAttributeWithValues = z.infer<
   typeof ProductAttributeWithValuesSchema
 >;
@@ -142,3 +142,22 @@ export type PurchaseOrderCreate = z.infer<typeof PurchaseOrderCreateSchema>;
 export type PurchaseOrderWithDetails = z.infer<
   typeof PurchaseOrderWithDetailsSchema
 >;
+
+export type Unit = z.infer<typeof UnitSchema>;
+export type UnitCreate = z.infer<typeof UnitCreateSchema>;
+export type UnitUpdate = z.infer<typeof UnitUpdateSchema>;
+
+export interface AttributeSelection {
+  attributeId: number;
+  attributeName: string;
+  selectedValueIds: number[];
+  values: Array<{
+    id: number;
+    value: string;
+  }>;
+}
+
+export type ProductCreateRequest = {
+  productData: ProductCreate;
+  attributeSelections: AttributeSelection[];
+};

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const ProductStatusEnum = z.enum(["ACTIVE", "INACTIVE"]);
 
 export const StockMovementTypeEnum = z.enum([
+  "INITIAL",
   "SALE",
   "PURCHASE",
   "ADJUSTMENT",

@@ -6,11 +6,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(
       1,
-      Number.parseInt(searchParams.get("page") || "1", 10)
+      Number.parseInt(searchParams.get("page") || "1", 10),
     );
     const limit = Math.max(
       1,
-      Math.min(100, Number.parseInt(searchParams.get("limit") || "10", 10))
+      Math.min(100, Number.parseInt(searchParams.get("limit") || "10", 10)),
     );
     const search = searchParams.get("search") || undefined;
 
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       page,
       limit,
       search,
-      filters
+      filters,
     );
     console.log("Fetched products successfully:", products);
 
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     console.error("Error fetching products:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -43,14 +43,27 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    console.log("Received product data:", JSON.stringify(data, null, 2));
-    const product = await productDbService.createProduct(data);
+    const { productData, attributeSelections } = data;
+    console.log("Received product data:", JSON.stringify(productData, null, 2));
+    const product = await productDbService.createProductWithVariants(
+      productData,
+      attributeSelections,
+    );
     return NextResponse.json(product);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating product:", error);
+    
+    if (error.code === "P2002" && error.meta?.target) {
+      const target = error.meta.target;
+      return NextResponse.json(
+        { error: `A product with this ${target} already exists.` },
+        { status: 409 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to create product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -66,7 +79,7 @@ export async function PUT(request: Request) {
     console.error("Error updating product:", error);
     return NextResponse.json(
       { error: "Failed to update product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

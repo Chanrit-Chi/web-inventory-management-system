@@ -25,11 +25,17 @@ const selectVariantListFields = {
   },
   attributes: {
     select: {
+      id: true,
+      variantId: true,
+      valueId: true,
       value: {
         select: {
+          id: true,
           value: true,
+          attributeId: true,
           attribute: {
             select: {
+              id: true,
               name: true,
             },
           },
@@ -91,11 +97,11 @@ const selectVariantDetailFields = {
 export const ProductVariantDbService = {
   // Add separate functions for variants/attributes
   createVariant: async (
-    data: ProductVariantCreate
+    data: ProductVariantCreate,
   ): Promise<ProductVariant> => {
     const validateProductVariant =
       ProductVariantWithAttributesSchema.parse(data);
-    const { attributes, ...variantData } = validateProductVariant;
+    const { attributes, productId, ...variantData } = validateProductVariant;
 
     // Pre-validate attribute values BEFORE transaction (reduces ID gaps)
     if (attributes && Array.isArray(attributes) && attributes.length > 0) {
@@ -106,7 +112,7 @@ export const ProductVariantDbService = {
 
         if (!attributeValue) {
           throw new Error(
-            `Attribute value with ID ${attr.valueId} does not exist`
+            `Attribute value with ID ${attr.valueId} does not exist`,
           );
         }
       }
@@ -114,7 +120,12 @@ export const ProductVariantDbService = {
 
     return (await prisma.$transaction(async (tx) => {
       const variant = await tx.productVariant.create({
-        data: variantData,
+        data: {
+          ...variantData,
+          product: {
+            connect: { id: productId },
+          },
+        },
       });
 
       // Link variant to attribute values (already validated)
@@ -144,7 +155,7 @@ export const ProductVariantDbService = {
       productId?: string;
       lowStock?: boolean; // stock <= reorderLevel
       searchSku?: string;
-    }
+    },
   ): Promise<ProductVariant[]> => {
     const skip = (page - 1) * limit;
 
@@ -192,7 +203,7 @@ export const ProductVariantDbService = {
   },
 
   fetchVariantsByProduct: async (
-    productId: string
+    productId: string,
   ): Promise<ProductVariant[]> => {
     return await prisma.productVariant.findMany({
       where: { productId },

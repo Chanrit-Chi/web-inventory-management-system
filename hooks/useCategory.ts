@@ -1,5 +1,5 @@
 import { categoryApiService } from "@/lib/services/client/categoryApiService";
-import { CategoryCreate } from "@/schemas/type-export.schema";
+import { CategoryUpdate } from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGetCategories = () =>
@@ -26,7 +26,7 @@ export const useCategoryMutations = () => {
   });
 
   const updateCategory = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CategoryCreate }) =>
+    mutationFn: ({ id, data }: { id: number; data: CategoryUpdate }) =>
       categoryApiService.updateCategory(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });

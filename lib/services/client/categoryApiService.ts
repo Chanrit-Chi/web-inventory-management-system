@@ -43,7 +43,7 @@ export const categoryApiService = {
 
   updateCategory: async (
     id: number,
-    category: CategoryUpdate
+    category: CategoryUpdate,
   ): Promise<Category> => {
     const validateCategory = CategoryUpdateSchema.parse(category);
     const res = await fetch(`/api/categories/${id}`, {

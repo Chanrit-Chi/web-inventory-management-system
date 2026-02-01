@@ -43,5 +43,12 @@ export function useImageUpload() {
     setImageKey(null);
   };
 
-  return { imagePreview, uploading, imageKey, uploadImage, resetImage };
+  return {
+    imagePreview,
+    uploading,
+    imageKey,
+    uploadImage,
+    resetImage,
+    setImagePreview,
+  };
 }

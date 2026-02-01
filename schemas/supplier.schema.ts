@@ -17,4 +17,9 @@ export const SupplierCreateSchema = SupplierSchema.omit({
   updatedAt: true,
 });
 
-export const SupplierUpdateSchema = SupplierCreateSchema.partial();
+export const SupplierUpdateSchema = SupplierCreateSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  {
+    message: "At least one field must be updated",
+  },
+);

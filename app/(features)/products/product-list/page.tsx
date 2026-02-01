@@ -33,7 +33,7 @@ function ProductList() {
         value: cat.id.toString(),
         label: cat.name,
       })) ?? [],
-    [categories]
+    [categories],
   );
 
   if (isLoading || isLoadingCategories)
@@ -81,7 +81,7 @@ function ProductList() {
         data={products?.data ?? []}
         showAddNew={true}
         addNewLabel="New Product"
-        addNewHref="/products/new-product"
+        addNewHref="/products/new"
         paginationMeta={products?.pagination}
         onPageChange={(newPage) => setPage(newPage)}
         onPageSizeChange={(newLimit) => {

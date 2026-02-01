@@ -1,56 +1,36 @@
-"use client";
-
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Category, CategoryCreate } from "@/schemas/type-export.schema";
+  Category,
+  CategoryCreate,
+  CategoryUpdate,
+} from "@/schemas/type-export.schema";
 import { useCategoryMutations, useGetCategoryById } from "@/hooks/useCategory";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CategoryCreateSchema } from "@/schemas/category.schema";
+import {
+  CategoryCreateSchema,
+  CategoryUpdateSchema,
+} from "@/schemas/category.schema";
 import { toast } from "sonner";
 
-interface ViewCategoryDialogProps {
-  category: Category;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+import {
+  ConfirmDialog,
+  FormDialog,
+  ViewDialog,
+} from "@/components/dialog-template";
 
+// Create Category Dialog
 export function CreateCategoryDialog({
   open,
   onOpenChange,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
 }) {
   const { addCategory } = useCategoryMutations();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CategoryCreate>({
-    resolver: zodResolver(CategoryCreateSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-    },
-  });
 
-  const onSubmit = async (data: CategoryCreate) => {
+  const handleSubmit = async (data: CategoryCreate) => {
     try {
       await addCategory.mutateAsync(data);
       toast.success("Category created successfully");
       onOpenChange(false);
-      reset();
     } catch (error) {
       toast.error("Failed to create category");
       console.error(error);
@@ -58,145 +38,93 @@ export function CreateCategoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create Category</DialogTitle>
-          <DialogDescription>
-            Add a new category to your inventory
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="create-name">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="create-name"
-                {...register("name")}
-                placeholder="Enter category name"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="create-description">Description</Label>
-              <Input
-                id="create-description"
-                {...register("description")}
-                placeholder="Enter category description"
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                reset();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={addCategory.isPending}>
-              {addCategory.isPending ? "Creating..." : "Create"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog<typeof CategoryCreateSchema>
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Create Category"
+      description="Add a new category to your inventory"
+      schema={CategoryCreateSchema}
+      fields={[
+        {
+          name: "name",
+          label: "Name",
+          placeholder: "Enter category name",
+          required: true,
+        },
+        {
+          name: "description",
+          label: "Description",
+          placeholder: "Enter category description",
+        },
+      ]}
+      defaultValues={{
+        name: "",
+        description: "",
+      }}
+      onSubmit={handleSubmit}
+      submitLabel="Create"
+      isSubmitting={addCategory.isPending}
+    />
   );
 }
 
+// View Category Dialog
 export function ViewCategoryDialog({
   category,
   open,
   onOpenChange,
-}: ViewCategoryDialogProps) {
+}: {
+  readonly category: Category;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>View Category</DialogTitle>
-          <DialogDescription>
-            Category details and information
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label className="font-semibold">Name</Label>
-            <p className="text-sm">{category.name}</p>
-          </div>
-          <div className="grid gap-2">
-            <Label className="font-semibold">Description</Label>
-            <p className="text-sm">
-              {category.description || "No description"}
-            </p>
-          </div>
-          <div className="grid gap-2">
-            <Label className="font-semibold">Created At</Label>
-            <p className="text-sm">
-              {new Date(category.createdAt).toLocaleString()}
-            </p>
-          </div>
-          <div className="grid gap-2">
-            <Label className="font-semibold">Updated At</Label>
-            <p className="text-sm">
-              {new Date(category.updatedAt).toLocaleString()}
-            </p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ViewDialog<Category>
+      open={open}
+      onOpenChange={onOpenChange}
+      title="View Category"
+      description="Category details and information"
+      item={category}
+      fields={[
+        {
+          label: "Name",
+          value: (cat) => cat.name,
+        },
+        {
+          label: "Description",
+          value: (cat) => cat.description || "No description",
+        },
+        {
+          label: "Created At",
+          value: (cat) => new Date(cat.createdAt).toLocaleString(),
+        },
+        {
+          label: "Updated At",
+          value: (cat) => new Date(cat.updatedAt).toLocaleString(),
+        },
+      ]}
+    />
   );
 }
 
-interface UpdateCategoryDialogProps {
-  category: Category;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
+// Update Category Dialog
 export function UpdateCategoryDialog({
   category,
   open,
   onOpenChange,
-}: UpdateCategoryDialogProps) {
+}: {
+  readonly category: Category;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
   const { updateCategory } = useCategoryMutations();
   const { data: categoryData } = useGetCategoryById(category.id);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CategoryCreate>({
-    resolver: zodResolver(CategoryCreateSchema),
-    defaultValues: {
-      name: categoryData?.name || category.name,
-      description: categoryData?.description || category.description || "",
-    },
-  });
-
-  const onSubmit = async (data: CategoryCreate) => {
+  const handleSubmit = async (data: CategoryUpdate) => {
     try {
       await updateCategory.mutateAsync({ id: category.id, data });
       toast.success("Category updated successfully");
       onOpenChange(false);
-      reset();
     } catch (error) {
       toast.error("Failed to update category");
       console.error(error);
@@ -204,75 +132,46 @@ export function UpdateCategoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Update Category</DialogTitle>
-          <DialogDescription>
-            Make changes to the category information
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                {...register("name")}
-                placeholder="Enter category name"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                {...register("description")}
-                placeholder="Enter category description"
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                reset();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateCategory.isPending}>
-              {updateCategory.isPending ? "Updating..." : "Update"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog<typeof CategoryUpdateSchema>
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Update Category"
+      description="Make changes to the category information"
+      schema={CategoryUpdateSchema}
+      fields={[
+        {
+          name: "name",
+          label: "Name",
+          placeholder: "Enter category name",
+          required: true,
+        },
+        {
+          name: "description",
+          label: "Description",
+          placeholder: "Enter category description",
+        },
+      ]}
+      defaultValues={{
+        name: categoryData?.name || category.name,
+        description: categoryData?.description || category.description || "",
+      }}
+      onSubmit={handleSubmit}
+      submitLabel="Updating"
+      isSubmitting={updateCategory.isPending}
+    />
   );
 }
 
-interface DeleteCategoryDialogProps {
-  category: Category;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
+// Delete Category Dialog
 export function DeleteCategoryDialog({
   category,
   open,
   onOpenChange,
-}: DeleteCategoryDialogProps) {
+}: {
+  readonly category: Category;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
   const { deleteCategory } = useCategoryMutations();
 
   const handleDelete = async () => {
@@ -287,40 +186,27 @@ export function DeleteCategoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Delete Category</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this category? This action cannot be
-            undone.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
-          <div className="rounded-lg bg-muted p-4">
-            <p className="text-sm font-semibold">Category Name:</p>
-            <p className="text-sm">{category.name}</p>
-            {category.description && (
-              <>
-                <p className="text-sm font-semibold mt-2">Description:</p>
-                <p className="text-sm">{category.description}</p>
-              </>
-            )}
-          </div>
+    <ConfirmDialog<Category>
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Delete Category"
+      description="Are you sure you want to delete this category? This action cannot be undone."
+      item={category}
+      renderItem={(cat) => (
+        <div className="rounded-lg bg-muted p-4">
+          <p className="text-sm font-semibold">Category Name:</p>
+          <p className="text-sm">{cat.name}</p>
+          {cat.description && (
+            <>
+              <p className="text-sm font-semibold mt-2">Description:</p>
+              <p className="text-sm">{cat.description}</p>
+            </>
+          )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={deleteCategory.isPending}
-          >
-            {deleteCategory.isPending ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      )}
+      onConfirm={handleDelete}
+      confirmLabel="Deleting"
+      isLoading={deleteCategory.isPending}
+    />
   );
 }
