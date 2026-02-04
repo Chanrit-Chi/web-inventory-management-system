@@ -3,6 +3,7 @@ import {
   ProductUpdate,
   ProductVariant,
   Category,
+  Unit,
 } from "@/schemas/type-export.schema";
 import { useProductMutations, useGetProductById } from "@/hooks/useProduct";
 import { ProductUpdateSchema } from "@/schemas/product.schema";
@@ -18,7 +19,7 @@ import {
 export type ProductWithVariants = Product & {
   variants?: ProductVariant[];
   category?: Category | null;
-  unit?: string | null;
+  unit?: Unit | null;
 };
 
 // View Product Dialog
@@ -58,7 +59,7 @@ export function ViewProductDialog({
         },
         {
           label: "Unit",
-          value: (prod) => prod.unit || "N/A",
+          value: (prod) => prod.unit?.name || "N/A",
         },
         {
           label: "Status",

@@ -215,7 +215,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     },
   },
   {
-    accessorKey: "unit",
+    id: "unit",
     header: ({ column }) => {
       return (
         <Button
@@ -230,7 +230,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.getValue("unit")}</div>;
+      return <div className="px-4">{row.original.unit?.name || "N/A"}</div>;
     },
   },
   {

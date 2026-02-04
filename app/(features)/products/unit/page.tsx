@@ -16,7 +16,7 @@ function UnitList() {
     return <Spinner className="size-8 items-center justify-center" />;
   if (error) return <p className="text-red-600">Failed to load units</p>;
   return (
-    <div className="container mx-auto py-10">
+    <div className="w-full px-4 md:px-6 py-6">
       <DataTable
         showAddNew={true}
         addNewLabel="New Unit"

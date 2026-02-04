@@ -19,6 +19,9 @@ const selectProductFields = {
   image: true,
   description: true,
   unitId: true,
+  unit: {
+    select: { id: true, name: true },
+  },
   categoryId: true,
   isActive: true,
   createdAt: true,
@@ -322,38 +325,27 @@ export const productDbService = {
         }
       }
 
-      // 3. Update variants (upsert + delete missing)
+      // 3. Update variants (Smart Upsert + Cleanup)
       if (variants) {
-        const existingVariants = await tx.productVariant.findMany({
-          where: { productId: id },
-          select: { id: true },
-        });
+        const handledIds = new Set<number>();
 
-        const existingIds = new Set(existingVariants.map((v) => v.id));
-        const incomingIds = new Set(variants.map((v) => v.id));
-
-        // Delete removed variants
-        const toDelete = [...existingIds].filter(
-          (vid) => !incomingIds.has(vid),
-        );
-        if (toDelete.length) {
-          await tx.productVariant.deleteMany({
-            where: { id: { in: toDelete } },
-          });
-        }
-
-        // Upsert variants
         for (const variant of variants) {
           const { id: variantId, attributes, ...variantData } = variant;
 
+          // Upsert by ID if available, otherwise by SKU to be resilient to lost IDs
           const updatedVariant = await tx.productVariant.upsert({
-            where: { id: variantId },
+            where: variantId ? { id: variantId } : { sku: variantData.sku },
             create: {
               ...variantData,
               productId: id,
             },
-            update: variantData,
+            update: {
+              ...variantData,
+              productId: id, // Ensure it's linked to this product even on update
+            },
           });
+
+          handledIds.add(updatedVariant.id);
 
           // Variant attributes (replace safely)
           if (attributes) {
@@ -368,6 +360,26 @@ export const productDbService = {
               })),
             });
           }
+        }
+
+        // Delete variants belonging to this product that were not handled above
+        const toDeleteVariants = await tx.productVariant.findMany({
+          where: {
+            productId: id,
+            id: { notIn: Array.from(handledIds) },
+          },
+          select: { id: true },
+        });
+
+        const toDeleteIds = toDeleteVariants.map((v) => v.id);
+
+        if (toDeleteIds.length) {
+          await tx.productVariantAttribute.deleteMany({
+            where: { variantId: { in: toDeleteIds } },
+          });
+          await tx.productVariant.deleteMany({
+            where: { id: { in: toDeleteIds } },
+          });
         }
       }
 
