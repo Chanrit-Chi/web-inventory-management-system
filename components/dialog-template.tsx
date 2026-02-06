@@ -23,7 +23,7 @@ interface BaseDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly title: string;
-  readonly description: string;
+  readonly description: ReactNode;
   readonly children: ReactNode;
   readonly footer?: ReactNode;
   readonly className?: string;
@@ -36,11 +36,11 @@ export function BaseDialog({
   description,
   children,
   footer,
-  className = "sm:max-w-[425px]",
+  className = "sm:max-w-106.25",
 }: BaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={className}>
+      <DialogContent className={`${className} max-h-[95vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -62,6 +62,7 @@ export interface FormField<T extends FieldValues> {
   required?: boolean;
   type?: "text" | "email" | "password" | "number" | "textarea";
   rows?: number;
+  description?: string;
 }
 
 // ============================================
@@ -71,7 +72,7 @@ interface FormDialogProps<TSchema extends z.ZodType<FieldValues>> {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly title: string;
-  readonly description: string;
+  readonly description: ReactNode;
   readonly fields: FormField<z.infer<TSchema>>[];
   readonly schema: TSchema;
   readonly defaultValues?: Partial<z.infer<TSchema>>;
@@ -110,7 +111,6 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
   };
 
   const renderField = (field: FormField<z.infer<TSchema>>) => {
-    const error = errors[field.name];
     const commonProps = {
       id: field.name,
       ...register(field.name),
@@ -156,6 +156,11 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
                 {field.label}
                 {field.required && <span className="text-red-500"> *</span>}
               </Label>
+              {field.description && (
+                <p className="text-xs text-muted-foreground -mt-1">
+                  {field.description}
+                </p>
+              )}
               {renderField(field)}
               {errors[field.name] && (
                 <p className="text-sm text-red-500">
@@ -182,7 +187,7 @@ interface ViewDialogProps<T> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: ReactNode;
   fields: ViewField<T>[];
   item: T;
   className?: string;
@@ -229,7 +234,7 @@ interface ConfirmDialogProps<T> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: ReactNode;
   item: T;
   renderItem?: (item: T) => ReactNode;
   onConfirm: () => Promise<void>;
@@ -290,12 +295,12 @@ export function ConfirmDialog<T>({
 // ============================================
 // Hook for Dialog State Management
 // ============================================
-export function useDialog() {
+export function useDialog<T = unknown>() {
   const [open, setOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<T | null>(null);
 
-  const openDialog = (item?: any) => {
-    setSelectedItem(item);
+  const openDialog = (item?: T) => {
+    setSelectedItem(item || null);
     setOpen(true);
   };
 

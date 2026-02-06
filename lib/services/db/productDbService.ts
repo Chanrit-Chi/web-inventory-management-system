@@ -19,6 +19,9 @@ const selectProductFields = {
   image: true,
   description: true,
   unitId: true,
+  unit: {
+    select: { id: true, name: true },
+  },
   categoryId: true,
   isActive: true,
   createdAt: true,
@@ -116,6 +119,7 @@ const mapProductResponse = (result: ProductWithRelations | null) => {
         ...v,
         attributes: v.attributes?.map((a) => ({ valueId: a.value?.id })) || [],
       })) || [],
+    unit: result.unit?.name || null,
   };
 };
 

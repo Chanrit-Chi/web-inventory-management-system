@@ -52,12 +52,12 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
           >
             Edit Product
           </DropdownMenuItem>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             className="cursor-pointer text-muted-foreground"
             onClick={() => setUpdateOpen(true)}
           >
             Quick Edit
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer text-red-600"
@@ -230,7 +230,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.getValue("unit")}</div>;
+      return <div className="px-4">{row.original.unit || "-"}</div>;
     },
   },
   {
@@ -258,7 +258,14 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         (sum: number, v) => sum + (v.stock || 0),
         0,
       );
-      return <div className="px-4">{totalStock}</div>;
+      return (
+        <div className="px-4">
+          {totalStock}{" "}
+          <span className="text-xs text-muted-foreground">
+            {row.original.unit}
+          </span>
+        </div>
+      );
     },
   },
 

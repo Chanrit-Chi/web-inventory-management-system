@@ -7,6 +7,20 @@ import {
 import { useProductMutations, useGetProductById } from "@/hooks/useProduct";
 import { ProductUpdateSchema } from "@/schemas/product.schema";
 import { toast } from "sonner";
+import {
+  Package,
+  Tag,
+  Calendar,
+  AlertCircle,
+  Info,
+  TrendingUp,
+  Hash,
+  FileText,
+  Layers,
+  CheckCircle2,
+  XCircle,
+  BarChart3,
+} from "lucide-react";
 
 import {
   ConfirmDialog,
@@ -21,7 +35,442 @@ export type ProductWithVariants = Product & {
   unit?: string | null;
 };
 
-// View Product Dialog
+function ProductStatsHeader({
+  product,
+}: {
+  readonly product: ProductWithVariants;
+}) {
+  const totalStock =
+    product.variants?.reduce((sum: number, v) => sum + (v.stock || 0), 0) || 0;
+  const activeVariants =
+    product.variants?.filter((v) => v.isActive).length || 0;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 -mt-2">
+      {/* Total Variants Card */}
+      <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+              Total Variants
+            </p>
+            <p className="text-2xl font-bold text-blue-900 mt-1">
+              {product.variants?.length || 0}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              {activeVariants} active
+            </p>
+          </div>
+          <Layers className="h-8 w-8 text-blue-500 opacity-60" />
+        </div>
+      </div>
+
+      {/* Total Stock Card */}
+      <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-green-600 uppercase tracking-wide">
+              Total Stock
+            </p>
+            <p className="text-2xl font-bold text-green-900 mt-1">
+              {totalStock}
+            </p>
+            <p className="text-xs text-green-600 mt-1">
+              {product.unit || "units"}
+            </p>
+          </div>
+          <Package className="h-8 w-8 text-green-500 opacity-60" />
+        </div>
+      </div>
+
+      {/* Status Card */}
+      <div
+        className={`bg-linear-to-br rounded-lg p-4 border ${
+          product.isActive === "ACTIVE"
+            ? "from-emerald-50 to-emerald-100 border-emerald-200"
+            : "from-red-50 to-red-100 border-red-200"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p
+              className={`text-xs font-medium uppercase tracking-wide ${
+                product.isActive === "ACTIVE"
+                  ? "text-emerald-600"
+                  : "text-red-600"
+              }`}
+            >
+              Status
+            </p>
+            <p
+              className={`text-2xl font-bold mt-1 ${
+                product.isActive === "ACTIVE"
+                  ? "text-emerald-900"
+                  : "text-red-900"
+              }`}
+            >
+              {product.isActive === "ACTIVE" ? "Active" : "Inactive"}
+            </p>
+          </div>
+          {product.isActive === "ACTIVE" ? (
+            <CheckCircle2 className="h-8 w-8 text-emerald-500 opacity-60" />
+          ) : (
+            <XCircle className="h-8 w-8 text-red-500 opacity-60" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Renders a stock overview card with low stock warnings
+ */
+function StockOverviewDisplay({
+  product,
+}: {
+  readonly product: ProductWithVariants;
+}) {
+  const totalStock =
+    product.variants?.reduce((sum: number, v) => sum + (v.stock || 0), 0) || 0;
+  const lowStockVariants =
+    product.variants?.filter((v) => (v.stock || 0) < 10).length || 0;
+
+  return (
+    <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-blue-900">
+          Total Stock Across All Variants
+        </span>
+        <Package className="h-5 w-5 text-blue-600" />
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-blue-900">{totalStock}</span>
+        <span className="text-sm text-blue-600">{product.unit || "units"}</span>
+      </div>
+      {lowStockVariants > 0 && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+          <AlertCircle className="h-3 w-3" />
+          <span>
+            {lowStockVariants} variant{lowStockVariants === 1 ? "" : "s"} with
+            low stock (&lt;10 units)
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Standard info field with icon
+ */
+function ProductField({
+  icon: Icon,
+  value,
+  className = "text-gray-900",
+}: {
+  readonly icon: React.ElementType;
+  readonly value: React.ReactNode;
+  readonly className?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="h-4 w-4 text-gray-400" />
+      <span className={`font-medium ${className}`}>{value}</span>
+    </div>
+  );
+}
+
+/**
+ * Renders a detailed summary card for a product, used in confirmation dialogs
+ */
+/**
+ * Renders a detailed summary card for a product, used in confirmation dialogs
+ */
+function ProductSummaryCard({
+  product,
+}: {
+  readonly product: ProductWithVariants;
+}) {
+  const totalStock =
+    product.variants?.reduce((sum: number, v) => sum + (v.stock || 0), 0) || 0;
+
+  return (
+    <div className="rounded-lg bg-linear-to-br from-slate-50 to-slate-100 border border-slate-200 p-5 space-y-3">
+      {/* Header */}
+      <div className="flex items-start justify-between pb-3 border-b border-slate-300">
+        <div>
+          <p className="text-base font-bold text-slate-900">{product.name}</p>
+          <p className="text-xs text-slate-500 mt-1 font-mono">
+            SKU: {product.sku}
+          </p>
+        </div>
+        <Package className="h-8 w-8 text-slate-400" />
+      </div>
+
+      {/* Details Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Category */}
+        <div className="bg-white rounded-lg p-3 border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium mb-1">Category</p>
+          <p className="text-sm font-semibold text-slate-900">
+            {product.category?.name || "Uncategorized"}
+          </p>
+        </div>
+
+        {/* Variants Count */}
+        <div className="bg-white rounded-lg p-3 border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium mb-1">
+            Total Variants
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {product.variants?.length || 0}
+          </p>
+        </div>
+
+        {/* Stock */}
+        <div className="bg-white rounded-lg p-3 border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium mb-1">Total Stock</p>
+          <p className="text-sm font-semibold text-slate-900">
+            {totalStock} {product.unit || "units"}
+          </p>
+        </div>
+
+        {/* Status */}
+        <div className="bg-white rounded-lg p-3 border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium mb-1">
+            Current Status
+          </p>
+          <div className="flex items-center gap-1">
+            {product.isActive === "ACTIVE" ? (
+              <CheckCircle2 className="h-3 w-3 text-green-600" />
+            ) : (
+              <XCircle className="h-3 w-3 text-red-600" />
+            )}
+            <p className="text-sm font-semibold text-slate-900">
+              {product.isActive === "ACTIVE" ? "Active" : "Inactive"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Section header for dialogs
+ */
+function SectionHeader({
+  icon: Icon,
+  title,
+  className = "mb-4 mt-0",
+}: {
+  readonly icon: React.ElementType;
+  readonly title: string;
+  readonly className?: string;
+}) {
+  return (
+    <div className={className}>
+      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2 mb-3">
+        <Icon className="h-4 w-4" />
+        {title}
+      </h3>
+      <div className="h-px bg-linear-to-r from-gray-300 via-gray-200 to-transparent mb-3" />
+    </div>
+  );
+}
+
+function DeactivationWarning({
+  variantCount,
+  totalStock,
+}: {
+  readonly variantCount: number;
+  readonly totalStock: number;
+}) {
+  return (
+    <div className="rounded-lg bg-amber-50 border-2 border-amber-300 p-4">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-amber-900">
+            Important: Deactivation Impact
+          </p>
+          <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
+            <li>
+              All <strong>{variantCount} variant(s)</strong> will be marked as
+              inactive
+            </li>
+            <li>
+              <strong>{totalStock} unit(s)</strong> of stock will remain in the
+              system
+            </li>
+            <li>Product will be hidden from active listings and catalogs</li>
+            <li>Historical data and records will be preserved</li>
+            <li>You can reactivate this product later if needed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductDateDisplay({ date }: { readonly date: string | Date }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Calendar className="h-4 w-4 text-gray-400" />
+      <span className="text-gray-700">
+        {new Date(date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </span>
+    </div>
+  );
+}
+
+// --- View Configuration (Static definitions to avoid nested component warnings) ---
+
+const VIEW_PRODUCT_FIELDS = [
+  // Header Section with Key Metrics
+  {
+    label: "",
+    value: (prod: ProductWithVariants) => <ProductStatsHeader product={prod} />,
+  },
+
+  // Basic Information Section
+  {
+    label: "",
+    value: () => <SectionHeader icon={Info} title="Basic Information" />,
+  },
+  {
+    label: "SKU",
+    value: (prod: ProductWithVariants) => (
+      <ProductField icon={Hash} value={prod.sku} className="font-mono" />
+    ),
+  },
+  {
+    label: "Product Name",
+    value: (prod: ProductWithVariants) => (
+      <ProductField icon={Package} value={prod.name} />
+    ),
+  },
+  {
+    label: "Description",
+    value: (prod: ProductWithVariants) => (
+      <div className="flex items-start gap-2">
+        <FileText className="h-4 w-4 text-gray-400 mt-0.5" />
+        <span className="text-gray-700">
+          {prod.description || (
+            <span className="text-gray-400 italic">No description</span>
+          )}
+        </span>
+      </div>
+    ),
+  },
+  {
+    label: "Category",
+    value: (prod: ProductWithVariants) => (
+      <div className="flex items-center gap-2">
+        <Tag className="h-4 w-4 text-gray-400" />
+        {prod.category ? (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
+            {prod.category.name}
+          </span>
+        ) : (
+          <span className="text-gray-400 italic">Uncategorized</span>
+        )}
+      </div>
+    ),
+  },
+  {
+    label: "Unit of Measure",
+    value: (prod: ProductWithVariants) => (
+      <ProductField
+        icon={BarChart3}
+        value={
+          prod.unit || (
+            <span className="text-gray-400 italic">Not specified</span>
+          )
+        }
+        className="text-gray-700 font-normal"
+      />
+    ),
+  },
+
+  // Inventory Statistics Section
+  {
+    label: "",
+    value: () => (
+      <SectionHeader
+        icon={TrendingUp}
+        title="Inventory Statistics"
+        className="mb-4 mt-6"
+      />
+    ),
+  },
+  {
+    label: "Variant Summary",
+    value: (prod: ProductWithVariants) => {
+      const activeVariants =
+        prod.variants?.filter((v) => v.isActive).length || 0;
+      return (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <p className="text-xs text-slate-600 font-medium mb-1">
+              Total Variants
+            </p>
+            <p className="text-xl font-bold text-slate-900">
+              {prod.variants?.length || 0}
+            </p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+            <p className="text-xs text-emerald-600 font-medium mb-1">
+              Active Variants
+            </p>
+            <p className="text-xl font-bold text-emerald-900">
+              {activeVariants}
+            </p>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    label: "Stock Overview",
+    value: (prod: ProductWithVariants) => (
+      <StockOverviewDisplay product={prod} />
+    ),
+  },
+
+  // Timestamps Section
+  {
+    label: "",
+    value: () => (
+      <SectionHeader
+        icon={Calendar}
+        title="Record Information"
+        className="mb-4 mt-6"
+      />
+    ),
+  },
+  {
+    label: "Created At",
+    value: (prod: ProductWithVariants) => (
+      <ProductDateDisplay date={prod.createdAt} />
+    ),
+  },
+  {
+    label: "Last Updated",
+    value: (prod: ProductWithVariants) => (
+      <ProductDateDisplay date={prod.updatedAt} />
+    ),
+  },
+];
+
+// View Product Dialog - Enhanced
 export function ViewProductDialog({
   product,
   open,
@@ -35,71 +484,16 @@ export function ViewProductDialog({
     <ViewDialog<ProductWithVariants>
       open={open}
       onOpenChange={onOpenChange}
-      title="View Product"
-      description="Product details and information"
+      title="Product Details"
+      description="Details of product information and statistics"
       item={product}
-      className="sm:max-w-[600px]"
-      fields={[
-        {
-          label: "SKU",
-          value: (prod) => prod.sku,
-        },
-        {
-          label: "Name",
-          value: (prod) => prod.name,
-        },
-        {
-          label: "Description",
-          value: (prod) => prod.description || "No description",
-        },
-        {
-          label: "Category",
-          value: (prod) => prod.category?.name || "N/A",
-        },
-        {
-          label: "Unit",
-          value: (prod) => prod.unit || "N/A",
-        },
-        {
-          label: "Status",
-          value: (prod) => (
-            <span
-              className={`px-2 py-1 rounded text-sm font-medium ${
-                prod.isActive === "ACTIVE"
-                  ? "bg-green-100 text-green-600"
-                  : "bg-red-100 text-red-600"
-              }`}
-            >
-              {prod.isActive === "ACTIVE" ? "Active" : "Inactive"}
-            </span>
-          ),
-        },
-        {
-          label: "Total Variants",
-          value: (prod) => prod.variants?.length || 0,
-        },
-        {
-          label: "Total Stock",
-          value: (prod) =>
-            prod.variants?.reduce(
-              (sum: number, v) => sum + (v.stock || 0),
-              0,
-            ) || 0,
-        },
-        {
-          label: "Created At",
-          value: (prod) => new Date(prod.createdAt).toLocaleString(),
-        },
-        {
-          label: "Updated At",
-          value: (prod) => new Date(prod.updatedAt).toLocaleString(),
-        },
-      ]}
+      className="sm:max-w-175"
+      fields={VIEW_PRODUCT_FIELDS}
     />
   );
 }
 
-// Update Product Dialog - Simple version for basic fields
+// Update Product Dialog - Enhanced
 export function UpdateProductDialog({
   product,
   open,
@@ -115,10 +509,14 @@ export function UpdateProductDialog({
   const handleSubmit = async (data: ProductUpdate) => {
     try {
       await updateProduct.mutateAsync({ id: product.id, data });
-      toast.success("Product updated successfully");
+      toast.success("Product updated successfully", {
+        description: `${data.name} has been updated`,
+      });
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to update product");
+      toast.error("Failed to update product", {
+        description: "Please try again or contact support",
+      });
       console.error(error);
     }
   };
@@ -128,28 +526,44 @@ export function UpdateProductDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Quick Update Product"
-      description="Update basic product information. For advanced editing, use the full edit page."
+      description={
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Update basic product information quickly.
+          </p>
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-800">
+              For advanced editing including variants, categories, and inventory
+              management, use the full edit page.
+            </p>
+          </div>
+        </div>
+      }
       schema={ProductUpdateSchema}
-      className="sm:max-w-[500px]"
+      className="sm:max-w-137.5"
       fields={[
+        {
+          name: "sku",
+          label: "SKU (Stock Keeping Unit)",
+          placeholder: "e.g., PROD-001",
+          required: true,
+          description: "Unique identifier for this product",
+        },
         {
           name: "name",
           label: "Product Name",
-          placeholder: "Enter product name",
+          placeholder: "Enter a descriptive product name",
           required: true,
+          description: "Display name shown to customers",
         },
         {
           name: "description",
           label: "Description",
-          placeholder: "Enter product description",
+          placeholder: "Describe the product features and benefits...",
           type: "textarea",
-          rows: 3,
-        },
-        {
-          name: "sku",
-          label: "SKU",
-          placeholder: "Enter SKU",
-          required: true,
+          rows: 4,
+          description: "Optional detailed product description",
         },
       ]}
       defaultValues={{
@@ -158,13 +572,13 @@ export function UpdateProductDialog({
         sku: productData?.sku || product.sku,
       }}
       onSubmit={handleSubmit}
-      submitLabel="Update"
+      submitLabel="Update Product"
       isSubmitting={updateProduct.isPending}
     />
   );
 }
 
-// Delete Product Dialog
+// Delete Product Dialog - Enhanced
 export function DeleteProductDialog({
   product,
   open,
@@ -179,10 +593,14 @@ export function DeleteProductDialog({
   const handleDelete = async () => {
     try {
       await deleteProduct.mutateAsync(product.id);
-      toast.success("Product deactivated successfully");
+      toast.success("Product deactivated successfully", {
+        description: `${product.name} and its variants have been deactivated`,
+      });
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to deactivate product");
+      toast.error("Failed to deactivate product", {
+        description: "Please try again or contact support",
+      });
       console.error(error);
     }
   };
@@ -192,44 +610,43 @@ export function DeleteProductDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Deactivate Product"
-      description="Are you sure you want to deactivate this product? This will mark the product and all its variants as inactive."
+      description={
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            This action will mark the product and all its variants as inactive.
+            The data will be preserved but hidden from active listings.
+          </p>
+        </div>
+      }
       item={product}
       renderItem={(prod) => (
-        <div className="rounded-lg bg-muted p-4 space-y-2">
-          <div>
-            <p className="text-sm font-semibold">
-              Product Name: <span className="font-normal">{prod.name}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-semibold">
-              SKU: <span className="font-normal">{prod.sku}</span>
-            </p>
-          </div>
-          {prod.category && (
-            <div>
-              <p className="text-sm font-semibold">
-                Category:{" "}
-                <span className="font-normal">{prod.category.name}</span>
+        <div className="space-y-4">
+          <ProductSummaryCard product={prod} />
+
+          <DeactivationWarning
+            variantCount={prod.variants?.length || 0}
+            totalStock={
+              prod.variants?.reduce(
+                (sum: number, v) => sum + (v.stock || 0),
+                0,
+              ) || 0
+            }
+          />
+
+          {/* Info Notice */}
+          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-800">
+                This action does not permanently delete the product. You can
+                reactivate it from the inactive products list.
               </p>
             </div>
-          )}
-          <div>
-            <p className="text-sm font-semibold">
-              Total Variants:{" "}
-              <span className="font-normal">{prod.variants?.length || 0}</span>
-            </p>
-          </div>
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-xs text-blue-800">
-              ℹ️ Note: Deactivating this product will also mark all{" "}
-              {prod.variants?.length || 0} variant(s) as inactive.
-            </p>
           </div>
         </div>
       )}
       onConfirm={handleDelete}
-      confirmLabel="Deactivate"
+      confirmLabel="Deactivate Product"
       isLoading={deleteProduct.isPending}
     />
   );
