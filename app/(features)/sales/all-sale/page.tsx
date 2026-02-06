@@ -53,7 +53,7 @@ function Sale() {
   };
 
   return (
-    <div className="container mx-auto py-3">
+    <div className="w-full px-4 md:px-6 py-3">
       <h1 className="text-2xl font-bold">Sales</h1>
       <div className="flex justify-end items-center gap-2">
         <Button className="btn btn-primary">XLSX</Button>

@@ -137,11 +137,11 @@ export function VariantForm() {
       if (computedVariants.length > 0) {
         const currentFormVariants = watch("variants") || [];
 
-        const variantsForForm = computedVariants.map((v, index) => {
+        const variantsForForm = computedVariants.map((v) => {
           const existing = currentFormVariants.find((ev) => ev.sku === v.sku);
 
           return {
-            id: existing?.id ?? index,
+            id: existing?.id,
             sku: v.sku,
             costPrice: existing ? existing.costPrice : new Decimal(v.costPrice),
             sellingPrice: existing

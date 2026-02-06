@@ -64,12 +64,12 @@ export function NavMain({ items }: NavMainProps) {
                       <SidebarMenuButton
                         tooltip={item.title}
                         isActive={isActive}
-                        className="transition-all duration-200 ease-in-out hover:bg-sidebar-accent/50 hover:scale-[1.02]"
+                        className="transition-all duration-300 ease-in-out hover:bg-sidebar-accent/50 hover:scale-[1.02]"
                       >
                         {item.icon && (
-                          <item.icon className="transition-transform duration-200 ease-in-out" />
+                          <item.icon className="transition-transform duration-300 ease-in-out" />
                         )}
-                        <span className="transition-all duration-200 ease-in-out">
+                        <span className="transition-all duration-300 ease-in-out">
                           {item.title}
                         </span>
                         <ChevronRight className="ml-auto transition-transform duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
@@ -84,7 +84,7 @@ export function NavMain({ items }: NavMainProps) {
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={isSubItemActive}
-                                className="transition-all duration-200 ease-in-out hover:bg-sidebar-accent/50"
+                                className="transition-all duration-300 ease-in-out hover:bg-sidebar-accent/50"
                               >
                                 <Link href={subItem.url}>
                                   <span>{subItem.title}</span>
@@ -101,13 +101,13 @@ export function NavMain({ items }: NavMainProps) {
                     asChild
                     tooltip={item.title}
                     isActive={isActive}
-                    className="transition-all duration-200 ease-in-out hover:bg-sidebar-accent/50 hover:scale-[1.02]"
+                    className="transition-all duration-700 ease-in-out hover:bg-sidebar-accent/50 hover:scale-[1.02]"
                   >
                     <Link href={item.url}>
                       {item.icon && (
-                        <item.icon className="transition-transform duration-200 ease-in-out" />
+                        <item.icon className="transition-transform duration-700 ease-in-out" />
                       )}
-                      <span className="transition-all duration-200 ease-in-out">
+                      <span className="transition-all duration-700 ease-in-out">
                         {item.title}
                       </span>
                     </Link>

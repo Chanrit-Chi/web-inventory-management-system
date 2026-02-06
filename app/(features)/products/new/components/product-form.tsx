@@ -236,7 +236,7 @@ export default function ProductForm({
   const submitButtonText = isPending ? "Saving..." : checkEdit;
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-0 sm:px-6 lg:px-8 py-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6">
       <div className="space-y-6">
         {/* Product Information Section */}
         <section className="rounded-lg border p-4 sm:p-6">

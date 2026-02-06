@@ -10,14 +10,14 @@
 [data-slot="collapsible-content"] {
   overflow: hidden;
   transition:
-    height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 [data-slot="collapsible-content"][data-state="open"] {
-  animation: collapsible-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: collapsible-down 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 [data-slot="collapsible-content"][data-state="closed"] {
-  animation: collapsible-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: collapsible-up 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -143,6 +143,14 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Force Sidebar Transitions */
+  [data-slot="sidebar"],
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-slot="sidebar-inset"] {
+    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
 }
 
 /* Override sidebar background */
@@ -176,11 +184,11 @@
 }
 
 .animate-collapsible-down {
-  animation: collapsible-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: collapsible-down 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .animate-collapsible-up {
-  animation: collapsible-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: collapsible-up 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @layer utilities {
   .bg-gradient-radial {

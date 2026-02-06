@@ -215,7 +215,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     },
   },
   {
-    accessorKey: "unit",
+    id: "unit",
     header: ({ column }) => {
       return (
         <Button

@@ -16,7 +16,7 @@ function CategoryList() {
   if (error) return <p className="text-red-600">Failed to load categories</p>;
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="w-full px-4 md:px-6 py-6">
       <DataTable
         showAddNew={true}
         addNewLabel="New Category"

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { positiveInt, moneySchema } from "./common.schema";
 
 export const ProductVariantSchema = z.object({
-  id: z.number().int(),
+  id: z.number().int().optional(),
   productId: z.string(),
   sku: z.string().min(1, "Variant name is required"),
   costPrice: moneySchema,
