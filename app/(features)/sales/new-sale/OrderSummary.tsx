@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface OrderSummaryProps {
   discountPercent: number;
@@ -13,6 +14,7 @@ interface OrderSummaryProps {
   onTaxChange: (value: number) => void;
   onSubmit: () => void;
   isValid: boolean;
+  isPending: boolean;
 }
 
 export const OrderSummary = ({
@@ -26,9 +28,10 @@ export const OrderSummary = ({
   onTaxChange,
   onSubmit,
   isValid,
+  isPending,
 }: OrderSummaryProps) => {
   return (
-    <div className="bg-card text-card-foreground rounded-lg shadow p-6 sticky top-6">
+    <div className="bg-card text-card-foreground border rounded-lg shadow p-6 sticky top-6">
       <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
       <div className="space-y-4 mb-6">
@@ -73,7 +76,7 @@ export const OrderSummary = ({
         </div>
       </div>
 
-      <div className="flex justify-between text-lg font-bold mt-4 mb-6">
+      <div className="flex justify-between text-lg font-bold mt-4">
         <span>Total:</span>
         <span className="text-green-600 dark:text-green-400">
           ${total.toFixed(2)}
@@ -83,9 +86,16 @@ export const OrderSummary = ({
       <Button
         onClick={onSubmit}
         className="w-full py-3 rounded-lg font-semibold cursor-pointer transition-colors disabled:cursor-not-allowed"
-        disabled={!isValid}
+        disabled={!isValid || isPending}
       >
-        Complete Sale
+        {isPending ? (
+          <>
+            <Spinner className="mr-2 size-4" />
+            Completing Sale...
+          </>
+        ) : (
+          "Complete Sale"
+        )}
       </Button>
 
       {!isValid && (

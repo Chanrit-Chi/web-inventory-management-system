@@ -426,4 +426,23 @@ export const productDbService = {
       return mapProductResponse(deactivated) as Product;
     });
   },
+
+  reactivateProduct: async (id: string): Promise<Product> => {
+    return await prisma.$transaction(async (tx) => {
+      // Reactivate all variants
+      await tx.productVariant.updateMany({
+        where: { productId: id },
+        data: { isActive: true },
+      });
+
+      // Reactivate the product
+      const reactivated = await tx.product.update({
+        where: { id },
+        data: { isActive: ProductStatus.ACTIVE },
+        select: selectProductFields,
+      });
+
+      return mapProductResponse(reactivated) as Product;
+    });
+  },
 } as const;

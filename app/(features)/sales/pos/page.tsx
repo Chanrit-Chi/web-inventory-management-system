@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import Link from "next/link";
 const img = "https://picsum.photos/200/300";
 
 const POSOrderPage = () => {
@@ -52,7 +53,7 @@ const POSOrderPage = () => {
 
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [selectedSizes, setSelectedSizes] = useState<Record<number, string>>(
-    {}
+    {},
   );
 
   const customer = [
@@ -145,7 +146,7 @@ const POSOrderPage = () => {
     const selectedSize = selectedSizes[product.id] || product.sizes[0];
 
     const existingItemIndex = cart.findIndex(
-      (item) => item.name === product.name && item.size === selectedSize
+      (item) => item.name === product.name && item.size === selectedSize,
     );
 
     if (existingItemIndex > -1) {
@@ -153,8 +154,8 @@ const POSOrderPage = () => {
         cart.map((item, index) =>
           index === existingItemIndex
             ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
+            : item,
+        ),
       );
     } else {
       const newItem = {
@@ -173,9 +174,9 @@ const POSOrderPage = () => {
     setCart(
       cart
         .map((item) =>
-          item.id === id ? { ...item, quantity: item.quantity + delta } : item
+          item.id === id ? { ...item, quantity: item.quantity + delta } : item,
         )
-        .filter((item) => item.quantity > 0)
+        .filter((item) => item.quantity > 0),
     );
   };
 
@@ -186,40 +187,40 @@ const POSOrderPage = () => {
 
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
   const discount = 0;
   const tax = subtotal * 0.1;
   const total = subtotal - discount + tax;
 
   return (
-    <SharedLayout>
-      <div className="flex flex-col lg:flex-row h-screen">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Products Section */}
-          <div className="flex-1 overflow-auto md:pt-2">
-            <div className="mb-4 md:mb-6">
-              <div className="flex items-center justify-between mb-4 gap-2">
-                <h2 className="text-lg md:text-xl font-semibold">Product</h2>
-                <div className="flex items-center gap-2 mt-2 md:gap-4">
-                  <div className="relative">
-                    <Search
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 bg-background w-32 md:w-auto"
-                    />
-                  </div>
-                  <button className="p-2 border rounded-lg hover:bg-accent">
-                    <Filter size={24} />
-                  </button>
+    <div className="flex flex-col lg:flex-row h-screen">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Products Section */}
+        <div className="flex-1 overflow-auto md:pt-2">
+          <div className="mx-4 md:mb-6">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <h2 className="text-lg md:text-xl font-semibold">Product</h2>
+              <div className="flex items-center gap-2 mt-2 md:gap-4">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 bg-background w-32 md:w-auto"
+                  />
                 </div>
+                <button className="p-2 border rounded-lg hover:bg-accent">
+                  <Filter size={24} />
+                </button>
               </div>
+            </div>
 
+            <div className="flex justify-between">
               <div className="flex gap-2 md:gap-4 mb-4 md:mb-6 overflow-x-auto scrollbar-hide">
                 {["All Items", "Hoodie", "Pants", "Tshirt"].map((category) => (
                   <Button
@@ -235,104 +236,109 @@ const POSOrderPage = () => {
                   </Button>
                 ))}
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-card rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow border"
-                >
-                  <div className="bg-muted rounded-lg mb-2 md:mb-3 h-32 sm:h-40 lg:h-48 flex items-center justify-center">
-                    <Image
-                      src={product.image}
-                      width={200}
-                      height={300}
-                      alt={product.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  </div>
-                  <h3 className="font-medium text-xs sm:text-sm mb-1 md:mb-2 line-clamp-2 truncate">
-                    {product.name}
-                  </h3>
-                  <div className="text-base md:text-lg font-bold mb-2 md:mb-3">
-                    ${product.price}
-                  </div>
-                  <div className="flex flex-wrap gap-0.5 md:gap-1 mb-2 md:mb-3">
-                    {product.sizes.map((size) => (
-                      <Button
-                        key={size}
-                        onClick={() => handleSizeSelect(product.id, size)}
-                        className={`flex-1 min-w-[28px] md:min-w-[32px] py-0 md:py-0.5 text-[9px] md:text-[10px] border rounded cursor-pointer transition-colors ${
-                          selectedSizes[product.id] === size
-                            ? "bg-green-500 text-white"
-                            : "hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                      >
-                        {size}
-                      </Button>
-                    ))}
-                  </div>
-                  <Button
-                    onClick={() => addToCart(product)}
-                    className="w-full py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 cursor-pointer"
-                  >
-                    <Plus size={14} className="md:hidden" />
-                    <Plus size={16} className="hidden md:block" />
-                    <span className="hidden sm:inline">Add</span>
-                  </Button>
-                </div>
-              ))}
+              <Button className="hover-pointer">
+                <Link href="/products/product-list" className="text-sm">
+                  Return
+                </Link>
+              </Button>
             </div>
           </div>
-        </div>
 
-        {/* Mobile Cart Button */}
-        <div className="lg:hidden fixed bottom-4 right-4 z-50">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button className="rounded-full h-14 w-14 shadow-lg">
-                <div className="relative">
-                  <ShoppingCart size={24} />
-                  {cart.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cart.length}
-                    </span>
-                  )}
+          <div className="grid ml-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 md:gap-2">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-card rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow border"
+              >
+                <div className="bg-muted rounded-lg mb-2 md:mb-3 h-32 sm:h-40 lg:h-48 flex items-center justify-center">
+                  <Image
+                    src={product.image}
+                    width={200}
+                    height={300}
+                    alt={product.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-96 p-0">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Shopping Cart</SheetTitle>
-              </SheetHeader>
-              <OrderDetailsSidebar
-                cart={cart}
-                customer={customer}
-                updateQuantity={updateQuantity}
-                subtotal={subtotal}
-                discount={discount}
-                tax={tax}
-                total={total}
-              />
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Desktop Order Details Sidebar */}
-        <div className="hidden lg:flex w-96 bg-card border-l flex-col">
-          <OrderDetailsSidebar
-            cart={cart}
-            customer={customer}
-            updateQuantity={updateQuantity}
-            subtotal={subtotal}
-            discount={discount}
-            tax={tax}
-            total={total}
-          />
+                <h3 className="font-medium text-xs sm:text-sm mb-1 md:mb-2 line-clamp-2 truncate">
+                  {product.name}
+                </h3>
+                <div className="text-base md:text-lg font-bold mb-2 md:mb-3">
+                  ${product.price}
+                </div>
+                <div className="flex flex-wrap gap-0.5 md:gap-1 mb-2 md:mb-3">
+                  {product.sizes.map((size) => (
+                    <Button
+                      key={size}
+                      onClick={() => handleSizeSelect(product.id, size)}
+                      className={`flex-1 min-w-[28px] md:min-w-[32px] py-0 md:py-0.5 text-[9px] md:text-[10px] border rounded cursor-pointer transition-colors ${
+                        selectedSizes[product.id] === size
+                          ? "bg-green-500 text-white"
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      {size}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  onClick={() => addToCart(product)}
+                  className="w-full py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 cursor-pointer"
+                >
+                  <Plus size={14} className="md:hidden" />
+                  <Plus size={16} className="hidden md:block" />
+                  <span className="hidden sm:inline">Add</span>
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </SharedLayout>
+
+      {/* Mobile Cart Button */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-50">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button className="rounded-full h-14 w-14 shadow-lg">
+              <div className="relative">
+                <ShoppingCart size={24} />
+                {cart.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cart.length}
+                  </span>
+                )}
+              </div>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full sm:w-96 p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Shopping Cart</SheetTitle>
+            </SheetHeader>
+            <OrderDetailsSidebar
+              cart={cart}
+              customer={customer}
+              updateQuantity={updateQuantity}
+              subtotal={subtotal}
+              discount={discount}
+              tax={tax}
+              total={total}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Order Details Sidebar */}
+      <div className="hidden lg:flex w-96 bg-card border-l flex-col">
+        <OrderDetailsSidebar
+          cart={cart}
+          customer={customer}
+          updateQuantity={updateQuantity}
+          subtotal={subtotal}
+          discount={discount}
+          tax={tax}
+          total={total}
+        />
+      </div>
+    </div>
   );
 };
 

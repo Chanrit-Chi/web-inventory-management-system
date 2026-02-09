@@ -3,7 +3,6 @@ import {
   ProductUpdate,
   ProductVariant,
   Category,
-  Unit,
 } from "@/schemas/type-export.schema";
 import { useProductMutations, useGetProductById } from "@/hooks/useProduct";
 import { ProductUpdateSchema } from "@/schemas/product.schema";
@@ -182,12 +181,6 @@ function ProductField({
   );
 }
 
-/**
- * Renders a detailed summary card for a product, used in confirmation dialogs
- */
-/**
- * Renders a detailed summary card for a product, used in confirmation dialogs
- */
 function ProductSummaryCard({
   product,
 }: {
@@ -332,10 +325,7 @@ function ProductDateDisplay({ date }: { readonly date: string | Date }) {
   );
 }
 
-// --- View Configuration (Static definitions to avoid nested component warnings) ---
-
 const VIEW_PRODUCT_FIELDS = [
-  // Header Section with Key Metrics
   {
     label: "",
     value: (prod: ProductWithVariants) => <ProductStatsHeader product={prod} />,
@@ -495,89 +485,89 @@ export function ViewProductDialog({
 }
 
 // Update Product Dialog - Enhanced
-export function UpdateProductDialog({
-  product,
-  open,
-  onOpenChange,
-}: {
-  readonly product: ProductWithVariants;
-  readonly open: boolean;
-  readonly onOpenChange: (open: boolean) => void;
-}) {
-  const { updateProduct } = useProductMutations();
-  const { data: productData } = useGetProductById(product.id);
+// export function UpdateProductDialog({
+//   product,
+//   open,
+//   onOpenChange,
+// }: {
+//   readonly product: ProductWithVariants;
+//   readonly open: boolean;
+//   readonly onOpenChange: (open: boolean) => void;
+// }) {
+//   const { updateProduct } = useProductMutations();
+//   const { data: productData } = useGetProductById(product.id);
 
-  const handleSubmit = async (data: ProductUpdate) => {
-    try {
-      await updateProduct.mutateAsync({ id: product.id, data });
-      toast.success("Product updated successfully", {
-        description: `${data.name} has been updated`,
-      });
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to update product", {
-        description: "Please try again or contact support",
-      });
-      console.error(error);
-    }
-  };
+//   const handleSubmit = async (data: ProductUpdate) => {
+//     try {
+//       await updateProduct.mutateAsync({ id: product.id, data });
+//       toast.success("Product updated successfully", {
+//         description: `${data.name} has been updated`,
+//       });
+//       onOpenChange(false);
+//     } catch (error) {
+//       toast.error("Failed to update product", {
+//         description: "Please try again or contact support",
+//       });
+//       console.error(error);
+//     }
+//   };
 
-  return (
-    <FormDialog<typeof ProductUpdateSchema>
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Quick Update Product"
-      description={
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Update basic product information quickly.
-          </p>
-          <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-800">
-              For advanced editing including variants, categories, and inventory
-              management, use the full edit page.
-            </p>
-          </div>
-        </div>
-      }
-      schema={ProductUpdateSchema}
-      className="sm:max-w-137.5"
-      fields={[
-        {
-          name: "sku",
-          label: "SKU (Stock Keeping Unit)",
-          placeholder: "e.g., PROD-001",
-          required: true,
-          description: "Unique identifier for this product",
-        },
-        {
-          name: "name",
-          label: "Product Name",
-          placeholder: "Enter a descriptive product name",
-          required: true,
-          description: "Display name shown to customers",
-        },
-        {
-          name: "description",
-          label: "Description",
-          placeholder: "Describe the product features and benefits...",
-          type: "textarea",
-          rows: 4,
-          description: "Optional detailed product description",
-        },
-      ]}
-      defaultValues={{
-        name: productData?.name || product.name,
-        description: productData?.description || product.description || "",
-        sku: productData?.sku || product.sku,
-      }}
-      onSubmit={handleSubmit}
-      submitLabel="Update Product"
-      isSubmitting={updateProduct.isPending}
-    />
-  );
-}
+//   return (
+//     <FormDialog<typeof ProductUpdateSchema>
+//       open={open}
+//       onOpenChange={onOpenChange}
+//       title="Quick Update Product"
+//       description={
+//         <div className="space-y-2">
+//           <p className="text-sm text-muted-foreground">
+//             Update basic product information quickly.
+//           </p>
+//           <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+//             <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+//             <p className="text-xs text-blue-800">
+//               For advanced editing including variants, categories, and inventory
+//               management, use the full edit page.
+//             </p>
+//           </div>
+//         </div>
+//       }
+//       schema={ProductUpdateSchema}
+//       className="sm:max-w-137.5"
+//       fields={[
+//         {
+//           name: "sku",
+//           label: "SKU (Stock Keeping Unit)",
+//           placeholder: "e.g., PROD-001",
+//           required: true,
+//           description: "Unique identifier for this product",
+//         },
+//         {
+//           name: "name",
+//           label: "Product Name",
+//           placeholder: "Enter a descriptive product name",
+//           required: true,
+//           description: "Display name shown to customers",
+//         },
+//         {
+//           name: "description",
+//           label: "Description",
+//           placeholder: "Describe the product features and benefits...",
+//           type: "textarea",
+//           rows: 4,
+//           description: "Optional detailed product description",
+//         },
+//       ]}
+//       defaultValues={{
+//         name: productData?.name || product.name,
+//         description: productData?.description || product.description || "",
+//         sku: productData?.sku || product.sku,
+//       }}
+//       onSubmit={handleSubmit}
+//       submitLabel="Update Product"
+//       isSubmitting={updateProduct.isPending}
+//     />
+//   );
+// }
 
 // Delete Product Dialog - Enhanced
 export function DeleteProductDialog({
@@ -649,6 +639,68 @@ export function DeleteProductDialog({
       onConfirm={handleDelete}
       confirmLabel="Deactivate Product"
       isLoading={deleteProduct.isPending}
+    />
+  );
+}
+
+export function ReactivateProductDialog({
+  product,
+  open,
+  onOpenChange,
+}: {
+  readonly product: ProductWithVariants;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
+  const { reactivateProduct } = useProductMutations();
+
+  const handleReactivate = async () => {
+    try {
+      await reactivateProduct.mutateAsync(product.id);
+      toast.success("Product reactivated successfully", {
+        description: `${product.name} and its variants have been reactivated`,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Failed to reactivate product", {
+        description: "Please try again or contact support",
+      });
+      console.error(error);
+    }
+  };
+
+  return (
+    <ConfirmDialog<ProductWithVariants>
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Reactivate Product"
+      description={
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            This action will mark the product and all its variants as active.
+            The data will be preserved and visible in active listings.
+          </p>
+        </div>
+      }
+      item={product}
+      renderItem={(prod) => (
+        <div className="space-y-4">
+          <ProductSummaryCard product={prod} />
+
+          <DeactivationWarning
+            variantCount={prod.variants?.length || 0}
+            totalStock={
+              prod.variants?.reduce(
+                (sum: number, v) => sum + (v.stock || 0),
+                0,
+              ) || 0
+            }
+          />
+        </div>
+      )}
+      onConfirm={handleReactivate}
+      confirmLabel="Reactivate Product"
+      isLoading={reactivateProduct.isPending}
     />
   );
 }

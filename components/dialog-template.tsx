@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useForm, FieldValues, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -104,6 +104,13 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
     resolver: (zodResolver as any)(schema),
     defaultValues: defaultValues as any,
   });
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      reset(defaultValues as any);
+    }
+  }, [open, reset, defaultValues]);
 
   const handleClose = () => {
     onOpenChange(false);
@@ -253,7 +260,7 @@ export function ConfirmDialog<T>({
   renderItem,
   onConfirm,
   confirmLabel = "Confirm",
-  confirmVariant = "destructive",
+  confirmVariant = "default",
   isLoading = false,
   className,
 }: ConfirmDialogProps<T>) {

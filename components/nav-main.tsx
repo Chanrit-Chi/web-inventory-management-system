@@ -48,7 +48,7 @@ export function NavMain({ items }: NavMainProps) {
           const isActive =
             pathname === item.url || pathname.startsWith(item.url + "/");
           const hasActiveSubItem = item.items?.some(
-            (subItem) => pathname === subItem.url
+            (subItem) => pathname === subItem.url,
           );
 
           return (
@@ -75,8 +75,8 @@ export function NavMain({ items }: NavMainProps) {
                         <ChevronRight className="ml-auto transition-transform duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden">
-                      <SidebarMenuSub>
+                    <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden scrollbar-hide">
+                      <SidebarMenuSub className="scrollbar-hide">
                         {item.items?.map((subItem) => {
                           const isSubItemActive = pathname === subItem.url;
                           return (

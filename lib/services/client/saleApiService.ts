@@ -4,12 +4,18 @@ import { Order, OrderWithDetails } from "@/schemas/type-export.schema";
 export const saleApiService = {
   AddSale: async (sale: OrderWithDetails): Promise<Order> => {
     // Validate order header
-    const validatedOrder = OrderCreateSchema.parse({ sale });
+    const validatedOrder = OrderCreateSchema.parse(sale);
 
-    // Include orderDetails in the payload
+    // Convert Decimal values to numbers for JSON serialization
     const payload = {
       ...validatedOrder,
-      orderDetails: sale.orderDetails,
+      totalPrice: validatedOrder.totalPrice.toNumber(),
+      discountAmount: validatedOrder.discountAmount.toNumber(),
+      taxAmount: validatedOrder.taxAmount.toNumber(),
+      orderDetails: sale.orderDetails.map((detail) => ({
+        ...detail,
+        unitPrice: detail.unitPrice.toNumber(),
+      })),
     };
 
     const res = await fetch("/api/sales", {

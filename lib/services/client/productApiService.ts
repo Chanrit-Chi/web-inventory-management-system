@@ -35,7 +35,7 @@ export const productApiService = {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    filters?: Record<string, string>
+    filters?: Record<string, string>,
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -72,7 +72,7 @@ export const productApiService = {
 
   updateProduct: async (
     id: string,
-    product: ProductUpdate
+    product: ProductUpdate,
   ): Promise<Product> => {
     const validateProduct = ProductUpdateSchema.parse(product);
     const res = await fetch(`/api/products/${id}`, {
@@ -100,5 +100,18 @@ export const productApiService = {
     if (!res.ok) {
       throw new Error(`Failed to delete product with id ${id}`);
     }
+  },
+
+  reactivateProduct: async (id: string) => {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to reactivate product with id ${id}`);
+    }
+
+    return res.json();
   },
 };

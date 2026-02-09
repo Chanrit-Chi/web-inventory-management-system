@@ -23,7 +23,7 @@ export const ProductSearch = ({
   const [showProductSearch, setShowProductSearch] = useState(false);
 
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchProduct.toLowerCase())
+    p.name.toLowerCase().includes(searchProduct.toLowerCase()),
   );
 
   const handleAddProduct = (product: ProductForSale) => {
@@ -36,6 +36,7 @@ export const ProductSearch = ({
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Products</h2>
+        <p>Need barcode here </p>
         <Button
           onClick={() => setShowProductSearch(!showProductSearch)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer"

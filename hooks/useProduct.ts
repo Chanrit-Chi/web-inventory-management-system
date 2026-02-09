@@ -10,7 +10,7 @@ export const useGetProducts = (
   page: number,
   limit: number,
   search?: string,
-  filters?: Record<string, string>
+  filters?: Record<string, string>,
 ) =>
   useQuery({
     queryKey: ["products", page, limit, search, filters],
@@ -30,7 +30,8 @@ export const useProductMutations = () => {
   const queryClient = useQueryClient();
 
   const addProduct = useMutation({
-    mutationFn: (data: ProductCreateRequest) => productApiService.addProduct(data),
+    mutationFn: (data: ProductCreateRequest) =>
+      productApiService.addProduct(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },
@@ -53,5 +54,13 @@ export const useProductMutations = () => {
     },
   });
 
-  return { addProduct, updateProduct, deleteProduct };
+  const reactivateProduct = useMutation({
+    mutationFn: (id: string) => productApiService.reactivateProduct(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["products", id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+
+  return { addProduct, updateProduct, deleteProduct, reactivateProduct };
 };

@@ -72,8 +72,8 @@ function Sale() {
       <DataTable
         columns={columns}
         data={sales?.data ?? []}
-          showAddNew={true}
-          addNewLabel="New Sale"
+        showAddNew={true}
+        addNewLabel="New Sale"
         addNewHref="/sales/new-sale"
         paginationMeta={sales?.pagination}
         onPageChange={(newPage) => setPage(newPage)}

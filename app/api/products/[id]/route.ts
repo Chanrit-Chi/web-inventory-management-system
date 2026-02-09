@@ -39,6 +39,23 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const product = await productDbService.reactivateProduct(id);
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error reactivating product:", error);
+    return NextResponse.json(
+      { error: "Failed to reactivate product" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

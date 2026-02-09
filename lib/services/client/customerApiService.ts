@@ -10,7 +10,7 @@ import {
 
 export const customerApiService = {
   AddCustomer: async (customer: CustomerCreate): Promise<Customer> => {
-    const validateCustomer = CustomerCreateSchema.parse({ customer });
+    const validateCustomer = CustomerCreateSchema.parse(customer);
     const res = await fetch("/api/customers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,7 +55,7 @@ export const customerApiService = {
 
   UpdateCustomer: async (
     id: string,
-    customer: CustomerUpdate
+    customer: CustomerUpdate,
   ): Promise<Customer> => {
     const validateCustomer = CustomerUpdateSchema.parse(customer);
     const res = await fetch("/api/customers", {

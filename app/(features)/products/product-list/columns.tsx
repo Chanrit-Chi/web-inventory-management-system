@@ -15,8 +15,8 @@ import Image from "next/image";
 import {
   ProductWithVariants,
   ViewProductDialog,
-  UpdateProductDialog,
   DeleteProductDialog,
+  ReactivateProductDialog,
 } from "./product-dialogs";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,6 @@ import { useRouter } from "next/navigation";
 function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
   const router = useRouter();
   const [viewOpen, setViewOpen] = useState(false);
-  const [updateOpen, setUpdateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -52,18 +51,14 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
           >
             Edit Product
           </DropdownMenuItem>
-          {/* <DropdownMenuItem
-            className="cursor-pointer text-muted-foreground"
-            onClick={() => setUpdateOpen(true)}
-          >
-            Quick Edit
-          </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer text-red-600"
+            className={`cursor-pointer ${product.isActive === "ACTIVE" ? "text-red-600" : "text-green-600"}`}
             onClick={() => setDeleteOpen(true)}
           >
-            Deactivate Product
+            {product.isActive === "ACTIVE"
+              ? "Deactivate Product"
+              : "Reactivate Product"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -73,16 +68,20 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
         open={viewOpen}
         onOpenChange={setViewOpen}
       />
-      <UpdateProductDialog
-        product={product}
-        open={updateOpen}
-        onOpenChange={setUpdateOpen}
-      />
-      <DeleteProductDialog
-        product={product}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-      />
+
+      {product.isActive === "ACTIVE" ? (
+        <DeleteProductDialog
+          product={product}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+        />
+      ) : (
+        <ReactivateProductDialog
+          product={product}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+        />
+      )}
     </>
   );
 }
@@ -104,8 +103,9 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.index + 1}</div>;
+      return <div className="text-center">{row.index + 1}</div>;
     },
+    size: 60,
   },
   {
     accessorKey: "sku",
@@ -123,8 +123,13 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.getValue("sku")}</div>;
+      return (
+        <div className="px-2 text-sm max-w-[100px] truncate">
+          {row.getValue("sku")}
+        </div>
+      );
     },
+    size: 100,
   },
   {
     accessorKey: "name",
@@ -144,24 +149,27 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     cell: ({ row }) => {
       const product = row.original;
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {product.image ? (
             <Image
-              width={60}
-              height={60}
+              width={40}
+              height={40}
               src={product.image}
               alt={product.name}
-              className="w-10 h-10 rounded object-cover"
+              className="w-8 h-8 rounded object-cover flex-shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
               <span className="text-xs text-gray-500">img</span>
             </div>
           )}
-          <span>{product.name}</span>
+          <span className="text-sm truncate max-w-[150px]" title={product.name}>
+            {product.name}
+          </span>
         </div>
       );
     },
+    size: 200,
   },
   {
     accessorKey: "category.name",
@@ -179,8 +187,16 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.original.category?.name}</div>;
+      return (
+        <div
+          className="px-2 text-sm max-w-[120px] truncate"
+          title={row.original.category?.name}
+        >
+          {row.original.category?.name}
+        </div>
+      );
     },
+    size: 120,
   },
   {
     id: "sellingPrice",
@@ -200,12 +216,12 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     cell: ({ row }) => {
       const variants = row.original.variants;
       if (!variants || variants.length === 0)
-        return <div className="px-4">N/A</div>;
+        return <div className="px-2 text-sm">N/A</div>;
 
       const price = variants[0].sellingPrice;
       const amount = Number.parseFloat(price.toString());
       return (
-        <div className="px-4">
+        <div className="px-2 text-sm">
           {new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: "USD",
@@ -213,6 +229,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         </div>
       );
     },
+    size: 100,
   },
   {
     id: "unit",
@@ -230,8 +247,13 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-4">{row.original.unit || "-"}</div>;
+      return (
+        <div className="px-2 text-sm text-center">
+          {row.original.unit || "-"}
+        </div>
+      );
     },
+    size: 80,
   },
   {
     id: "quantity",
@@ -251,7 +273,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     cell: ({ row }) => {
       const variants = row.original.variants;
       if (!variants || variants.length === 0)
-        return <div className="px-4">0</div>;
+        return <div className="px-2 text-sm text-center">0</div>;
 
       // Sum up stock from all variants
       const totalStock = variants.reduce(
@@ -259,7 +281,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         0,
       );
       return (
-        <div className="px-4">
+        <div className="px-2 text-sm text-center">
           {totalStock}{" "}
           <span className="text-xs text-muted-foreground">
             {row.original.unit}
@@ -267,6 +289,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
         </div>
       );
     },
+    size: 100,
   },
 
   {
@@ -289,18 +312,20 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       let statusClass = "";
       if (isActive == "ACTIVE") {
         statusClass =
-          "text-green-600 font-medium bg-green-100 px-2 py-1 rounded";
+          "text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded text-xs";
       } else {
-        statusClass = "text-red-600 font-medium bg-red-100 px-2 py-1 rounded";
+        statusClass =
+          "text-red-600 font-medium bg-red-100 px-2 py-0.5 rounded text-xs";
       }
       return (
-        <div className="px-4">
+        <div className="px-2">
           <span className={statusClass}>
             {isActive == "ACTIVE" ? "Active" : "Inactive"}
           </span>
         </div>
       );
     },
+    size: 90,
   },
   {
     accessorKey: "createdAt",
@@ -319,8 +344,9 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     },
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
-      return <div className="px-4">{date.toLocaleDateString()}</div>;
+      return <div className="px-2 text-sm">{date.toLocaleDateString()}</div>;
     },
+    size: 100,
   },
   {
     id: "actions",
@@ -328,5 +354,6 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
       const product = row.original;
       return <ActionsCell product={product} />;
     },
+    size: 70,
   },
 ];

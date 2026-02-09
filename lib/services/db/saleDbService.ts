@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import {
   Order,
   OrderUpdate,
@@ -35,29 +36,28 @@ export const saleService = {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    filters?: Record<string, string>
+    filters?: Record<string, string>,
   ) => {
     const skip = (page - 1) * limit;
 
     // Build where clause for filtering
-    const where: any = {};
-    const conditions: any[] = [];
+    const where: Prisma.OrderWhereInput = {};
 
     // Add search filter
-    if (search && search.trim()) {
+    if (search?.trim()) {
       const searchUpper = search.toUpperCase();
       const statusMatch = ["COMPLETED", "PENDING", "CANCELLED"].find((s) =>
-        s.includes(searchUpper)
+        s.includes(searchUpper),
       );
 
-      const orConditions: any[] = [
+      const orConditions: Prisma.OrderWhereInput[] = [
         { customer: { name: { contains: search, mode: "insensitive" } } },
         { paymentMethod: { name: { contains: search, mode: "insensitive" } } },
       ];
 
       // Add status to search if it matches
       if (statusMatch) {
-        orConditions.push({ status: statusMatch });
+        orConditions.push({ status: statusMatch as any });
       }
 
       where.OR = orConditions;
@@ -66,7 +66,7 @@ export const saleService = {
     // Add column filters
     if (filters) {
       if (filters.status) {
-        where.status = filters.status;
+        where.status = filters.status as any;
       }
       if (filters["paymentMethod.name"]) {
         where.paymentMethod = { name: filters["paymentMethod.name"] };
@@ -171,7 +171,7 @@ export const saleService = {
 
   updateSale: async (
     id: number,
-    data: Partial<OrderUpdate>
+    data: Partial<OrderUpdate>,
   ): Promise<Order> => {
     return await prisma.$transaction(async (tx) => {
       // Separate orderDetails from the order data
@@ -201,7 +201,7 @@ export const saleService = {
               variantId: detail.variantId,
               unitPrice: detail.unitPrice,
               quantity: detail.quantity,
-            })
+            }),
           ),
         });
       }

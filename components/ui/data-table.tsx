@@ -162,10 +162,13 @@ export function DataTable<TData, TValue>({
               { id: columnId, value },
             ];
 
-      const filterObj = newFilters.reduce((acc, f) => {
-        acc[f.id] = f.value as string;
-        return acc;
-      }, {} as Record<string, string>);
+      const filterObj = newFilters.reduce(
+        (acc, f) => {
+          acc[f.id] = f.value as string;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
       onFilterChange(filterObj);
     }
@@ -209,9 +212,9 @@ export function DataTable<TData, TValue>({
   const hasActiveFilters = searchInput || Object.keys(filterValues).length > 0;
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       {(showSearch || showAddNew || filterConfigs.length > 0) && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-4 gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-2 gap-2 mb-1">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
             {showSearch && (
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -281,19 +284,27 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-md border">
-        <Table className="min-w-full">
+      <div className="flex-1 min-h-0 overflow-x-auto rounded-md border">
+        <Table className="w-full">
           <TableHeader className="bg-primary/10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-primary/15">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="font-semibold">
+                    <TableHead
+                      key={header.id}
+                      className="font-semibold text-xs px-2"
+                      style={{
+                        width: header.column.columnDef.size
+                          ? `${header.column.columnDef.size}px`
+                          : undefined,
+                      }}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -307,13 +318,21 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={undefined}
+                  className="h-12"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={undefined}>
+                    <TableCell
+                      key={cell.id}
+                      className="py-2 px-2"
+                      style={{
+                        width: cell.column.columnDef.size
+                          ? `${cell.column.columnDef.size}px`
+                          : undefined,
+                      }}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -323,7 +342,7 @@ export function DataTable<TData, TValue>({
               <TableRow className={undefined}>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-16 text-center text-sm"
                 >
                   No results found.
                 </TableCell>
@@ -334,7 +353,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {showPagination && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 mt-1">
           <div className="text-sm text-muted-foreground text-center sm:text-left">
             {isServerSidePagination ? (
               <>
@@ -342,7 +361,7 @@ export function DataTable<TData, TValue>({
                 to{" "}
                 {Math.min(
                   paginationMeta.page * paginationMeta.limit,
-                  paginationMeta.total
+                  paginationMeta.total,
                 )}{" "}
                 of {paginationMeta.total} row(s)
               </>

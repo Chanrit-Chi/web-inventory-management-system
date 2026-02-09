@@ -56,9 +56,9 @@ function ProductList() {
   };
 
   return (
-    <div className="w-full px-4 md:px-6 py-3">
-      <h1 className="text-2xl font-bold">Product List</h1>
-      <div className="flex justify-end items-center gap-2">
+    <div className="w-full min-h-full flex flex-col px-2 py-2 overflow-hidden">
+      <h1 className="text-xl font-bold mb-1">Product List</h1>
+      <div className="flex justify-end items-center gap-2 mb-1">
         <Button className="btn btn-primary">XLSX</Button>
         <Button className="btn btn-primary">
           <Download className="size-4" />
@@ -76,38 +76,40 @@ function ProductList() {
           )}
         </Button>
       </div>
-      <DataTable
-        columns={columns}
-        data={products?.data ?? []}
-        showAddNew={true}
-        addNewLabel="New Product"
-        addNewHref="/products/new"
-        paginationMeta={products?.pagination}
-        onPageChange={(newPage) => setPage(newPage)}
-        onPageSizeChange={(newLimit) => {
-          setLimit(newLimit);
-          setPage(1);
-        }}
-        onSearchChange={handleSearchChange}
-        onFilterChange={handleFilterChange}
-        searchValue={search}
-        filterValues={filters}
-        rowFilters={[
-          {
-            columnId: "isActive",
-            label: "Status",
-            options: [
-              { value: "ACTIVE", label: "Active" },
-              { value: "INACTIVE", label: "Inactive" },
-            ],
-          },
-          {
-            columnId: "category",
-            label: "Category",
-            options: categoryOptions,
-          },
-        ]}
-      />
+      <div className="flex-1 min-h-0">
+        <DataTable
+          columns={columns}
+          data={products?.data ?? []}
+          showAddNew={true}
+          addNewLabel="New Product"
+          addNewHref="/products/new"
+          paginationMeta={products?.pagination}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+          searchValue={search}
+          filterValues={filters}
+          rowFilters={[
+            {
+              columnId: "isActive",
+              label: "Status",
+              options: [
+                { value: "ACTIVE", label: "Active" },
+                { value: "INACTIVE", label: "Inactive" },
+              ],
+            },
+            {
+              columnId: "category",
+              label: "Category",
+              options: categoryOptions,
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 }
