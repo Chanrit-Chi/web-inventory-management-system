@@ -10,7 +10,6 @@ import {
   ProductCreate,
   ProductUpdate,
 } from "@/schemas/type-export.schema";
-import { AttributeSelection } from "@/utils/cartesianProduct";
 
 const selectProductFields = {
   id: true,
@@ -37,6 +36,11 @@ const selectProductFields = {
       isActive: true,
       reservedStock: true,
       reorderLevel: true,
+      _count: {
+        select: {
+          orderDetail: true,
+        },
+      },
       attributes: {
         select: {
           value: {
@@ -117,7 +121,16 @@ const mapProductResponse = (result: ProductWithRelations | null) => {
     variants:
       result.variants?.map((v) => ({
         ...v,
-        attributes: v.attributes?.map((a) => ({ valueId: a.value?.id })) || [],
+        attributes:
+          v.attributes?.map((a) => ({
+            valueId: a.value?.id,
+            value: a.value
+              ? {
+                  value: a.value.value,
+                  attribute: { name: a.value.attribute?.name },
+                }
+              : undefined,
+          })) || [],
       })) || [],
     unit: result.unit?.name || null,
   };
@@ -163,7 +176,7 @@ export const productDbService = {
     if (filters) {
       if (filters.isActive) {
         where.isActive =
-          filters.isActive === "ACTIVE"
+          filters.isActive === "true" || filters.isActive === "ACTIVE"
             ? ProductStatus.ACTIVE
             : ProductStatus.INACTIVE;
       }
@@ -207,20 +220,15 @@ export const productDbService = {
     return mapProductResponse(result);
   },
 
-  createProductWithVariants: async (
-    data: ProductCreate,
-    attributeSelections: AttributeSelection[],
-  ): Promise<Product> => {
-    const validated = ProductCreateSchema.parse(data);
+  createProductWithVariants: async (data: ProductCreate): Promise<Product> => {
     const { productAttributes, variants, supplierId, ...validatedCore } =
-      validated;
-    const coreProductData = validatedCore;
+      ProductCreateSchema.parse(data);
 
     return await prisma.$transaction(async (tx) => {
       // 1. Create the product
       const product = await tx.product.create({
         data: {
-          ...coreProductData,
+          ...validatedCore,
           ...(supplierId && supplierId.length > 0
             ? {
                 supplier: {
@@ -277,7 +285,7 @@ export const productDbService = {
         select: selectProductFields,
       });
       if (!result) throw new Error("Product not found");
-      return mapProductResponse(result) as Product;
+      return mapProductResponse(result) as unknown as Product;
     });
   },
 
@@ -404,7 +412,7 @@ export const productDbService = {
 
       if (!result) throw new Error("Product not found");
 
-      return mapProductResponse(result) as Product;
+      return mapProductResponse(result) as unknown as Product;
     });
   },
 
@@ -423,7 +431,7 @@ export const productDbService = {
         select: selectProductFields,
       });
 
-      return mapProductResponse(deactivated) as Product;
+      return mapProductResponse(deactivated) as unknown as Product;
     });
   },
 
@@ -442,7 +450,7 @@ export const productDbService = {
         select: selectProductFields,
       });
 
-      return mapProductResponse(reactivated) as Product;
+      return mapProductResponse(reactivated) as unknown as Product;
     });
   },
 } as const;

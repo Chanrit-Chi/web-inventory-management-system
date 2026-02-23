@@ -9,13 +9,19 @@ import {
 // Minimal fields for list views (faster, smaller payload)
 const selectVariantListFields = {
   id: true,
-  productId: true, // Required by type
+  productId: true,
   sku: true,
-  costPrice: true, // Required by type
+  costPrice: true,
   sellingPrice: true,
   stock: true,
+  isActive: true,
   reservedStock: true,
-  reorderLevel: true, // Required by type
+  reorderLevel: true,
+  _count: {
+    select: {
+      orderDetail: true,
+    },
+  },
   product: {
     select: {
       id: true,
@@ -53,8 +59,14 @@ const selectVariantDetailFields = {
   costPrice: true,
   sellingPrice: true,
   stock: true,
+  isActive: true,
   reservedStock: true,
   reorderLevel: true,
+  _count: {
+    select: {
+      orderDetail: true,
+    },
+  },
   product: {
     select: {
       id: true,
@@ -179,13 +191,17 @@ export const ProductVariantDbService = {
       };
     }
 
-    return await prisma.productVariant.findMany({
-      where,
-      select: selectVariantListFields,
-      orderBy: [{ product: { name: "asc" } }, { sku: "asc" }],
-      take: limit,
-      skip: skip,
-    });
+    return await prisma.productVariant
+      .findMany({
+        where,
+        select: selectVariantListFields,
+        orderBy: [{ product: { name: "asc" } }, { sku: "asc" }],
+        take: limit,
+        skip: skip,
+      })
+      .then((variants) =>
+        variants.map((v) => ({ ...v, salesCount: v._count.orderDetail })),
+      );
   },
 
   fetchVariantById: async (id: number): Promise<ProductVariant | null> => {
@@ -204,10 +220,24 @@ export const ProductVariantDbService = {
 
   fetchVariantsByProduct: async (
     productId: string,
+    page?: number,
+    limit?: number,
   ): Promise<ProductVariant[]> => {
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      return await prisma.productVariant.findMany({
+        where: { productId },
+        select: selectVariantListFields,
+        orderBy: { sku: "asc" },
+        skip,
+        take: limit,
+      });
+    }
+
     return await prisma.productVariant.findMany({
       where: { productId },
       select: selectVariantListFields,
+      orderBy: { sku: "asc" },
     });
   },
 

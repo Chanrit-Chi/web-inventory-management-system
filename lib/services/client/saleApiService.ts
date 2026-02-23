@@ -1,4 +1,5 @@
-import { OrderCreateSchema, OrderUpdateSchema } from "@/schemas/order.schema";
+import { OrderCreateSchema } from "@/schemas/order.schema";
+import { OrderWithDetailsUpdateSchema } from "@/schemas/complex.schema";
 import { Order, OrderWithDetails } from "@/schemas/type-export.schema";
 
 export const saleApiService = {
@@ -12,10 +13,15 @@ export const saleApiService = {
       totalPrice: validatedOrder.totalPrice.toNumber(),
       discountAmount: validatedOrder.discountAmount.toNumber(),
       taxAmount: validatedOrder.taxAmount.toNumber(),
-      orderDetails: sale.orderDetails.map((detail) => ({
-        ...detail,
-        unitPrice: detail.unitPrice.toNumber(),
-      })),
+      orderDetails: sale.orderDetails.map((detail) => {
+        const data: Record<string, unknown> = {
+          ...detail,
+        };
+        if (detail.unitPrice != null) {
+          data.unitPrice = detail.unitPrice.toNumber();
+        }
+        return data;
+      }),
     };
 
     const res = await fetch("/api/sales", {
@@ -28,7 +34,11 @@ export const saleApiService = {
       const errorData = await res
         .json()
         .catch(() => ({ error: "Failed to create sale" }));
-      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+      throw new Error(
+        errorData.details ||
+          errorData.error ||
+          `HTTP error! status: ${res.status}`,
+      );
     }
 
     return res.json();
@@ -38,7 +48,7 @@ export const saleApiService = {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    filters?: Record<string, string>
+    filters?: Record<string, string>,
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -77,17 +87,120 @@ export const saleApiService = {
 
   UpdateSale: async (
     id: number,
-    sale: OrderWithDetails
+    sale: OrderWithDetails,
   ): Promise<OrderWithDetails> => {
-    const validateSale = OrderUpdateSchema.parse(sale);
+    console.log("UpdateSale called with:", { id, sale });
+
+    // Transform orderDetails to ensure only required fields are included
+    const transformedSale = {
+      ...sale,
+      orderDetails: sale.orderDetails?.map((detail) => {
+        const data: Record<string, unknown> = {
+          productId: detail.productId,
+          variantId: detail.variantId,
+          quantity: detail.quantity,
+        };
+        if (detail.unitPrice != null) {
+          data.unitPrice = detail.unitPrice;
+        }
+        return data;
+      }),
+    };
+
+    console.log("Transformed sale:", transformedSale);
+
+    // Validate using the proper update schema that includes orderDetails
+    const validateSale = OrderWithDetailsUpdateSchema.parse({
+      ...transformedSale,
+      id,
+    });
+
+    console.log("Validated sale:", validateSale);
+
+    // Convert Decimal values to numbers for JSON serialization
+    const payload: Record<string, unknown> = {};
+
+    // Copy all fields from validated sale
+    Object.entries(validateSale).forEach(([key, value]) => {
+      if (value !== undefined) {
+        payload[key] = value;
+      }
+    });
+
+    // Handle Decimal conversions
+    if (
+      payload.totalPrice &&
+      typeof payload.totalPrice === "object" &&
+      "toNumber" in payload.totalPrice
+    ) {
+      payload.totalPrice = (
+        payload.totalPrice as { toNumber: () => number }
+      ).toNumber();
+    }
+    if (
+      payload.discountAmount &&
+      typeof payload.discountAmount === "object" &&
+      "toNumber" in payload.discountAmount
+    ) {
+      payload.discountAmount = (
+        payload.discountAmount as { toNumber: () => number }
+      ).toNumber();
+    }
+    if (
+      payload.taxAmount &&
+      typeof payload.taxAmount === "object" &&
+      "toNumber" in payload.taxAmount
+    ) {
+      payload.taxAmount = (
+        payload.taxAmount as { toNumber: () => number }
+      ).toNumber();
+    }
+    if (payload.orderDetails && Array.isArray(payload.orderDetails)) {
+      payload.orderDetails = payload.orderDetails.map(
+        (detail: {
+          unitPrice?: { toNumber?: () => number } | number;
+          [key: string]: unknown;
+        }) => {
+          let convertedUnitPrice = detail.unitPrice;
+          if (
+            detail.unitPrice &&
+            typeof detail.unitPrice === "object" &&
+            "toNumber" in detail.unitPrice
+          ) {
+            const toNumberFn = detail.unitPrice.toNumber;
+            if (toNumberFn) {
+              convertedUnitPrice = toNumberFn();
+            }
+          }
+          return {
+            ...detail,
+            unitPrice: convertedUnitPrice,
+          };
+        },
+      );
+    }
+
+    // Remove id from payload since it's in the URL
+    delete payload.id;
+
+    console.log("Sending update payload:", JSON.stringify(payload, null, 2));
+
     const res = await fetch(`/api/sales/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(validateSale),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      const errorBody = await res
+        .json()
+        .catch(() => ({ error: "Unknown error" }));
+      console.error("Server error response:", errorBody);
+      throw new Error(
+        errorBody.details ||
+          errorBody.error ||
+          `HTTP error! status: ${res.status}`,
+      );
     }
 
     return res.json();

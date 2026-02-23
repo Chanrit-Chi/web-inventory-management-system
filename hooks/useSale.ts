@@ -7,7 +7,7 @@ export const useGetSales = (
   page: number = 1,
   limit: number = 10,
   search?: string,
-  filters?: Record<string, string>
+  filters?: Record<string, string>,
 ) =>
   useQuery({
     queryKey: ["sales", page, limit, search, filters],
@@ -33,7 +33,10 @@ export const useSaleMutations = () => {
   });
 
   const updateSale = useMutation({
-    mutationFn: ({ id, ...data }: OrderUpdate) =>
+    mutationFn: ({
+      id,
+      ...data
+    }: OrderUpdate & { orderDetails?: OrderWithDetails["orderDetails"] }) =>
       saleApiService.UpdateSale(id, data as OrderWithDetails),
     onSuccess: (_, sale) => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });

@@ -1,17 +1,128 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, Printer, CheckCircle2, Edit, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { OrderWithRelations } from "@/schemas/type-export.schema";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  CompleteSaleDialog,
+  InvoiceDialog,
+  ViewSaleDialog,
+} from "./sale-dialogs";
+import { useSaleMutations } from "@/hooks/useSale";
+import { toast } from "sonner";
+
+// Actions Cell Component (needs hooks, so separate from column definition)
+function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
+  const router = useRouter();
+  const [viewOpen, setViewOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [shouldPrint, setShouldPrint] = useState(false);
+  const { updateSale } = useSaleMutations();
+
+  const handleMarkAsCompleted = (callbacks?: {
+    onSuccess?: () => void;
+    onError?: (err: Error) => void;
+  }) => {
+    updateSale.mutate(
+      { id: order.id, status: "COMPLETED" },
+      {
+        onSuccess: () => {
+          toast.success("Sale marked as completed");
+          callbacks?.onSuccess?.();
+        },
+        onError: (err: Error) => {
+          toast.error(err.message);
+          callbacks?.onError?.(err);
+        },
+      },
+    );
+  };
+
+  const handleOpenView = () => {
+    setShouldPrint(false);
+    setInvoiceOpen(true);
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-1">
+        {/* View Order */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 cursor-pointer"
+          onClick={() => setViewOpen(true)}
+          title="View Order"
+        >
+          <Eye className="h-4 w-4 text-sky-600" />
+        </Button>
+
+        {/* View Invoice */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-neutral-100"
+          onClick={handleOpenView}
+          title="View Invoice"
+        >
+          <Printer className="h-4 w-4" />
+        </Button>
+
+        {/* Edit Order */}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={order.status === "COMPLETED"}
+          className="h-8 w-8 p-0 cursor-pointer"
+          onClick={() => router.push(`/sales/edit/${order.id}`)}
+          title="Edit Order"
+        >
+          <Edit className="h-4 w-4 text-amber-600" />
+        </Button>
+
+        {/* Complete Sale */}
+        {order.status !== "COMPLETED" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+            onClick={() => setCompleteOpen(true)}
+            disabled={updateSale.isPending}
+            title="Mark as Completed"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/*Open Sale Dialog */}
+      <ViewSaleDialog open={viewOpen} onOpenChange={setViewOpen} sale={order} />
+      {/*Open Invoice Dialog */}
+      <InvoiceDialog
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        sale={order}
+        autoPrint={shouldPrint}
+      />
+      {/*Complete Sale Dialog */}
+      <CompleteSaleDialog
+        open={completeOpen}
+        onOpenChange={setCompleteOpen}
+        sale={order}
+        isLoading={updateSale.isPending}
+        onConfirm={() => {
+          handleMarkAsCompleted({
+            onSuccess: () => setCompleteOpen(false),
+          });
+        }}
+      />
+    </>
+  );
+}
 
 export const columns: ColumnDef<OrderWithRelations>[] = [
   {
@@ -31,6 +142,25 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
     },
     cell: ({ row }) => {
       return <div className="px-4">{row.index + 1}</div>;
+    },
+  },
+  {
+    accessorKey: "id",
+    header: ({ column }) => {
+      return (
+        <Button
+          size={undefined}
+          className="cursor-pointer"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "desc")}
+        >
+          Invoice No
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      return <div className="px-4">{row.original.id}</div>;
     },
   },
   {
@@ -154,32 +284,6 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0" size={undefined}>
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="">
-            <DropdownMenuLabel className="" inset={undefined}>
-              Actions
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className={""} />
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              Edit Order
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              View order
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" inset={undefined}>
-              View customer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => <ActionsCell order={row.original} />,
   },
 ];

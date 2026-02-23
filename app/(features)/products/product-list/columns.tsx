@@ -1,7 +1,14 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  CircleCheck,
+  CircleSlash,
+  Edit,
+  Eye,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,12 +50,14 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
             className="cursor-pointer"
             onClick={() => setViewOpen(true)}
           >
+            <Eye className="mr-2 h-4 w-4" />
             View Details
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => router.push(`/products/edit/${product.id}`)}
           >
+            <Edit className="mr-2 h-4 w-4" />
             Edit Product
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -56,9 +65,17 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
             className={`cursor-pointer ${product.isActive === "ACTIVE" ? "text-red-600" : "text-green-600"}`}
             onClick={() => setDeleteOpen(true)}
           >
-            {product.isActive === "ACTIVE"
-              ? "Deactivate Product"
-              : "Reactivate Product"}
+            {product.isActive === "ACTIVE" ? (
+              <>
+                <CircleSlash className="mr-2 h-4 w-4" />
+                Deactivate Product
+              </>
+            ) : (
+              <>
+                <CircleCheck className="mr-2 h-4 w-4" />
+                Reactivate Product
+              </>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -124,7 +141,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     },
     cell: ({ row }) => {
       return (
-        <div className="px-2 text-sm max-w-[100px] truncate">
+        <div className="px-2 text-sm max-w-25 truncate">
           {row.getValue("sku")}
         </div>
       );
@@ -156,14 +173,14 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
               height={40}
               src={product.image}
               alt={product.name}
-              className="w-8 h-8 rounded object-cover flex-shrink-0"
+              className="w-8 h-8 rounded object-cover shrink-0"
             />
           ) : (
-            <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center shrink-0">
               <span className="text-xs text-gray-500">img</span>
             </div>
           )}
-          <span className="text-sm truncate max-w-[150px]" title={product.name}>
+          <span className="text-sm truncate max-w-37.5" title={product.name}>
             {product.name}
           </span>
         </div>
@@ -189,7 +206,7 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     cell: ({ row }) => {
       return (
         <div
-          className="px-2 text-sm max-w-[120px] truncate"
+          className="px-2 text-sm max-w-30 truncate"
           title={row.original.category?.name}
         >
           {row.original.category?.name}

@@ -27,8 +27,11 @@ export const customerApiService = {
     return res.json();
   },
 
-  GetCustomers: async (): Promise<Customer[]> => {
-    const res = await fetch("/api/customers");
+  GetCustomers: async (phone?: string): Promise<Customer[]> => {
+    const url = phone
+      ? `/api/customers?phone=${encodeURIComponent(phone)}`
+      : "/api/customers";
+    const res = await fetch(url);
 
     if (!res.ok) {
       const errorData = await res

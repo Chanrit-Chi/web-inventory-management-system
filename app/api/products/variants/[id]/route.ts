@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 // GET /api/products/variants/[id] - Get variant by ID
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: idParam } = await params;
@@ -13,7 +13,7 @@ export async function GET(
     if (Number.isNaN(id)) {
       return NextResponse.json(
         { error: "Invalid variant ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function GET(
     console.error("Error fetching variant:", error);
     return NextResponse.json(
       { error: "Failed to fetch variant" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

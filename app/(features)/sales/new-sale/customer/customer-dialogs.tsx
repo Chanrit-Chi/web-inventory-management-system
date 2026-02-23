@@ -1,20 +1,36 @@
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import {
+  Plus,
+  UserCheck,
+  Phone,
+  Mail,
+  User as UserIcon,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   Customer,
   CustomerCreate,
   CustomerUpdate,
 } from "@/schemas/type-export.schema";
-import { toast } from "sonner";
 
 import {
+  BaseDialog,
   ConfirmDialog,
   FormDialog,
   ViewDialog,
 } from "@/components/dialog-template";
-import { useCustomerMutations, useGetCustomerById } from "@/hooks/useCustomer";
 import {
-  CustomerCreateSchema,
-  CustomerUpdateSchema,
-} from "@/schemas/customer.schema";
+  useCustomerMutations,
+  useGetCustomers,
+  useGetCustomerById,
+} from "@/hooks/useCustomer";
+import { CustomerUpdateSchema } from "@/schemas/customer.schema";
+import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 // Create Customer Dialog
 export function CreateCustomerDialog({
@@ -26,9 +42,49 @@ export function CreateCustomerDialog({
   readonly onOpenChange: (open: boolean) => void;
   readonly onSuccess?: (customer: Customer) => void;
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
   const { addCustomer } = useCustomerMutations();
 
-  const handleSubmit = async (data: CustomerCreate) => {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    reset,
+  } = useForm<CustomerCreate>({
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+    },
+  });
+
+  const phoneNumber = useWatch({ control, name: "phone" }) || "";
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    isFetched,
+  } = useGetCustomers(searchQuery.length >= 9 ? searchQuery : undefined);
+
+  const existingCustomer = searchResults?.[0];
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      reset();
+      setSearchQuery("");
+    }
+    onOpenChange(newOpen);
+  };
+
+  const handleCheckPhone = () => {
+    if (phoneNumber.length < 9) {
+      toast.error("Please enter at least 9 digits to check");
+      return;
+    }
+    setSearchQuery(phoneNumber);
+  };
+
+  const onAddCustomer = async (data: CustomerCreate) => {
     try {
       const newCustomer = await addCustomer.mutateAsync(data);
       toast.success("Customer created successfully");
@@ -40,40 +96,154 @@ export function CreateCustomerDialog({
     }
   };
 
+  const handleSelectExisting = () => {
+    if (existingCustomer) {
+      onSuccess?.(existingCustomer);
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <FormDialog<typeof CustomerCreateSchema>
+    <BaseDialog
       open={open}
-      onOpenChange={onOpenChange}
-      title="Create Customer"
-      description="Add a new customer to your inventory"
-      schema={CustomerCreateSchema}
-      fields={[
-        {
-          name: "name",
-          label: "Name",
-          placeholder: "Enter customer name",
-          required: true,
-        },
-        {
-          name: "email",
-          label: "Email",
-          placeholder: "Enter customer email",
-        },
-        {
-          name: "phone",
-          label: "Phone",
-          placeholder: "Enter customer phone",
-        },
-      ]}
-      defaultValues={{
-        name: "",
-        email: "",
-        phone: "",
-      }}
-      onSubmit={handleSubmit}
-      submitLabel="Create"
-      isSubmitting={addCustomer.isPending}
-    />
+      onOpenChange={handleOpenChange}
+      title="Add Customer"
+      description="Enter phone number to check existence"
+      className="sm:max-w-112.5"
+    >
+      <div className="space-y-6 py-4">
+        {/* Phone Search Section */}
+        <div className="space-y-2">
+          <Label htmlFor="search-phone">Phone Number</Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="search-phone"
+                placeholder="091xxx..."
+                className="pl-9"
+                {...register("phone")}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCheckPhone}
+              disabled={isSearching}
+            >
+              {isSearching ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <Search className="h-4 w-4 mr-2" />
+              )}
+              Check
+            </Button>
+          </div>
+        </div>
+
+        {/* Results Section */}
+        {isFetched && searchQuery && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            {existingCustomer ? (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3 font-outfit">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-primary">
+                      Found Existing Record
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleSelectExisting}
+                    className="gap-2 shadow-sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Select
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Name</p>
+                    <p className="font-medium">{existingCustomer.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Email</p>
+                    <p className="font-medium">
+                      {existingCustomer.email || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit(onAddCustomer)}
+                className="space-y-4 pt-2 border-t"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-amber-600 mb-2">
+                  <Plus className="h-4 w-4" />
+                  No customer found. Create new?
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      placeholder="John Doe"
+                      className="pl-9"
+                      {...register("name")}
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-xs text-red-500">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      className="pl-9"
+                      {...register("email")}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-xs text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={addCustomer.isPending}
+                  >
+                    {addCustomer.isPending ? (
+                      <Spinner className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    Create New Customer
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+      </div>
+    </BaseDialog>
   );
 }
 

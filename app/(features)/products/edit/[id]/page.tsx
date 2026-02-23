@@ -18,7 +18,7 @@ export default function EditProductPage() {
   if (isLoading) {
     return (
       <SharedLayout>
-        <div className="flex h-[400px] w-full items-center justify-center">
+        <div className="flex h-100 w-full items-center justify-center">
           <Spinner className="h-8 w-8" />
         </div>
       </SharedLayout>

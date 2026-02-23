@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 // GET /api/products/variants/sku/[sku] - Get variant by SKU
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ sku: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ sku: string }> },
 ) {
   try {
     const { sku } = await params;
@@ -19,7 +19,7 @@ export async function GET(
     console.error("Error fetching variant by SKU:", error);
     return NextResponse.json(
       { error: "Failed to fetch variant" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -61,12 +61,12 @@ const data = {
           url: "/sales/new-sale",
         },
         {
-          title: "Invoice",
+          title: "Invoices",
           url: "/sales/invoice",
         },
         {
-          title: "Quotation",
-          url: "/sales/quotation",
+          title: "Quotations",
+          url: "/sales/quotations",
         },
         {
           title: "POS",

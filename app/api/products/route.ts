@@ -45,14 +45,12 @@ export async function POST(request: Request) {
     const data = await request.json();
     const { productData, attributeSelections } = data;
     console.log("Received product data:", JSON.stringify(productData, null, 2));
-    const product = await productDbService.createProductWithVariants(
-      productData,
-      attributeSelections,
-    );
+    const product =
+      await productDbService.createProductWithVariants(productData);
     return NextResponse.json(product);
   } catch (error: any) {
     console.error("Error creating product:", error);
-    
+
     if (error.code === "P2002" && error.meta?.target) {
       const target = error.meta.target;
       return NextResponse.json(

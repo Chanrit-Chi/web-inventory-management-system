@@ -212,7 +212,7 @@ export function DataTable<TData, TValue>({
   const hasActiveFilters = searchInput || Object.keys(filterValues).length > 0;
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
       {(showSearch || showAddNew || filterConfigs.length > 0) && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-2 gap-2 mb-1">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
@@ -284,7 +284,10 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-x-auto rounded-md border">
+      <div
+        className="flex-1 min-h-0 overflow-x-auto rounded-md border"
+        style={{ overflowY: "auto", maxHeight: "65vh" }}
+      >
         <Table className="w-full">
           <TableHeader className="bg-primary/10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -318,12 +321,12 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="h-12"
+                  className="h-8"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="py-2 px-2"
+                      className="py-1 px-2"
                       style={{
                         width: cell.column.columnDef.size
                           ? `${cell.column.columnDef.size}px`
@@ -351,9 +354,8 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
       {showPagination && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 mt-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 mt-1 sticky bottom-0 bg-background border-t">
           <div className="text-sm text-muted-foreground text-center sm:text-left">
             {isServerSidePagination ? (
               <>

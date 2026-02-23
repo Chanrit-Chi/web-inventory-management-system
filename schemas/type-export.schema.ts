@@ -5,6 +5,20 @@ import {
   ProductUpdateSchema,
 } from "./product.schema";
 import {
+  StockMovementCreateSchema,
+  StockMovementSchema,
+  batchAdjustmentSchema,
+} from "./stock-movement.schema";
+
+export {
+  ProductCreateSchema,
+  ProductSchema,
+  ProductUpdateSchema,
+  StockMovementCreateSchema,
+  StockMovementSchema,
+  batchAdjustmentSchema,
+};
+import {
   SupplierCreateSchema,
   SupplierSchema,
   SupplierUpdateSchema,
@@ -22,13 +36,16 @@ import {
 import {
   InvoiceWithItemsSchema,
   OrderWithDetailsSchema,
+  OrderWithDetailsUpdateSchema,
   OrderWithRelationsSchema,
   ProductAttributeWithValuesSchema,
   ProductVariantWithAttributesSchema,
   PurchaseOrderWithDetailsSchema,
   QuotationWithItemsSchema,
+  StockMovementWithRelationsSchema,
   VariantWithAttributeLinksSchema,
 } from "./complex.schema";
+import { OrderDetailWithProductSchema } from "./order-details.schema";
 import { InvoiceCreateSchema, InvoiceSchema } from "./invoice.schema";
 import { QuotationCreateSchema, QuotationSchema } from "./quotation.schema";
 import {
@@ -126,7 +143,13 @@ export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
 export type Order = z.infer<typeof OrderSchema>;
 export type OrderCreate = z.infer<typeof OrderCreateSchema>;
 export type OrderWithDetails = z.infer<typeof OrderWithDetailsSchema>;
+export type OrderWithDetailsUpdate = z.infer<
+  typeof OrderWithDetailsUpdateSchema
+>;
 export type OrderWithRelations = z.infer<typeof OrderWithRelationsSchema>;
+export type OrderDetailWithProduct = z.infer<
+  typeof OrderDetailWithProductSchema
+>;
 export type OrderUpdate = z.infer<typeof OrderUpdateSchema>;
 
 export type Invoice = z.infer<typeof InvoiceSchema>;
@@ -146,6 +169,12 @@ export type PurchaseOrderWithDetails = z.infer<
 export type Unit = z.infer<typeof UnitSchema>;
 export type UnitCreate = z.infer<typeof UnitCreateSchema>;
 export type UnitUpdate = z.infer<typeof UnitUpdateSchema>;
+export type StockMovement = z.infer<typeof StockMovementSchema>;
+export type StockMovementWithRelations = z.infer<
+  typeof StockMovementWithRelationsSchema
+>;
+export type StockMovementCreate = z.infer<typeof StockMovementCreateSchema>;
+export type BatchAdjustmentValues = z.infer<typeof batchAdjustmentSchema>;
 
 export interface AttributeSelection {
   attributeId: number;

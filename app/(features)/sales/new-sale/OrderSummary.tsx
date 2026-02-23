@@ -15,6 +15,7 @@ interface OrderSummaryProps {
   onSubmit: () => void;
   isValid: boolean;
   isPending: boolean;
+  ctaLabel?: string;
 }
 
 export const OrderSummary = ({
@@ -29,6 +30,7 @@ export const OrderSummary = ({
   onSubmit,
   isValid,
   isPending,
+  ctaLabel = "Complete Sale",
 }: OrderSummaryProps) => {
   return (
     <div className="bg-card text-card-foreground border rounded-lg shadow p-6 sticky top-6">
@@ -94,7 +96,7 @@ export const OrderSummary = ({
             Completing Sale...
           </>
         ) : (
-          "Complete Sale"
+          ctaLabel
         )}
       </Button>
 

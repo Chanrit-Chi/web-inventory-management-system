@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
 import { columns } from "./columns";
 import { SharedLayout } from "@/components/shared-layout";
-import { RefreshCcw } from "lucide-react";
+import { BanknoteArrowDown, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -53,8 +53,11 @@ function Sale() {
   };
 
   return (
-    <div className="w-full px-4 md:px-6 py-3">
-      <h1 className="text-2xl font-bold">Sales</h1>
+    <div className="w-full px-2 md:px-3 py-3">
+      <div className="flex gap-2 items-center">
+        <BanknoteArrowDown className="size-6 text-green-500" />
+        <h1 className="text-2xl font-bold">Sales</h1>
+      </div>
       <div className="flex justify-end items-center gap-2">
         <Button className="btn btn-primary">XLSX</Button>
         <Button

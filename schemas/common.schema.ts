@@ -2,7 +2,7 @@ import { z } from "zod";
 import Decimal from "decimal.js";
 
 // Prisma Decimal → maintain precision with Decimal.js
-export const moneySchema = z
+export const baseMoneySchema = z
   .union([z.number(), z.string(), z.instanceof(Decimal)])
   .refine((val) => {
     try {
@@ -12,8 +12,9 @@ export const moneySchema = z
       return false;
     }
   }, "Value must be a valid non-negative number")
-  .transform((val) => (val instanceof Decimal ? val : new Decimal(val)))
-  .default(new Decimal(0));
+  .transform((val) => (val instanceof Decimal ? val : new Decimal(val)));
+
+export const moneySchema = baseMoneySchema.default(new Decimal(0));
 
 export const cuidSchema = z.string().min(10);
 export const uuidSchema = z.uuid();

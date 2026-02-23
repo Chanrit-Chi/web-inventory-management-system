@@ -15,6 +15,15 @@ export const customerService = {
     });
   },
 
+  getCustomerByPhone: async (phone: string): Promise<Customer | null> => {
+    return prisma.customer.findFirst({
+      where: { phone },
+      include: {
+        orders: true,
+      },
+    });
+  },
+
   createCustomer: async (data: CustomerCreate): Promise<Customer> => {
     return prisma.customer.create({
       data,
@@ -32,7 +41,7 @@ export const customerService = {
 
   updateCustomer: async (
     id: string,
-    data: CustomerUpdate
+    data: CustomerUpdate,
   ): Promise<Customer> => {
     return prisma.customer.update({
       where: { id },

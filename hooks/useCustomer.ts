@@ -1,12 +1,12 @@
 import { customerApiService } from "@/lib/services/client/customerApiService";
-import { CustomerCreate, CustomerUpdate } from "@/schemas/type-export.schema";
+import { CustomerUpdate } from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Query hooks
-export const useGetCustomers = () =>
+export const useGetCustomers = (phone?: string) =>
   useQuery({
-    queryKey: ["customers"],
-    queryFn: customerApiService.GetCustomers,
+    queryKey: ["customers", phone],
+    queryFn: () => customerApiService.GetCustomers(phone),
   });
 
 export const useGetCustomerById = (id: string) =>

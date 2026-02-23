@@ -21,4 +21,5 @@ export const QuotationStatusEnum = z.enum([
   "ACCEPTED",
   "REJECTED",
   "EXPIRED",
+  "CONVERTED",
 ]);

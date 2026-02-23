@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { Trash2 } from "lucide-react";
 
-interface SaleOrderDetail {
+export interface SaleOrderDetail {
   productId: string;
   variantId: number;
   productName: string;
