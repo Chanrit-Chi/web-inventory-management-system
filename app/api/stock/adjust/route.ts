@@ -1,6 +1,7 @@
 import { stockService } from "@/lib/services/db/stockDbService";
 import { NextResponse } from "next/server";
 import { StockMovementType } from "@prisma/client";
+import { getServerSession } from "@/lib/getServerSession";
 
 export async function GET(request: Request) {
   try {
@@ -34,8 +35,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession();
+    const createdBy = session?.user?.name ?? undefined;
+
     const body = await request.json();
-    const { variantId, movementType, quantity, reason, createdBy } = body;
+    const { variantId, movementType, quantity, reason } = body;
 
     if (!variantId || !movementType || quantity === undefined) {
       return NextResponse.json(

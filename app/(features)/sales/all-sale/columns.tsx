@@ -149,7 +149,6 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
     header: ({ column }) => {
       return (
         <Button
-          size={undefined}
           className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "desc")}
@@ -168,7 +167,6 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
     header: ({ column }) => {
       return (
         <Button
-          size={undefined}
           className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}

@@ -6,6 +6,15 @@ import ChartBarStacked from "@/components/admin/sale-statistic-chart";
 import { SharedLayout } from "@/components/shared-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";
+import Link from "next/link";
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  Layers,
+  FileText,
+  Receipt,
+} from "lucide-react";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -34,64 +43,76 @@ export default function DashboardPage() {
 
         <ChartBarStacked />
 
-        {/* Admin Controls & System Overview */}
-        <div className="bg-muted/50 min-h-125 flex-1 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">System Administration</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">User Management</h4>
-              <p className="text-sm text-muted-foreground">
-                Manage users and roles
-              </p>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">Product Catalog</h4>
-              <p className="text-sm text-muted-foreground">
-                Manage products and inventory
-              </p>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">Sales Reports</h4>
-              <p className="text-sm text-muted-foreground">
-                View detailed analytics
-              </p>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">System Settings</h4>
-              <p className="text-sm text-muted-foreground">
-                Configure system preferences
-              </p>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">Backup & Security</h4>
-              <p className="text-sm text-muted-foreground">
-                System maintenance
-              </p>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border">
-              <h4 className="font-medium">Audit Logs</h4>
-              <p className="text-sm text-muted-foreground">
-                View system activity
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="font-medium mb-4">Recent System Activity</h4>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div>• User john.doe logged in - 2 minutes ago</div>
-              <div>• New product added: Widget Pro - 15 minutes ago</div>
-              <div>• Sale order #ORD-001 completed - 23 minutes ago</div>
-              <div>• Database backup completed - 1 hour ago</div>
-            </div>
+        {/* Quick Actions */}
+        <div className="bg-muted/50 rounded-xl p-6">
+          <h3 className="text-lg font-semibold mb-5">Quick Actions</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                label: "User Management",
+                description: "Manage users and roles",
+                icon: Users,
+                href: "/users/management",
+                color: "text-blue-600",
+                bg: "bg-blue-50 dark:bg-blue-950/40",
+              },
+              {
+                label: "Product Catalog",
+                description: "Browse and manage products",
+                icon: Package,
+                href: "/products",
+                color: "text-emerald-600",
+                bg: "bg-emerald-50 dark:bg-emerald-950/40",
+              },
+              {
+                label: "All Sales",
+                description: "View and manage all orders",
+                icon: ShoppingCart,
+                href: "/sales/all-sale",
+                color: "text-orange-600",
+                bg: "bg-orange-50 dark:bg-orange-950/40",
+              },
+              {
+                label: "Stock",
+                description: "Adjust and track inventory",
+                icon: Layers,
+                href: "/stock/adjust",
+                color: "text-purple-600",
+                bg: "bg-purple-50 dark:bg-purple-950/40",
+              },
+              {
+                label: "Quotations",
+                description: "Review customer quotations",
+                icon: FileText,
+                href: "/sales/quotations",
+                color: "text-sky-600",
+                bg: "bg-sky-50 dark:bg-sky-950/40",
+              },
+              {
+                label: "Invoices",
+                description: "View and export invoices",
+                icon: Receipt,
+                href: "/sales/invoice",
+                color: "text-rose-600",
+                bg: "bg-rose-50 dark:bg-rose-950/40",
+              },
+            ].map(({ label, description, icon: Icon, href, color, bg }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:shadow-md hover:border-primary/30 transition-all group"
+              >
+                <div className={`p-2.5 rounded-lg ${bg}`}>
+                  <Icon className={`size-5 ${color}`} />
+                </div>
+                <div>
+                  <p className="font-medium group-hover:text-primary transition-colors">
+                    {label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

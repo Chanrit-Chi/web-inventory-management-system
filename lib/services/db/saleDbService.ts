@@ -124,7 +124,8 @@ async function adjustInventory(
       }
 
       const previousStock = variant.stock;
-      const newStock = previousStock - delta;
+      const actualChange = -delta; // delta > 0 for sale (subtract), delta < 0 for return (add)
+      const newStock = previousStock + actualChange;
 
       // Update stock
       await tx.productVariant.update({
@@ -137,7 +138,7 @@ async function adjustInventory(
         data: {
           variantId: vId,
           movementType: delta > 0 ? "SALE" : "RETURN",
-          quantity: Math.abs(delta),
+          quantity: actualChange,
           previousStock,
           newStock,
           orderId,

@@ -109,8 +109,8 @@ const data = {
         },
 
         {
-          title: "Product Variant",
-          url: "/products/variant",
+          title: "Units",
+          url: "/products/unit",
         },
         {
           title: "Barcode",

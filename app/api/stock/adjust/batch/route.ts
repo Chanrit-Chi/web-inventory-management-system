@@ -1,8 +1,16 @@
 import { stockService } from "@/lib/services/db/stockDbService";
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/getServerSession";
+
+type AdjustmentInput = Parameters<
+  typeof stockService.batchAdjustStock
+>[0][number];
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession();
+    const createdBy = session?.user?.name ?? undefined;
+
     const { adjustments } = await request.json();
 
     if (!Array.isArray(adjustments) || adjustments.length === 0) {
@@ -12,7 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const results = await stockService.batchAdjustStock(adjustments);
+    const adjustmentsWithUser = (adjustments as AdjustmentInput[]).map(
+      (adj) => ({ ...adj, createdBy }),
+    );
+
+    const results = await stockService.batchAdjustStock(adjustmentsWithUser);
 
     return NextResponse.json({
       message: `Successfully adjusted ${results.length} items`,

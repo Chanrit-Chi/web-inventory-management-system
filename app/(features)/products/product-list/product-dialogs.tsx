@@ -19,6 +19,7 @@ import {
   XCircle,
   BarChart3,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 import { ConfirmDialog, ViewDialog } from "@/components/dialog-template";
 
@@ -319,6 +320,106 @@ function ProductDateDisplay({ date }: { readonly date: string | Date }) {
   );
 }
 
+function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
+  const variants = product.variants ?? [];
+
+  if (variants.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground italic text-center py-4 border rounded-lg">
+        No variants found
+      </div>
+    );
+  }
+
+  const fmt = (val: number | string | null | undefined) =>
+    val == null
+      ? "—"
+      : `$${Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              Variant
+            </th>
+            <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              SKU
+            </th>
+            <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              Stock
+            </th>
+            <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              Cost
+            </th>
+            <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              Selling
+            </th>
+            <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+              Status
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {variants.map((v) => {
+            const attrs =
+              v.attributes
+                ?.map((a) => a.value?.value)
+                .filter(Boolean)
+                .join(" / ") || "Default";
+            const isLow = (v.stock ?? 0) < 10;
+
+            return (
+              <tr key={v.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-3 py-2 font-medium text-slate-800">
+                  {attrs}
+                </td>
+                <td className="px-3 py-2 font-mono text-xs text-slate-500">
+                  {v.sku}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <span
+                    className={`font-semibold ${isLow ? "text-red-600" : "text-slate-800"}`}
+                  >
+                    {v.stock ?? 0}
+                  </span>
+                  {isLow && (
+                    <span className="ml-1 text-[10px] text-red-500">low</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right text-slate-600">
+                  {fmt(v.costPrice as unknown as number)}
+                </td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-800">
+                  {fmt(v.sellingPrice as unknown as number)}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  {v.isActive ? (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-green-50 text-green-700 border-green-200"
+                    >
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-red-50 text-red-700 border-red-200"
+                    >
+                      Inactive
+                    </Badge>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 const VIEW_PRODUCT_FIELDS = [
   {
     label: "",
@@ -397,31 +498,8 @@ const VIEW_PRODUCT_FIELDS = [
     ),
   },
   {
-    label: "Variant Summary",
-    value: (prod: ProductWithVariants) => {
-      const activeVariants =
-        prod.variants?.filter((v) => v.isActive).length || 0;
-      return (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-            <p className="text-xs text-slate-600 font-medium mb-1">
-              Total Variants
-            </p>
-            <p className="text-xl font-bold text-slate-900">
-              {prod.variants?.length || 0}
-            </p>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-            <p className="text-xs text-emerald-600 font-medium mb-1">
-              Active Variants
-            </p>
-            <p className="text-xl font-bold text-emerald-900">
-              {activeVariants}
-            </p>
-          </div>
-        </div>
-      );
-    },
+    label: "Variants",
+    value: (prod: ProductWithVariants) => <VariantsTable product={prod} />,
   },
   {
     label: "Stock Overview",

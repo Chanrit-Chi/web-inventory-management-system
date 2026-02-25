@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { Search, Package, CheckCircle2 } from "lucide-react";
 import { useGetProducts } from "@/hooks/useProduct";
 import { useAdjustStock } from "@/hooks/useStock";
@@ -77,6 +78,11 @@ export function StockAdjustmentDialog({
   const [selectedVariant, setSelectedVariant] = useState<
     ProductSearchResult["variants"][0] | null
   >(null);
+  const [pendingProduct, setPendingProduct] =
+    useState<ProductSearchResult | null>(null);
+  const [pendingVariant, setPendingVariant] = useState<
+    ProductSearchResult["variants"][0] | null
+  >(null);
 
   const { data: searchResponse, isLoading: isSearching } = useGetProducts(
     1,
@@ -91,7 +97,7 @@ export function StockAdjustmentDialog({
     resolver: zodResolver(adjustmentSchema),
     defaultValues: {
       movementType: "ADJUSTMENT",
-      action: "subtract",
+      action: "add",
       quantity: 1,
       reason: "",
     },
@@ -117,6 +123,8 @@ export function StockAdjustmentDialog({
     setSelectedProduct(null);
     setSelectedVariant(null);
     setSearchQuery("");
+    setPendingProduct(null);
+    setPendingVariant(null);
   };
 
   const handleSelectVariant = (
@@ -160,30 +168,45 @@ export function StockAdjustmentDialog({
             </div>
           </div>
           <div className="grid grid-cols-1 gap-1">
-            {product.variants.map((variant) => (
-              <button
-                key={variant.id}
-                onClick={() => handleSelectVariant(product, variant)}
-                className="flex items-center justify-between p-2 hover:bg-accent rounded-md text-sm text-left group"
-              >
-                <div className="flex flex-col">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    SKU: {variant.sku}
-                  </span>
-                  <span>
-                    {variant.attributes
-                      ?.map((a) => a.value?.value)
-                      .join(" / ") || "Default Variant"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-muted px-1.5 rounded">
-                    Stock: {variant.stock}
-                  </span>
-                  <CheckCircle2 className="size-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </button>
-            ))}
+            {product.variants.map((variant) => {
+              const isPending =
+                pendingProduct?.id === product.id &&
+                pendingVariant?.id === variant.id;
+              return (
+                <button
+                  key={variant.id}
+                  onClick={() => {
+                    setPendingProduct(product);
+                    setPendingVariant(variant);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between p-2 hover:bg-accent rounded-md text-sm text-left group",
+                    isPending && "bg-primary/10 border border-primary/30",
+                  )}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      SKU: {variant.sku}
+                    </span>
+                    <span>
+                      {variant.attributes
+                        ?.map((a) => a.value?.value)
+                        .join(" / ") || "Default Variant"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-muted px-1.5 rounded">
+                      Stock: {variant.stock}
+                    </span>
+                    {isPending ? (
+                      <CheckCircle2 className="size-4 text-primary" />
+                    ) : (
+                      <CheckCircle2 className="size-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       ));
@@ -287,6 +310,33 @@ export function StockAdjustmentDialog({
               <div className="max-h-75 overflow-y-auto border rounded-md divide-y">
                 {renderSearchResults()}
               </div>
+
+              {pendingVariant && (
+                <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+                  <div className="text-xs">
+                    <span className="font-semibold">
+                      {pendingProduct?.name}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      — {pendingVariant.sku}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (pendingProduct && pendingVariant) {
+                        handleSelectVariant(pendingProduct, pendingVariant);
+                        setPendingProduct(null);
+                        setPendingVariant(null);
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -333,7 +383,7 @@ export function StockAdjustmentDialog({
                         <FormLabel>Action</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue="add"
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>

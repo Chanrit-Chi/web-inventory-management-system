@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Search,
   Package,
@@ -75,6 +76,12 @@ function ProductSelectionDialog({
   selectedVariantIds,
 }: Readonly<ProductSelectionDialogProps>) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [pendingVariants, setPendingVariants] = useState<
+    Array<{
+      product: ProductSearchResult;
+      variant: ProductSearchResult["variants"][0];
+    }>
+  >([]);
 
   const { data: searchResponse, isLoading: isSearching } = useGetProducts(
     1,
@@ -82,6 +89,53 @@ function ProductSelectionDialog({
     searchQuery || undefined,
     { isActive: "true" },
   );
+
+  const handleOpenChange = (val: boolean) => {
+    if (!val) setPendingVariants([]);
+    onOpenChange(val);
+  };
+
+  const isVariantPending = (variantId: number) =>
+    pendingVariants.some((p) => p.variant.id === variantId);
+
+  const toggleVariant = (
+    product: ProductSearchResult,
+    variant: ProductSearchResult["variants"][0],
+  ) => {
+    if (selectedVariantIds.includes(variant.id)) return;
+    if (isVariantPending(variant.id)) {
+      setPendingVariants((prev) =>
+        prev.filter((p) => p.variant.id !== variant.id),
+      );
+    } else {
+      setPendingVariants((prev) => [...prev, { product, variant }]);
+    }
+  };
+
+  const toggleAllVariants = (product: ProductSearchResult) => {
+    const available = product.variants.filter(
+      (v) => !selectedVariantIds.includes(v.id),
+    );
+    const allPending = available.every((v) => isVariantPending(v.id));
+    if (allPending) {
+      setPendingVariants((prev) =>
+        prev.filter((p) => !available.some((v) => v.id === p.variant.id)),
+      );
+    } else {
+      const toAdd = available
+        .filter((v) => !isVariantPending(v.id))
+        .map((v) => ({ product, variant: v }));
+      setPendingVariants((prev) => [...prev, ...toAdd]);
+    }
+  };
+
+  const handleConfirm = () => {
+    pendingVariants.forEach(({ product, variant }) =>
+      onSelect(product, variant),
+    );
+    setPendingVariants([]);
+    onOpenChange(false);
+  };
 
   const renderProductList = () => {
     if (isSearching) {
@@ -93,64 +147,113 @@ function ProductSelectionDialog({
     }
 
     if (searchResponse?.data?.length) {
-      return (searchResponse.data as ProductSearchResult[]).map((product) => (
-        <div key={product.id} className="p-2 space-y-1">
-          <div className="flex items-center gap-2 px-2 py-1">
-            {product.image ? (
-              <div className="size-6 relative rounded overflow-hidden border">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
+      return (searchResponse.data as ProductSearchResult[]).map((product) => {
+        const totalVariants = product.variants.length;
+        const addedCount = product.variants.filter((v) =>
+          selectedVariantIds.includes(v.id),
+        ).length;
+        const available = product.variants.filter(
+          (v) => !selectedVariantIds.includes(v.id),
+        );
+        const pendingCount = available.filter((v) =>
+          isVariantPending(v.id),
+        ).length;
+        const allAvailablePending =
+          available.length > 0 &&
+          available.every((v) => isVariantPending(v.id));
+        const someSelected =
+          (addedCount > 0 || pendingCount > 0) &&
+          addedCount + pendingCount < totalVariants;
+
+        return (
+          <div key={product.id} className="p-2 space-y-1">
+            <div className="flex items-center gap-2 px-2 py-1">
+              {/* Product-level checkbox */}
+              <input
+                type="checkbox"
+                ref={(el) => {
+                  if (el)
+                    el.indeterminate = someSelected && !allAvailablePending;
+                }}
+                checked={allAvailablePending || addedCount === totalVariants}
+                onChange={() => toggleAllVariants(product)}
+                disabled={addedCount === totalVariants}
+                title={
+                  addedCount === totalVariants
+                    ? "All variants already added"
+                    : "Select all variants"
+                }
+                className="size-3.5 cursor-pointer accent-primary disabled:cursor-default"
+              />
+              {product.image ? (
+                <div className="size-6 relative rounded overflow-hidden border">
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="size-6 rounded bg-muted flex items-center justify-center border">
+                  <Package className="size-3 text-muted-foreground" />
+                </div>
+              )}
+              <div className="font-semibold text-xs text-primary flex-1">
+                {product.name}
               </div>
-            ) : (
-              <div className="size-6 rounded bg-muted flex items-center justify-center border">
-                <Package className="size-3 text-muted-foreground" />
-              </div>
-            )}
-            <div className="font-semibold text-xs text-primary">
-              {product.name}
+              {(addedCount > 0 || pendingCount > 0) && (
+                <span className="text-[10px] text-muted-foreground">
+                  {addedCount + pendingCount}/{totalVariants}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {product.variants.map((variant) => {
+                const isAdded = selectedVariantIds.includes(variant.id);
+                const isPending = isVariantPending(variant.id);
+                return (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    onClick={() => toggleVariant(product, variant)}
+                    disabled={isAdded}
+                    className={cn(
+                      "flex items-center justify-between p-2 hover:bg-accent rounded-md text-sm text-left group disabled:opacity-50",
+                      isPending && "bg-primary/10 border border-primary/30",
+                    )}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        SKU: {variant.sku}
+                      </span>
+                      <span>
+                        {variant.attributes
+                          ?.map((a) => a.value?.value)
+                          .join(" / ") || "Default"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-muted px-1.5 rounded">
+                        Stock: {variant.stock}
+                      </span>
+                      {isAdded && (
+                        <CheckCircle2 className="size-4 text-green-500" />
+                      )}
+                      {!isAdded && isPending && (
+                        <CheckCircle2 className="size-4 text-primary" />
+                      )}
+                      {!isAdded && !isPending && (
+                        <PlusCircle className="size-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-1">
-            {product.variants.map((variant) => {
-              const itemIsSelected = selectedVariantIds.includes(variant.id);
-              return (
-                <button
-                  key={variant.id}
-                  type="button"
-                  onClick={() => onSelect(product, variant)}
-                  disabled={itemIsSelected}
-                  className="flex items-center justify-between p-2 hover:bg-accent rounded-md text-sm text-left group disabled:opacity-50"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      SKU: {variant.sku}
-                    </span>
-                    <span>
-                      {variant.attributes
-                        ?.map((a) => a.value?.value)
-                        .join(" / ") || "Default"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-muted px-1.5 rounded">
-                      Stock: {variant.stock}
-                    </span>
-                    {itemIsSelected ? (
-                      <CheckCircle2 className="size-4 text-green-500" />
-                    ) : (
-                      <PlusCircle className="size-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ));
+        );
+      });
     }
 
     if (searchQuery) {
@@ -168,8 +271,13 @@ function ProductSelectionDialog({
     );
   };
 
+  const pendingCount = pendingVariants.length;
+  const itemWord = pendingCount === 1 ? "Item" : "Items";
+  const addButtonLabel =
+    pendingCount === 0 ? "Add Items" : `Add ${pendingCount} ${itemWord}`;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0"
         onPointerDownOutside={(e) => e.preventDefault()}
@@ -194,8 +302,13 @@ function ProductSelectionDialog({
             {renderProductList()}
           </div>
         </div>
-        <DialogFooter className="p-6 pt-0">
-          <Button onClick={() => onOpenChange(false)}>Done</Button>
+        <DialogFooter className="p-6 pt-0 gap-2">
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} disabled={pendingCount === 0}>
+            {addButtonLabel}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
