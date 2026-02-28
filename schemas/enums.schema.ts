@@ -23,3 +23,5 @@ export const QuotationStatusEnum = z.enum([
   "EXPIRED",
   "CONVERTED",
 ]);
+
+export const AttributeTypeEnum = z.enum(["SELECT", "COLOR", "TEXT"]);

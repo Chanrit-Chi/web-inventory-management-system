@@ -3,7 +3,7 @@ import { positiveInt, moneySchema } from "./common.schema";
 
 export const ProductVariantSchema = z.object({
   id: z.number().int().optional(),
-  productId: z.string(),
+  productId: z.string().optional(),
   sku: z.string().min(1, "Variant name is required"),
   costPrice: moneySchema,
   sellingPrice: moneySchema,
@@ -15,19 +15,29 @@ export const ProductVariantSchema = z.object({
   reorderLevel: positiveInt
     .min(0, "Reorder level cannot be negative")
     .default(0),
-  _count: z.object({
-    orderDetail: z.number().int().default(0),
-  }),
+  _count: z
+    .object({
+      orderDetail: z.number().int().default(0),
+    })
+    .optional(),
   attributes: z
     .array(
       z.object({
         valueId: z.number(),
-        value: z.object({
-          value: z.string(),
-          attribute: z.object({
-            name: z.string(),
-          }),
-        }),
+        value: z
+          .union([
+            // Structure from DB
+            z.object({
+              value: z.string(),
+              attribute: z.object({
+                name: z.string(),
+              }),
+            }),
+            // Direct string value (sometimes passed during form submission)
+            z.string(),
+          ])
+          .optional(),
+        attributeName: z.string().optional(),
       }),
     )
     .optional()

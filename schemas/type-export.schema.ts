@@ -76,6 +76,7 @@ import {
   CategoryUpdateSchema,
 } from "./category.schema";
 import { UnitCreateSchema, UnitSchema, UnitUpdateSchema } from "./unit.schema";
+import { UserCreateSchema, UserSchema, UserUpdateSchema } from "./user.schema";
 
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryCreate = z.infer<typeof CategoryCreateSchema>;
@@ -169,6 +170,11 @@ export type PurchaseOrderWithDetails = z.infer<
 export type Unit = z.infer<typeof UnitSchema>;
 export type UnitCreate = z.infer<typeof UnitCreateSchema>;
 export type UnitUpdate = z.infer<typeof UnitUpdateSchema>;
+
+export type User = z.infer<typeof UserSchema>;
+export type UserCreate = z.infer<typeof UserCreateSchema>;
+export type UserUpdate = z.infer<typeof UserUpdateSchema>;
+
 export type StockMovement = z.infer<typeof StockMovementSchema>;
 export type StockMovementWithRelations = z.infer<
   typeof StockMovementWithRelationsSchema

@@ -13,8 +13,13 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deactivatedBy String?
+  deactivatedAt DateTime?
   sessions      Session[]
   accounts      Account[]
 
@@ -74,6 +79,7 @@ enum Role {
   SELLER
   ADMIN
   MANAGER
+  SUPER_ADMIN
 }
 
 // Inventory section
@@ -175,19 +181,34 @@ model ProductVariantAttribute {
 }
 
 model ProductAttributeValue {
-  id          Int    @id @default(autoincrement())
-  value       String // Red, Blue, M, L
-  attributeId Int
+  id           Int     @id @default(autoincrement())
+  value        String // red, blue, m, l
+  displayValue String  @default("") // Red, Blue, M, L
+  colorHex     String? // For color attributes
+  sortOrder    Int     @default(0)
+  attributeId  Int
 
-  attribute    ProductAttribute          @relation(fields: [attributeId], references: [id])
+  attribute    ProductAttribute          @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   variantLinks ProductVariantAttribute[]
 
   @@unique([attributeId, value])
 }
 
+enum AttributeType {
+  SELECT
+  COLOR
+  TEXT
+}
+
 model ProductAttribute {
-  id   Int    @id @default(autoincrement())
-  name String @unique // Size, Color
+  id          Int           @id @default(autoincrement())
+  name        String        @unique // size, color - internal name
+  displayName String        @default("") // Size, Color - display name
+  type        AttributeType @default(SELECT)
+  isRequired  Boolean       @default(false)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
 
   values   ProductAttributeValue[]
   products ProductOnAttribute[]
@@ -198,7 +219,7 @@ model ProductOnAttribute {
   attributeId Int
 
   product   Product          @relation(fields: [productId], references: [id])
-  attribute ProductAttribute @relation(fields: [attributeId], references: [id])
+  attribute ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
 
   @@id([productId, attributeId])
 }

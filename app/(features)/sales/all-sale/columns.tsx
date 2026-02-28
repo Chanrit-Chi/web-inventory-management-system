@@ -13,6 +13,12 @@ import {
 } from "./sale-dialogs";
 import { useSaleMutations } from "@/hooks/useSale";
 import { toast } from "sonner";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Actions Cell Component (needs hooks, so separate from column definition)
 function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
@@ -22,6 +28,7 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
   const [completeOpen, setCompleteOpen] = useState(false);
   const [shouldPrint, setShouldPrint] = useState(false);
   const { updateSale } = useSaleMutations();
+  const { can } = usePermission();
 
   const handleMarkAsCompleted = (callbacks?: {
     onSuccess?: () => void;
@@ -73,29 +80,47 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
         </Button>
 
         {/* Edit Order */}
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={order.status === "COMPLETED"}
-          className="h-8 w-8 p-0 cursor-pointer"
-          onClick={() => router.push(`/sales/edit/${order.id}`)}
-          title="Edit Order"
-        >
-          <Edit className="h-4 w-4 text-amber-600" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={order.status === "COMPLETED" || !can("sale:update")}
+                className="h-8 w-8 p-0 cursor-pointer"
+                onClick={() => router.push(`/sales/edit/${order.id}`)}
+                title="Edit Order"
+              >
+                <Edit className="h-4 w-4 text-amber-600" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("sale:update") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
 
         {/* Complete Sale */}
         {order.status !== "COMPLETED" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
-            onClick={() => setCompleteOpen(true)}
-            disabled={updateSale.isPending}
-            title="Mark as Completed"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={() => setCompleteOpen(true)}
+                  disabled={updateSale.isPending || !can("sale:update")}
+                  title="Mark as Completed"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!can("sale:update") && (
+              <TooltipContent>No permission</TooltipContent>
+            )}
+          </Tooltip>
         )}
       </div>
 

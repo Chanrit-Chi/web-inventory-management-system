@@ -9,6 +9,12 @@ import {
   ViewPurchaseOrderDialog,
   DeletePurchaseOrderDialog,
 } from "./purchase-order-dialogs";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type PurchaseOrderDetailRow = {
   id: number;
@@ -50,6 +56,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const router = useRouter();
+  const { can } = usePermission();
 
   return (
     <>
@@ -63,29 +70,54 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
         >
           <Eye className="h-4 w-4 text-sky-600" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          onClick={() => router.push(`/purchase/edit-order/${order.id}`)}
-          title={
-            order.status === "COMPLETED"
-              ? "Completed orders cannot be edited"
-              : "Edit Purchase Order"
-          }
-          disabled={order.status === "COMPLETED"}
-        >
-          <Pencil className="h-4 w-4 text-amber-500" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
-          onClick={() => setDeleteOpen(true)}
-          title="Delete Purchase Order"
-        >
-          <Trash2 className="h-4 w-4 text-red-500" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => router.push(`/purchase/edit-order/${order.id}`)}
+                title={
+                  order.status === "COMPLETED"
+                    ? "Completed orders cannot be edited"
+                    : "Edit Purchase Order"
+                }
+                disabled={
+                  order.status === "COMPLETED" || !can("purchase_order:update")
+                }
+              >
+                <Pencil className="h-4 w-4 text-amber-500" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("purchase_order:update") && order.status !== "COMPLETED" && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!can("purchase_order:delete")}
+                className="h-8 w-8 p-0 cursor-pointer"
+                onClick={
+                  can("purchase_order:delete")
+                    ? () => setDeleteOpen(true)
+                    : undefined
+                }
+                title="Delete Purchase Order"
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("purchase_order:delete") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
       </div>
 
       <ViewPurchaseOrderDialog

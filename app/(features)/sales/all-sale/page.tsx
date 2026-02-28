@@ -9,12 +9,14 @@ import { SharedLayout } from "@/components/shared-layout";
 import { BanknoteArrowDown, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { usePermission } from "@/hooks/usePermission";
 
 function Sale() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const { can } = usePermission();
 
   const {
     data: sales,
@@ -76,6 +78,7 @@ function Sale() {
         columns={columns}
         data={sales?.data ?? []}
         showAddNew={true}
+        addNewDisabled={!can("sale:create")}
         addNewLabel="New Sale"
         addNewHref="/sales/new-sale"
         paginationMeta={sales?.pagination}

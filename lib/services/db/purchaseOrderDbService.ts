@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { PurchaseOrderWithDetails } from "@/schemas/type-export.schema";
+import { getServerSession } from "@/lib/getServerSession";
+import { hasPermission } from "@/lib/rbac";
 
 const purchaseOrderSelectFields = {
   id: true,
@@ -183,6 +185,18 @@ export const purchaseOrderService = {
     data: PurchaseOrderWithDetails,
     createdBy?: string,
   ) => {
+    const session = await getServerSession();
+    const userRole = session?.user?.role;
+
+    if (
+      !userRole ||
+      !hasPermission(userRole as Role, "purchase_order:create")
+    ) {
+      throw new Error(
+        "Unauthorized: Insufficient permissions to create purchase orders",
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
       const { purchaseOrderDetails, ...orderData } = data;
 
@@ -227,6 +241,18 @@ export const purchaseOrderService = {
     data: Partial<PurchaseOrderWithDetails>,
     createdBy?: string,
   ) => {
+    const session = await getServerSession();
+    const userRole = session?.user?.role;
+
+    if (
+      !userRole ||
+      !hasPermission(userRole as Role, "purchase_order:update")
+    ) {
+      throw new Error(
+        "Unauthorized: Insufficient permissions to update purchase orders",
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
       const existingOrder = await tx.purchaseOrder.findUnique({
         where: { id },
@@ -294,6 +320,18 @@ export const purchaseOrderService = {
   },
 
   deletePurchaseOrder: async (id: number, createdBy?: string) => {
+    const session = await getServerSession();
+    const userRole = session?.user?.role;
+
+    if (
+      !userRole ||
+      !hasPermission(userRole as Role, "purchase_order:delete")
+    ) {
+      throw new Error(
+        "Unauthorized: Insufficient permissions to delete purchase orders",
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
       const order = await tx.purchaseOrder.findUnique({
         where: { id },

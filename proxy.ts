@@ -46,18 +46,21 @@ export async function proxy(request: NextRequest) {
   // Check role access
   const userRole = session.user.role;
 
-  if (pathname.startsWith("/dashboard/admin") && userRole !== "ADMIN") {
+  if (
+    pathname.startsWith("/dashboard/admin") &&
+    !["ADMIN", "SUPER_ADMIN"].includes(userRole)
+  ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
   if (
     pathname.startsWith("/dashboard/manager") &&
-    !["ADMIN", "MANAGER"].includes(userRole)
+    !["ADMIN", "SUPER_ADMIN", "MANAGER"].includes(userRole)
   ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
   if (
     pathname.startsWith("/dashboard/sale") &&
-    !["ADMIN", "MANAGER", "SELLER"].includes(userRole)
+    !["ADMIN", "SUPER_ADMIN", "MANAGER", "SELLER"].includes(userRole)
   ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }

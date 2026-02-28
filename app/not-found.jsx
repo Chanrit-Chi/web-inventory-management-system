@@ -2,14 +2,45 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, ArrowLeft, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+
+function getDashboardByRole(role) {
+  switch (role) {
+    case "SUPER_ADMIN":
+    case "ADMIN":
+      return "/dashboard/admin";
+    case "MANAGER":
+      return "/dashboard/manager";
+    case "SELLER":
+      return "/dashboard/sale";
+    default:
+      return "/";
+  }
+}
 
 export default function NotFound() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = session?.user?.role;
+  const dashboard = getDashboardByRole(userRole);
+
   const handleGoHome = () => {
-    globalThis.location.href = "/";
+    router.push(dashboard);
   };
 
   const handleGoBack = () => {
-    globalThis.history.back();
+    // Avoid going back to /unauthorized — navigate to dashboard instead
+    const referrer = document.referrer;
+    const isSafeReferrer =
+      referrer &&
+      !referrer.includes("/unauthorized") &&
+      !referrer.includes("/user_auth");
+    if (isSafeReferrer) {
+      router.back();
+    } else {
+      router.push(dashboard);
+    }
   };
 
   const handleSearch = () => {

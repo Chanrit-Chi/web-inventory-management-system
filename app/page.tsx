@@ -11,7 +11,7 @@ export default function Home() {
   const role = (session?.user as { role?: string })?.role || "Unknown";
 
   let dashboardLink: React.ReactNode = null;
-  if (role === "ADMIN" || role === "MANAGER") {
+  if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER") {
     dashboardLink = (
       <Link href="/dashboard/admin">
         <Button size="lg">Go to Dashboard</Button>

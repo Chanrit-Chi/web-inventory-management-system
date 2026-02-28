@@ -5,11 +5,13 @@ import { Plus, Trash2 } from "lucide-react";
 interface AttributeValue {
   id: number;
   value: string;
+  displayValue: string;
 }
 
 interface Attribute {
   id: number;
   name: string;
+  displayName: string;
   values: AttributeValue[];
 }
 
@@ -20,14 +22,14 @@ interface AttributeSelectionState {
 }
 
 interface AttributeSelectorProps {
-  attributes: Attribute[];
-  selectedAttributes: AttributeSelectionState[];
-  availableAttributes: Attribute[];
-  loadingAttributes: boolean;
-  onAddAttribute: () => void;
-  onRemoveAttribute: (id: string) => void;
-  onUpdateAttributeId: (id: string, attributeId: number) => void;
-  onToggleValueSelection: (attrId: string, valueId: number) => void;
+  readonly attributes: Attribute[];
+  readonly selectedAttributes: AttributeSelectionState[];
+  readonly availableAttributes: Attribute[];
+  readonly loadingAttributes: boolean;
+  readonly onAddAttribute: () => void;
+  readonly onRemoveAttribute: (id: string) => void;
+  readonly onUpdateAttributeId: (id: string, attributeId: number) => void;
+  readonly onToggleValueSelection: (attrId: string, valueId: number) => void;
 }
 
 export function AttributeSelector({
@@ -92,7 +94,7 @@ export function AttributeSelector({
                     )
                     .map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name}
+                        {a.displayName}
                       </option>
                     ))}
                 </select>
@@ -113,16 +115,14 @@ export function AttributeSelector({
                     <button
                       key={value.id}
                       type="button"
-                      onClick={() =>
-                        onToggleValueSelection(attr.id, value.id)
-                      }
+                      onClick={() => onToggleValueSelection(attr.id, value.id)}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                         attr.selectedValueIds.includes(value.id)
                           ? "bg-primary text-primary-foreground"
                           : "bg-white text-gray-700 border border-gray-300 hover:border-primary"
                       }`}
                     >
-                      {value.value}
+                      {value.displayValue || value.value}
                     </button>
                   ))}
                 </div>

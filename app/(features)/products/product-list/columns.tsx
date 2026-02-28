@@ -27,12 +27,19 @@ import {
 } from "./product-dialogs";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Actions Cell Component (needs hooks, so separate from column definition)
 function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
   const router = useRouter();
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { can } = usePermission();
 
   return (
     <>
@@ -53,30 +60,50 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
             <Eye className="mr-2 h-4 w-4" />
             View Details
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => router.push(`/products/edit/${product.id}`)}
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Product
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className={`cursor-pointer ${product.isActive === "ACTIVE" ? "text-red-600" : "text-green-600"}`}
-            onClick={() => setDeleteOpen(true)}
-          >
-            {product.isActive === "ACTIVE" ? (
-              <>
-                <CircleSlash className="mr-2 h-4 w-4" />
-                Deactivate Product
-              </>
-            ) : (
-              <>
-                <CircleCheck className="mr-2 h-4 w-4" />
-                Reactivate Product
-              </>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  disabled={!can("product:update")}
+                  onClick={() => router.push(`/products/edit/${product.id}`)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Product
+                </DropdownMenuItem>
+              </span>
+            </TooltipTrigger>
+            {!can("product:update") && (
+              <TooltipContent side="left">No permission</TooltipContent>
             )}
-          </DropdownMenuItem>
+          </Tooltip>
+          <DropdownMenuSeparator />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <DropdownMenuItem
+                  className={`cursor-pointer ${product.isActive === "ACTIVE" ? "text-red-600" : "text-green-600"}`}
+                  disabled={!can("product:delete")}
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  {product.isActive === "ACTIVE" ? (
+                    <>
+                      <CircleSlash className="mr-2 h-4 w-4" />
+                      Deactivate Product
+                    </>
+                  ) : (
+                    <>
+                      <CircleCheck className="mr-2 h-4 w-4" />
+                      Reactivate Product
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </span>
+            </TooltipTrigger>
+            {!can("product:delete") && (
+              <TooltipContent side="left">No permission</TooltipContent>
+            )}
+          </Tooltip>
         </DropdownMenuContent>
       </DropdownMenu>
 

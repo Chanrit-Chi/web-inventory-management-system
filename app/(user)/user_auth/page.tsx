@@ -1,25 +1,20 @@
 import { LoginForm } from "@/components/ui/login-form";
-import { SignupForm } from "@/components/ui/signup-form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function Register() {
+export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
-      <Tabs
-        defaultValue="login"
-        className="w-full max-w-md rounded-lg border p-6"
-      >
-        <TabsList>
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="register">Register</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <LoginForm />
-        </TabsContent>
-        <TabsContent value="register">
-          <SignupForm />
-        </TabsContent>
-      </Tabs>
+      <div className="w-full max-w-md rounded-lg border p-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Sign in to your account to continue
+          </p>
+        </div>
+        <LoginForm />
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Need help? Contact your administrator
+        </p>
+      </div>
     </div>
   );
 }

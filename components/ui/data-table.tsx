@@ -34,6 +34,11 @@ import {
 import { Search } from "lucide-react";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PaginationMeta {
   page: number;
@@ -55,6 +60,7 @@ interface DataTableProps<TData, TValue> {
   readonly searchKey?: string;
   readonly showAddNew?: boolean;
   readonly addNewLabel?: string;
+  readonly addNewDisabled?: boolean;
   readonly onAddNew?: () => void;
   readonly addNewHref?: string;
   readonly showSearch?: boolean;
@@ -80,6 +86,7 @@ export function DataTable<TData, TValue>({
   showSearch = true,
   showAddNew = false,
   addNewLabel = "Add New",
+  addNewDisabled = false,
   onAddNew,
   addNewHref,
   showPagination = true,
@@ -209,7 +216,20 @@ export function DataTable<TData, TValue>({
     }
   };
 
-  const hasActiveFilters = searchInput || Object.keys(filterValues).length > 0;
+  const getFilterValue = (columnId: string): string => {
+    // For client-side filtering, get value from columnFilters state
+    const columnFilter = columnFilters.find((f) => f.id === columnId);
+    if (columnFilter) {
+      return columnFilter.value as string;
+    }
+    // For server-side filtering, get value from filterValues prop
+    return filterValues[columnId] || "all";
+  };
+
+  const hasActiveFilters =
+    searchInput ||
+    columnFilters.length > 0 ||
+    Object.keys(filterValues).length > 0;
 
   return (
     <div className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
@@ -240,7 +260,7 @@ export function DataTable<TData, TValue>({
               {filterConfigs.map((filter) => (
                 <Select
                   key={filter.columnId}
-                  value={filterValues[filter.columnId] || "all"}
+                  value={getFilterValue(filter.columnId)}
                   onValueChange={(value) =>
                     handleFilterChange(filter.columnId, value)
                   }
@@ -274,12 +294,20 @@ export function DataTable<TData, TValue>({
           </div>
 
           {showAddNew && (
-            <Button
-              onClick={handleAddNew}
-              className="cursor-pointer w-full sm:w-auto sm:ml-auto"
-            >
-              {addNewLabel}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex w-full sm:w-auto sm:ml-auto">
+                  <Button
+                    onClick={addNewDisabled ? undefined : handleAddNew}
+                    disabled={addNewDisabled}
+                    className="cursor-pointer w-full sm:w-auto"
+                  >
+                    {addNewLabel}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {addNewDisabled && <TooltipContent>No permission</TooltipContent>}
+            </Tooltip>
           )}
         </div>
       )}

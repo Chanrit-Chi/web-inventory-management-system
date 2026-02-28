@@ -10,12 +10,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-interface NavSecondaryProps
-  extends React.ComponentPropsWithoutRef<typeof SidebarGroup> {
+interface NavSecondaryProps extends React.ComponentPropsWithoutRef<
+  typeof SidebarGroup
+> {
   items: {
     title: string;
     url: string;
     icon: LucideIcon;
+    permission?: string;
   }[];
 }
 

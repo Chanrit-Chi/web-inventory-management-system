@@ -1,9 +1,11 @@
-import { Prisma, ProductStatus } from "@prisma/client";
+import { Prisma, ProductStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   ProductUpdateSchema,
   ProductCreateSchema,
 } from "@/schemas/product.schema";
+import { getServerSession } from "@/lib/getServerSession";
+import { hasPermission } from "@/lib/rbac";
 
 import {
   Product,
@@ -221,6 +223,14 @@ export const productDbService = {
   },
 
   createProductWithVariants: async (data: ProductCreate): Promise<Product> => {
+    const session = await getServerSession();
+    if (
+      !session?.user ||
+      !hasPermission(session.user.role as Role, "product:create")
+    ) {
+      throw new Error("Unauthorized: Insufficient permissions");
+    }
+
     const { productAttributes, variants, supplierId, ...validatedCore } =
       ProductCreateSchema.parse(data);
 
@@ -290,6 +300,14 @@ export const productDbService = {
   },
 
   updateProduct: async (id: string, data: ProductUpdate): Promise<Product> => {
+    const session = await getServerSession();
+    if (
+      !session?.user ||
+      !hasPermission(session.user.role as Role, "product:update")
+    ) {
+      throw new Error("Unauthorized: Insufficient permissions");
+    }
+
     const validated = ProductUpdateSchema.parse(data);
 
     const { productAttributes, variants, supplierId, ...scalarFields } =
@@ -417,6 +435,14 @@ export const productDbService = {
   },
 
   deleteProduct: async (id: string): Promise<Product> => {
+    const session = await getServerSession();
+    if (
+      !session?.user ||
+      !hasPermission(session.user.role as Role, "product:delete")
+    ) {
+      throw new Error("Unauthorized: Insufficient permissions");
+    }
+
     return await prisma.$transaction(async (tx) => {
       // Deactivate all variants
       await tx.productVariant.updateMany({
@@ -436,6 +462,14 @@ export const productDbService = {
   },
 
   reactivateProduct: async (id: string): Promise<Product> => {
+    const session = await getServerSession();
+    if (
+      !session?.user ||
+      !hasPermission(session.user.role as Role, "product:update")
+    ) {
+      throw new Error("Unauthorized: Insufficient permissions");
+    }
+
     return await prisma.$transaction(async (tx) => {
       // Reactivate all variants
       await tx.productVariant.updateMany({

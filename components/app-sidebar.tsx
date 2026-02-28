@@ -29,6 +29,8 @@ import {
 import { NavSecondary } from "./nav-secondary";
 import { NavReports } from "./nav-reports";
 import Link from "next/link";
+import { hasPermission, Permission } from "@/lib/rbac";
+import { Role } from "@prisma/client";
 
 const data = {
   navMain: [
@@ -40,10 +42,17 @@ const data = {
         {
           title: "Admin Dashboard",
           url: "/dashboard/admin",
+          permission: "dashboard:admin",
+        },
+        {
+          title: "Manager Dashboard",
+          url: "/dashboard/manager",
+          permission: "dashboard:manager",
         },
         {
           title: "Sale Dashboard",
           url: "/dashboard/sale",
+          permission: "dashboard:sale",
         },
       ],
     },
@@ -55,22 +64,27 @@ const data = {
         {
           title: "All Sale",
           url: "/sales/all-sale",
+          permission: "sale:read",
         },
         {
           title: "New Sale",
           url: "/sales/new-sale",
+          permission: "sale:create",
         },
         {
           title: "Invoices",
           url: "/sales/invoice",
+          permission: "invoice:read",
         },
         {
           title: "Quotations",
           url: "/sales/quotations",
+          permission: "quotation:read",
         },
         {
           title: "POS",
           url: "/sales/pos",
+          permission: "pos:read",
         },
       ],
     },
@@ -83,10 +97,12 @@ const data = {
         {
           title: "Adjust Stock",
           url: "/stock/adjust",
+          permission: "stock:update",
         },
         {
           title: "New Stock",
           url: "/stock/new",
+          permission: "stock:create",
         },
       ],
     },
@@ -98,23 +114,32 @@ const data = {
         {
           title: "View All Products",
           url: "/products/product-list",
+          permission: "product:read",
         },
         {
           title: "New Product",
           url: "/products/new",
+          permission: "product:create",
         },
         {
           title: "Category",
           url: "/products/category/all-categories",
+          permission: "category:read",
         },
-
         {
           title: "Units",
           url: "/products/unit",
+          permission: "unit:read",
+        },
+        {
+          title: "Attributes",
+          url: "/products/attributes",
+          permission: "product:read",
         },
         {
           title: "Barcode",
           url: "/products/barcode",
+          permission: "barcode:read",
         },
       ],
     },
@@ -127,10 +152,12 @@ const data = {
         {
           title: "Purchase Order",
           url: "/purchase/order",
+          permission: "purchase_order:read",
         },
         {
           title: "Supplier",
           url: "/purchase/supplier",
+          permission: "supplier:read",
         },
       ],
     },
@@ -140,28 +167,70 @@ const data = {
       title: "Manage Employee",
       url: "/employee",
       icon: Users,
+      permission: "user:read",
     },
-  ],
-  Reports: [
     {
-      name: "Sale Report",
+      title: "Sale Report",
       url: "/sale/report",
       icon: ChartNoAxesCombined,
+      permission: "report:read",
     },
     {
-      name: "Stock Report",
+      title: "Stock Report",
       url: "/stock/report",
       icon: FolderKanban,
+      permission: "report:read",
     },
     {
-      name: "Product Report",
+      title: "Product Report",
       url: "/product/report",
       icon: FileChartColumnIncreasing,
+      permission: "report:read",
     },
   ],
+  // Reports: [
+  //   {
+  //     name: "Sale Report",
+  //     url: "/sale/report",
+  //     icon: ChartNoAxesCombined,
+  //     permission: "report:read",
+  //   },
+  //   {
+  //     name: "Stock Report",
+  //     url: "/stock/report",
+  //     icon: FolderKanban,
+  //     permission: "report:read",
+  //   },
+  //   {
+  //     name: "Product Report",
+  //     url: "/product/report",
+  //     icon: FileChartColumnIncreasing,
+  //     permission: "report:read",
+  //   },
+  // ],
 };
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
+  const userRole = (session?.user as { role?: Role } | undefined)?.role as Role;
+
+  const filteredNavMain = data.navMain
+    .map((item) => {
+      if (!item.items) return item;
+      const filteredItems = item.items.filter(
+        (subItem) =>
+          !subItem.permission ||
+          hasPermission(userRole, subItem.permission as Permission),
+      );
+      return { ...item, items: filteredItems };
+    })
+    .filter((item) => item.items?.length > 0 || !item.items);
+
+  const filteredNavSecondary = data.navSecondary.filter(
+    (item) =>
+      !item.permission ||
+      hasPermission(userRole, item.permission as Permission),
+  );
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -173,7 +242,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   <NotebookText className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">KC Shop</span>
+                  <span className="truncate font-medium">CC Inventory</span>
                   <span className="truncate text-xs">Inventory Management</span>
                 </div>
               </Link>
@@ -182,9 +251,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavReports reports={data.Reports} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={filteredNavMain} />
+        {/* <NavReports reports={filteredReports} /> */}
+        <NavSecondary items={filteredNavSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         {session?.user && (

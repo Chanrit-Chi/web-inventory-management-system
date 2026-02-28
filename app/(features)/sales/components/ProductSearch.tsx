@@ -31,61 +31,63 @@ interface DecimalLike {
 // Process products into ProductForSale format
 const processProductsForSale = (products: Product[]): ProductForSale[] => {
   return products.flatMap((p: Product) =>
-    p.variants.map((variant) => {
-      // Calculate price (prefer sellingPrice, fallback to costPrice)
-      let price = 0;
+    p.variants
+      .filter((variant) => variant.isActive)
+      .map((variant) => {
+        // Calculate price (prefer sellingPrice, fallback to costPrice)
+        let price = 0;
 
-      const getPriceValue = (val: DecimalLike | string): number => {
-        if (val == null) return 0;
-        if (typeof val === "number") return val;
-        if (typeof val === "string") return Number.parseFloat(val);
-        if (typeof val === "object" && "toNumber" in val) {
-          return val.toNumber();
+        const getPriceValue = (val: DecimalLike | string): number => {
+          if (val == null) return 0;
+          if (typeof val === "number") return val;
+          if (typeof val === "string") return Number.parseFloat(val);
+          if (typeof val === "object" && "toNumber" in val) {
+            return val.toNumber();
+          }
+          return 0;
+        };
+
+        price = getPriceValue(variant.sellingPrice);
+
+        // Fallback to cost price if selling price is 0 or invalid
+        if (price === 0) {
+          price = getPriceValue(variant.costPrice);
         }
-        return 0;
-      };
 
-      price = getPriceValue(variant.sellingPrice);
+        // Create variant description from attributes
+        const variantDescription =
+          variant.attributes
+            ?.map((attr) =>
+              attr.value
+                ? `${attr.value.attribute?.name}: ${attr.value.value}`
+                : "",
+            )
+            .filter(Boolean)
+            .join(" ") || "";
 
-      // Fallback to cost price if selling price is 0 or invalid
-      if (price === 0) {
-        price = getPriceValue(variant.costPrice);
-      }
+        // Create display name: "Product Name - Color: Red Size: M"
+        const displayName = variantDescription
+          ? `${p.name} - ${variantDescription}`
+          : `${p.name} (${variant.sku})`;
 
-      // Create variant description from attributes
-      const variantDescription =
-        variant.attributes
-          ?.map((attr) =>
-            attr.value
-              ? `${attr.value.attribute?.name}: ${attr.value.value}`
-              : "",
-          )
-          .filter(Boolean)
-          .join(" ") || "";
+        // Create search text: "Product Name SKU Color Red Size M"
+        const searchText =
+          `${p.name} ${variant.sku} ${variantDescription.replaceAll(":", "")}`.toLowerCase();
 
-      // Create display name: "Product Name - Color: Red Size: M"
-      const displayName = variantDescription
-        ? `${p.name} - ${variantDescription}`
-        : `${p.name} (${variant.sku})`;
-
-      // Create search text: "Product Name SKU Color Red Size M"
-      const searchText =
-        `${p.name} ${variant.sku} ${variantDescription.replaceAll(":", "")}`.toLowerCase();
-
-      return {
-        id: p.id,
-        name: displayName,
-        sku: variant.sku,
-        price,
-        stock: variant.stock || 0,
-        variantId: variant.id!,
-        _count: (variant._count || { orderDetail: 0 }) as {
-          orderDetail: number;
-        },
-        searchText,
-        image: p.image || undefined,
-      };
-    }),
+        return {
+          id: p.id,
+          name: displayName,
+          sku: variant.sku,
+          price,
+          stock: variant.stock || 0,
+          variantId: variant.id!,
+          _count: (variant._count || { orderDetail: 0 }) as {
+            orderDetail: number;
+          },
+          searchText,
+          image: p.image || undefined,
+        };
+      }),
   );
 };
 

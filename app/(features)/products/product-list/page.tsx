@@ -17,6 +17,7 @@ import {
 import { columns } from "./columns";
 import { useState, useMemo } from "react";
 import { useGetProducts } from "@/hooks/useProduct";
+import { usePermission } from "@/hooks/usePermission";
 import { useGetCategories } from "@/hooks/useCategory";
 import {
   ProductWithVariants,
@@ -28,8 +29,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 type ViewMode = "table" | "grid";
-
-// ── Product Grid Card ──────────────────────────────────────────────────────
 
 function ProductCard({ product }: { readonly product: ProductWithVariants }) {
   const [viewOpen, setViewOpen] = useState(false);
@@ -176,6 +175,7 @@ function ProductList() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const { can } = usePermission();
 
   const {
     data: products,
@@ -266,6 +266,7 @@ function ProductList() {
             columns={columns}
             data={products?.data ?? []}
             showAddNew={true}
+            addNewDisabled={!can("product:create")}
             addNewLabel="New Product"
             addNewHref="/products/new"
             paginationMeta={products?.pagination}

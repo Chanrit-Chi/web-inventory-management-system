@@ -9,6 +9,12 @@ import {
   UpdateSupplierDialog,
   DeleteSupplierDialog,
 } from "./supplier-dialogs";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type SupplierRow = {
   id: string;
@@ -28,6 +34,7 @@ function ActionsCell({ supplier }: { readonly supplier: SupplierRow }) {
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { can } = usePermission();
 
   return (
     <>
@@ -41,24 +48,48 @@ function ActionsCell({ supplier }: { readonly supplier: SupplierRow }) {
         >
           <Eye className="h-4 w-4 text-sky-600" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
-          onClick={() => setEditOpen(true)}
-          title="Edit Supplier"
-        >
-          <Pencil className="h-4 w-4 text-amber-600" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
-          onClick={() => setDeleteOpen(true)}
-          title="Delete Supplier"
-        >
-          <Trash2 className="h-4 w-4 text-red-500" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!can("supplier:update")}
+                className="h-8 w-8 p-0 cursor-pointer"
+                onClick={
+                  can("supplier:update") ? () => setEditOpen(true) : undefined
+                }
+                title="Edit Supplier"
+              >
+                <Pencil className="h-4 w-4 text-amber-600" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("supplier:update") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!can("supplier:delete")}
+                className="h-8 w-8 p-0 cursor-pointer"
+                onClick={
+                  can("supplier:delete") ? () => setDeleteOpen(true) : undefined
+                }
+                title="Delete Supplier"
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("supplier:delete") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
       </div>
 
       <ViewSupplierDialog

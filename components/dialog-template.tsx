@@ -248,6 +248,7 @@ interface ConfirmDialogProps<T> {
   confirmLabel?: string;
   confirmVariant?: "default" | "destructive";
   isLoading?: boolean;
+  confirmDisabled?: boolean;
   className?: string;
 }
 
@@ -262,6 +263,7 @@ export function ConfirmDialog<T>({
   confirmLabel = "Confirm",
   confirmVariant = "default",
   isLoading = false,
+  confirmDisabled = false,
   className,
 }: ConfirmDialogProps<T>) {
   return (
@@ -279,7 +281,7 @@ export function ConfirmDialog<T>({
           <Button
             variant={confirmVariant}
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
           >
             {isLoading ? `${confirmLabel}ing...` : confirmLabel}
           </Button>

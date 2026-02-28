@@ -5,6 +5,12 @@ import { ArrowUpDown, Eye, SquarePen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Customer } from "@/schemas/type-export.schema";
 import { useState } from "react";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ViewCustomerDialog,
   UpdateCustomerDialog,
@@ -15,6 +21,7 @@ function ActionsCell({ customer }: { readonly customer: Customer }) {
   const [viewOpen, setViewOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { can } = usePermission();
 
   return (
     <>
@@ -23,14 +30,44 @@ function ActionsCell({ customer }: { readonly customer: Customer }) {
           className="size-5 cursor-pointer hover:text-blue-600 transition-colors"
           onClick={() => setViewOpen(true)}
         />
-        <SquarePen
-          className="size-5 cursor-pointer ml-4 hover:text-green-600 transition-colors"
-          onClick={() => setUpdateOpen(true)}
-        />
-        <Trash2
-          className="size-5 text-red-600 cursor-pointer ml-4 hover:text-red-800 transition-colors"
-          onClick={() => setDeleteOpen(true)}
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex ml-4">
+              <SquarePen
+                className={`size-5 transition-colors ${
+                  can("customer:update")
+                    ? "cursor-pointer hover:text-green-600"
+                    : "opacity-40 cursor-not-allowed pointer-events-none"
+                }`}
+                onClick={
+                  can("customer:update") ? () => setUpdateOpen(true) : undefined
+                }
+              />
+            </span>
+          </TooltipTrigger>
+          {!can("customer:update") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex ml-4">
+              <Trash2
+                className={`size-5 transition-colors ${
+                  can("customer:delete")
+                    ? "text-red-600 cursor-pointer hover:text-red-800"
+                    : "text-red-300 cursor-not-allowed pointer-events-none"
+                }`}
+                onClick={
+                  can("customer:delete") ? () => setDeleteOpen(true) : undefined
+                }
+              />
+            </span>
+          </TooltipTrigger>
+          {!can("customer:delete") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
       </div>
 
       <ViewCustomerDialog

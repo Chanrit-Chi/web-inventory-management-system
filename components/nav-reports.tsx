@@ -32,6 +32,7 @@ export function NavReports({
     name: string;
     url: string;
     icon: LucideIcon;
+    permission?: string;
   }[];
 }) {
   const { isMobile } = useSidebar();

@@ -11,7 +11,7 @@ type User = {
 export default function UnauthorizedPage() {
   const { data: session, isPending } = useSession();
   const userRole = (session?.user as User)?.role ?? "GUEST";
-  const RequiredRole = ["ADMIN", "MANAGER"];
+  const RequiredRole = ["SUPER_ADMIN", "ADMIN", "MANAGER"];
   const router = useRouter();
 
   if (isPending) {
@@ -32,6 +32,7 @@ export default function UnauthorizedPage() {
         router.push("/dashboard/manager");
         break;
       case "ADMIN":
+      case "SUPER_ADMIN":
         router.push("/dashboard/admin");
         break;
       default:

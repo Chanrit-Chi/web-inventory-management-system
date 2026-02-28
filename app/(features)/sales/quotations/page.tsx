@@ -8,12 +8,14 @@ import { SharedLayout } from "@/components/shared-layout";
 import { FileText, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { usePermission } from "@/hooks/usePermission";
 
 function Quotations() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const { can } = usePermission();
 
   const {
     data: quotations,
@@ -65,6 +67,7 @@ function Quotations() {
         columns={columns}
         data={quotations?.data ?? []}
         showAddNew={true}
+        addNewDisabled={!can("quotation:create")}
         addNewLabel="New Quotation"
         addNewHref="/sales/new-quotation"
         paginationMeta={quotations?.pagination}

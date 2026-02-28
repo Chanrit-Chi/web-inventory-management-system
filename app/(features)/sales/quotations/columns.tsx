@@ -12,6 +12,12 @@ import {
 } from "./quotation-dialogs";
 import { useGetQuotationById } from "@/hooks/useQuotation";
 import Link from "next/link";
+import { usePermission } from "@/hooks/usePermission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type QuotationListing = {
   id: string;
@@ -95,6 +101,7 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
   const [viewOpen, setViewOpen] = useState(false);
   const [shouldPrint, setShouldPrint] = useState(false);
   const quotation = row.original;
+  const { can } = usePermission();
 
   // Fetch full quotation data for the dialog
   const { data: fullQuotation } = useGetQuotationById(quotation.id);
@@ -114,22 +121,37 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
         </Button>
 
         {/* Edit Quotation */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
-          asChild={quotation.status !== "CONVERTED"}
-          disabled={quotation.status === "CONVERTED"}
-          title="Edit Quotation"
-        >
-          {quotation.status === "CONVERTED" ? (
-            <Edit className="h-4 w-4 text-slate-400" />
-          ) : (
-            <Link href={`/sales/quotations/edit/${quotation.id}`}>
-              <Edit className="h-4 w-4 text-amber-600" />
-            </Link>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 cursor-pointer"
+                asChild={
+                  quotation.status !== "CONVERTED" && can("quotation:update")
+                }
+                disabled={
+                  quotation.status === "CONVERTED" || !can("quotation:update")
+                }
+                title="Edit Quotation"
+              >
+                {quotation.status !== "CONVERTED" && can("quotation:update") ? (
+                  <Link href={`/sales/quotations/edit/${quotation.id}`}>
+                    <Edit className="h-4 w-4 text-amber-600" />
+                  </Link>
+                ) : (
+                  <Edit
+                    className={`h-4 w-4 ${quotation.status === "CONVERTED" ? "text-slate-400" : "text-amber-600"}`}
+                  />
+                )}
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("quotation:update") && quotation.status !== "CONVERTED" && (
+            <TooltipContent>No permission</TooltipContent>
           )}
-        </Button>
+        </Tooltip>
 
         {/* Print */}
         <Button
@@ -146,26 +168,50 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
         </Button>
 
         {/* Delete */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-          title="Delete Quotation"
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!can("quotation:delete")}
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Delete Quotation"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!can("quotation:delete") && (
+            <TooltipContent>No permission</TooltipContent>
+          )}
+        </Tooltip>
 
         {/* Convert to Sale */}
         {quotation.status !== "CONVERTED" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
-            onClick={() => setConvertOpen(true)}
-            title="Convert to Sale"
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!can("quotation:update")}
+                  className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={
+                    can("quotation:update")
+                      ? () => setConvertOpen(true)
+                      : undefined
+                  }
+                  title="Convert to Sale"
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!can("quotation:update") && (
+              <TooltipContent>No permission</TooltipContent>
+            )}
+          </Tooltip>
         )}
       </div>
 

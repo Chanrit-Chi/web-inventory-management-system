@@ -88,6 +88,7 @@ export default function ProductForm({
       image: initialData?.image || null,
       variants: initialData?.variants || [],
       attributeSelections: initialData?.attributeSelections || [],
+      productAttributes: initialData?.productAttributes || [],
     },
   });
 
@@ -112,6 +113,7 @@ export default function ProductForm({
       unitId,
       variants,
       attributeSelections,
+      productAttributes,
     } = initialData;
 
     if (name) setValue("name", name);
@@ -129,6 +131,7 @@ export default function ProductForm({
     if (variants) setValue("variants", variants);
     if (attributeSelections)
       setValue("attributeSelections", attributeSelections);
+    if (productAttributes) setValue("productAttributes", productAttributes);
   }, [initialData, setValue, setImagePreview]);
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {

@@ -27,72 +27,77 @@ export interface ProductSearchProps {
 // Process products into ProductForSale format
 const processProductsForSale = (products: Product[]): ProductForSale[] => {
   return products.flatMap((p: Product) =>
-    p.variants.map((variant) => {
-      // Calculate price (prefer sellingPrice, fallback to costPrice)
-      let price = 0;
-      if (variant.sellingPrice !== null && variant.sellingPrice !== undefined) {
-        if (typeof variant.sellingPrice === "number") {
-          price = variant.sellingPrice;
-        } else if (
-          typeof variant.sellingPrice === "object" &&
-          variant.sellingPrice.toNumber
+    p.variants
+      .filter((variant) => variant.isActive)
+      .map((variant) => {
+        // Calculate price (prefer sellingPrice, fallback to costPrice)
+        let price = 0;
+        if (
+          variant.sellingPrice !== null &&
+          variant.sellingPrice !== undefined
         ) {
-          price = variant.sellingPrice.toNumber();
-        } else if (typeof variant.sellingPrice === "string") {
-          price = Number.parseFloat(variant.sellingPrice);
+          if (typeof variant.sellingPrice === "number") {
+            price = variant.sellingPrice;
+          } else if (
+            typeof variant.sellingPrice === "object" &&
+            variant.sellingPrice.toNumber
+          ) {
+            price = variant.sellingPrice.toNumber();
+          } else if (typeof variant.sellingPrice === "string") {
+            price = Number.parseFloat(variant.sellingPrice);
+          }
         }
-      }
 
-      // Fallback to cost price if selling price is 0 or invalid
-      if (
-        price === 0 &&
-        variant.costPrice !== null &&
-        variant.costPrice !== undefined
-      ) {
-        if (typeof variant.costPrice === "number") {
-          price = variant.costPrice;
-        } else if (
-          typeof variant.costPrice === "object" &&
-          variant.costPrice.toNumber
+        // Fallback to cost price if selling price is 0 or invalid
+        if (
+          price === 0 &&
+          variant.costPrice !== null &&
+          variant.costPrice !== undefined
         ) {
-          price = variant.costPrice.toNumber();
-        } else if (typeof variant.costPrice === "string") {
-          price = Number.parseFloat(variant.costPrice);
+          if (typeof variant.costPrice === "number") {
+            price = variant.costPrice;
+          } else if (
+            typeof variant.costPrice === "object" &&
+            variant.costPrice.toNumber
+          ) {
+            price = variant.costPrice.toNumber();
+          } else if (typeof variant.costPrice === "string") {
+            price = Number.parseFloat(variant.costPrice);
+          }
         }
-      }
 
-      // Create variant description from attributes
-      const variantDescription =
-        variant.attributes
-          ?.map((attr) =>
-            attr.value
-              ? `${attr.value.attribute?.name}: ${attr.value.value}`
-              : "",
-          )
-          .filter(Boolean)
-          .join(" ") || "";
+        // Create variant description from attributes
+        const variantDescription =
+          variant.attributes
+            ?.map((attr) =>
+              attr.value
+                ? `${attr.value.attribute?.name}: ${attr.value.value}`
+                : "",
+            )
+            .filter(Boolean)
+            .join(" ") || "";
 
-      // Create display name: "Product Name - Color: Red Size: M"
-      const displayName = variantDescription
-        ? `${p.name} - ${variantDescription}`
-        : `${p.name} (${variant.sku})`;
+        // Create display name: "Product Name - Color: Red Size: M"
+        const displayName = variantDescription
+          ? `${p.name} - ${variantDescription}`
+          : `${p.name} (${variant.sku})`;
 
-      // Create search text: "Product Name SKU Color Red Size M"
-      const searchText =
-        `${p.name} ${variant.sku} ${variantDescription.replaceAll(":", "")}`.toLowerCase();
+        // Create search text: "Product Name SKU Color Red Size M"
+        const searchText =
+          `${p.name} ${variant.sku} ${variantDescription.replaceAll(":", "")}`.toLowerCase();
 
-      return {
-        id: p.id,
-        name: displayName,
-        sku: variant.sku,
-        price,
-        stock: variant.stock || 0,
-        variantId: variant.id!,
-        _count: variant._count,
-        searchText,
-        image: p.image || undefined,
-      };
-    }),
+        return {
+          id: p.id,
+          name: displayName,
+          sku: variant.sku,
+          price,
+          stock: variant.stock || 0,
+          variantId: variant.id!,
+          _count: variant._count,
+          searchText,
+          image: p.image || undefined,
+        };
+      }),
   );
 };
 
