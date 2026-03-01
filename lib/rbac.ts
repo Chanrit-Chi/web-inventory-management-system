@@ -75,6 +75,12 @@ const ResourceMatrix = {
     MANAGER: "admin",
     SELLER: "write",
   },
+  expense: {
+    SUPER_ADMIN: "admin",
+    ADMIN: "admin",
+    MANAGER: "admin",
+    SELLER: "none",
+  },
   purchase_order: {
     SUPER_ADMIN: "admin",
     ADMIN: "admin",
@@ -82,6 +88,12 @@ const ResourceMatrix = {
     SELLER: "none",
   },
   supplier: {
+    SUPER_ADMIN: "admin",
+    ADMIN: "admin",
+    MANAGER: "admin",
+    SELLER: "none",
+  },
+  employee: {
     SUPER_ADMIN: "admin",
     ADMIN: "admin",
     MANAGER: "admin",
@@ -98,7 +110,8 @@ export type FeaturePermission =
   | "dashboard:sale"
   | "pos:read"
   | "barcode:read"
-  | "report:read";
+  | "report:read"
+  | "permission:admin";
 
 const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
   SUPER_ADMIN: [
@@ -108,6 +121,7 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "permission:admin",
   ],
   ADMIN: [
     "dashboard:admin",
@@ -116,6 +130,7 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "permission:admin",
   ],
   MANAGER: [
     "dashboard:manager",

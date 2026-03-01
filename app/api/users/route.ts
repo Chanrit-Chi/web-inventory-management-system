@@ -1,14 +1,54 @@
 import { userDbService } from "@/lib/services/db/userDbService";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 import { Prisma, Role } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/getServerSession";
 
 const PRIVILEGED_ROLES: Set<Role> = new Set([Role.ADMIN, Role.SUPER_ADMIN]);
 
+function getAuthErrorResponse(error: unknown): NextResponse | null {
+  if (!(error instanceof Error)) return null;
+
+  if (error.message === "Unauthorized") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (
+    error.message.startsWith("Forbidden:") ||
+    error.message.includes("Only SUPER_ADMIN")
+  ) {
+    return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+
+  return null;
+}
+
+function getUniqueUserConflictResponse(error: unknown): NextResponse | null {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return null;
+  }
+
+  if (error.code !== "P2002" || !error.meta?.target) {
+    return null;
+  }
+
+  const targetValue = error.meta.target;
+  let target = "field";
+  if (Array.isArray(targetValue)) {
+    target = targetValue.join(", ");
+  } else if (typeof targetValue === "string") {
+    target = targetValue;
+  }
+
+  return NextResponse.json(
+    { error: `A user with this ${target} already exists.` },
+    { status: 409 },
+  );
+}
+
 export async function GET() {
   try {
-    await requirePermission("user:read");
+    await requirePermissionDBForAPI("user:read");
 
     const session = await getServerSession();
     const currentUserRole = session?.user?.role as Role | undefined;
@@ -26,9 +66,8 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching users:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authErrorResponse = getAuthErrorResponse(error);
+    if (authErrorResponse) return authErrorResponse;
 
     return NextResponse.json(
       { error: "Failed to fetch users" },
@@ -39,7 +78,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requirePermission("user:create");
+    await requirePermissionDBForAPI("user:create");
 
     const data = await request.json();
     const user = await userDbService.createUser(data);
@@ -47,27 +86,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating user:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authErrorResponse = getAuthErrorResponse(error);
+    if (authErrorResponse) return authErrorResponse;
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002" && error.meta?.target) {
-        const targetValue = error.meta.target;
-        let target: string;
-        if (Array.isArray(targetValue)) {
-          target = targetValue.join(", ");
-        } else if (typeof targetValue === "string") {
-          target = targetValue;
-        } else {
-          target = "field";
-        }
-        return NextResponse.json(
-          { error: `A user with this ${target} already exists.` },
-          { status: 409 },
-        );
-      }
-    }
+    const conflictResponse = getUniqueUserConflictResponse(error);
+    if (conflictResponse) return conflictResponse;
 
     return NextResponse.json(
       { error: "Failed to create user" },

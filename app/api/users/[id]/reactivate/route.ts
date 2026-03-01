@@ -1,5 +1,5 @@
 import { userDbService } from "@/lib/services/db/userDbService";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 import { NextResponse } from "next/server";
 
 export async function PATCH(
@@ -7,7 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("user:update");
+    await requirePermissionDBForAPI("user:update");
 
     const { id } = await params;
     if (!id) {
@@ -19,8 +19,20 @@ export async function PATCH(
   } catch (error) {
     console.error("Error reactivating user:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof Error) {
+      // Handle authorization errors
+      if (error.message.startsWith("Unauthorized")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      if (error.message.startsWith("Forbidden:")) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+
+      // Handle role hierarchy violations
+      if (error.message.includes("Only SUPER_ADMIN")) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
     }
 
     return NextResponse.json(

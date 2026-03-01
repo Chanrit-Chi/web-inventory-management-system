@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Ban,
   KeyRound,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { User } from "@/schemas/type-export.schema";
@@ -27,6 +28,8 @@ import {
   ResetPasswordDialog,
 } from "./user-dialogs";
 import { Badge } from "@/components/ui/badge";
+import { UserPermissionOverrideDialog } from "@/components/admin/user-permission-override-dialog";
+import { Role } from "@prisma/client";
 
 function ActionsCell({ user }: { readonly user: User }) {
   const [viewOpen, setViewOpen] = useState(false);
@@ -34,9 +37,26 @@ function ActionsCell({ user }: { readonly user: User }) {
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
   const { can } = usePermission();
   const { data: session } = useSession();
   const isCurrentUser = session?.user?.id === user.id;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentUserRole = (session?.user as any)?.role as Role | undefined;
+  const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
+
+  // Check if user can edit this target user
+  const canEditTargetUser =
+    can("user:update") &&
+    !isCurrentUser &&
+    (isSuperAdmin ||
+      (user.role !== Role.SUPER_ADMIN && user.role !== Role.ADMIN));
+  const canDeleteTargetUser =
+    can("user:delete") &&
+    !isCurrentUser &&
+    (isSuperAdmin ||
+      (user.role !== Role.SUPER_ADMIN && user.role !== Role.ADMIN));
+  const canManagePermissionTarget = can("permission:admin") && !isCurrentUser;
 
   return (
     <>
@@ -50,18 +70,24 @@ function ActionsCell({ user }: { readonly user: User }) {
             <span className="inline-flex ml-4">
               <SquarePen
                 className={`size-5 transition-colors ${
-                  can("user:update")
+                  canEditTargetUser
                     ? "cursor-pointer hover:text-green-600"
                     : "opacity-40 cursor-not-allowed pointer-events-none"
                 }`}
                 onClick={
-                  can("user:update") ? () => setUpdateOpen(true) : undefined
+                  canEditTargetUser ? () => setUpdateOpen(true) : undefined
                 }
               />
             </span>
           </TooltipTrigger>
-          {!can("user:update") && (
-            <TooltipContent>No permission</TooltipContent>
+          {!canEditTargetUser && (
+            <TooltipContent>
+              {isCurrentUser
+                ? "Cannot edit yourself here"
+                : !can("user:update")
+                  ? "No permission"
+                  : "Cannot edit privileged users"}
+            </TooltipContent>
           )}
         </Tooltip>
         <Tooltip>
@@ -69,12 +95,12 @@ function ActionsCell({ user }: { readonly user: User }) {
             <span className="inline-flex ml-4">
               <KeyRound
                 className={`size-5 transition-colors ${
-                  can("user:update") && user.isActive
+                  canEditTargetUser && user.isActive
                     ? "cursor-pointer hover:text-orange-600"
                     : "opacity-40 cursor-not-allowed pointer-events-none"
                 }`}
                 onClick={
-                  can("user:update") && user.isActive
+                  canEditTargetUser && user.isActive
                     ? () => setResetPasswordOpen(true)
                     : undefined
                 }
@@ -83,10 +109,39 @@ function ActionsCell({ user }: { readonly user: User }) {
           </TooltipTrigger>
           <TooltipContent>
             {user.isActive
-              ? can("user:update")
+              ? canEditTargetUser
                 ? "Reset Password"
-                : "No permission"
+                : isCurrentUser
+                  ? "Cannot reset your own password here"
+                  : !can("user:update")
+                    ? "No permission"
+                    : "Cannot reset password for privileged users"
               : "User is deactivated"}
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex ml-4">
+              <Shield
+                className={`size-5 transition-colors ${
+                  canManagePermissionTarget
+                    ? "cursor-pointer hover:text-purple-600"
+                    : "opacity-40 cursor-not-allowed pointer-events-none"
+                }`}
+                onClick={
+                  canManagePermissionTarget
+                    ? () => setPermissionsOpen(true)
+                    : undefined
+                }
+              />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isCurrentUser
+              ? "Cannot manage your own overrides here"
+              : can("permission:admin")
+                ? "Manage Permissions"
+                : "No permission"}
           </TooltipContent>
         </Tooltip>
         {user.isActive ? (
@@ -95,12 +150,12 @@ function ActionsCell({ user }: { readonly user: User }) {
               <span className="inline-flex ml-4">
                 <Ban
                   className={`size-5 transition-colors ${
-                    can("user:delete") && !isCurrentUser
+                    canDeleteTargetUser && !isCurrentUser
                       ? "text-red-600 cursor-pointer hover:text-red-800"
                       : "text-red-300 cursor-not-allowed pointer-events-none"
                   }`}
                   onClick={
-                    can("user:delete") && !isCurrentUser
+                    canDeleteTargetUser && !isCurrentUser
                       ? () => setDeactivateOpen(true)
                       : undefined
                   }
@@ -110,9 +165,11 @@ function ActionsCell({ user }: { readonly user: User }) {
             <TooltipContent>
               {isCurrentUser
                 ? "Cannot deactivate yourself"
-                : can("user:delete")
+                : canDeleteTargetUser
                   ? "Deactivate"
-                  : "No permission"}
+                  : !can("user:delete")
+                    ? "No permission"
+                    : "Cannot deactivate privileged users"}
             </TooltipContent>
           </Tooltip>
         ) : (
@@ -121,12 +178,12 @@ function ActionsCell({ user }: { readonly user: User }) {
               <span className="inline-flex ml-4">
                 <RotateCcw
                   className={`size-5 transition-colors ${
-                    can("user:update")
+                    canEditTargetUser
                       ? "text-green-600 cursor-pointer hover:text-green-800"
                       : "text-green-300 cursor-not-allowed pointer-events-none"
                   }`}
                   onClick={
-                    can("user:update")
+                    canEditTargetUser
                       ? () => setReactivateOpen(true)
                       : undefined
                   }
@@ -134,7 +191,11 @@ function ActionsCell({ user }: { readonly user: User }) {
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {can("user:update") ? "Reactivate" : "No permission"}
+              {canEditTargetUser
+                ? "Reactivate"
+                : !can("user:update")
+                  ? "No permission"
+                  : "Cannot reactivate privileged users"}
             </TooltipContent>
           </Tooltip>
         )}
@@ -160,6 +221,12 @@ function ActionsCell({ user }: { readonly user: User }) {
         user={user}
         open={reactivateOpen}
         onOpenChange={setReactivateOpen}
+      />
+      <UserPermissionOverrideDialog
+        userId={user.id}
+        userName={user.name}
+        open={permissionsOpen}
+        onOpenChange={setPermissionsOpen}
       />
     </>
   );
@@ -227,6 +294,31 @@ export const columns: ColumnDef<User>[] = [
         variant = "default";
       }
       return <Badge variant={variant}>{displayText}</Badge>;
+    },
+  },
+  {
+    accessorKey: "permissionGroup",
+    header: "Permission Group",
+    cell: ({ row }) => {
+      const user = row.original;
+      const overrideCount = user._count?.permissionOverrides || 0;
+
+      return (
+        <div className="flex flex-col gap-1">
+          {user.permissionGroup ? (
+            <Badge variant="outline">{user.permissionGroup.name}</Badge>
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              Default ({user.role})
+            </span>
+          )}
+          {overrideCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {overrideCount} override{overrideCount === 1 ? "" : "s"}
+            </Badge>
+          )}
+        </div>
+      );
     },
   },
   {

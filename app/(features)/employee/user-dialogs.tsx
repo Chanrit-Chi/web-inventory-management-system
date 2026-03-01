@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { User, UserCreate, UserUpdate } from "@/schemas/type-export.schema";
 import {
@@ -7,6 +7,7 @@ import {
   ViewDialog,
 } from "@/components/dialog-template";
 import { useUserMutations, useGetUserById, useGetUsers } from "@/hooks/useUser";
+import { usePermissionGroups } from "@/hooks/usePermissionGroups";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from "@/components/ui/select";
 import { Role } from "@prisma/client";
 import {
@@ -30,7 +32,7 @@ import {
 import { useSession } from "@/lib/auth-client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generatePassword, copyToClipboard } from "@/lib/password-generator";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // Create User Dialog
 export function CreateUserDialog({
@@ -42,12 +44,28 @@ export function CreateUserDialog({
 }) {
   const { addUser } = useUserMutations();
   const { data: session } = useSession();
+  const { data: permissionGroups, isPending: loadingGroups } =
+    usePermissionGroups();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
+
+  // Filter permission groups based on role hierarchy
+  const filteredPermissionGroups = useMemo(() => {
+    if (!permissionGroups) return [];
+    if (isSuperAdmin) return permissionGroups;
+
+    // ADMIN users cannot see/assign SUPER_ADMIN groups
+    return permissionGroups.filter(
+      (group) =>
+        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN",
+    );
+  }, [permissionGroups, isSuperAdmin]);
+
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
+  const [selectedValue, setSelectedValue] = useState<string>(Role.SELLER);
 
   const {
     register,
@@ -61,6 +79,7 @@ export function CreateUserDialog({
       email: "",
       password: "",
       role: Role.SELLER,
+      permissionGroupId: null,
     },
   });
 
@@ -70,6 +89,7 @@ export function CreateUserDialog({
       setGeneratedPassword("");
       setPasswordValue("");
       setShowPassword(false);
+      setSelectedValue(Role.SELLER);
     }
     onOpenChange(newOpen);
   };
@@ -108,7 +128,9 @@ export function CreateUserDialog({
       setPasswordValue("");
       setShowPassword(false);
     } catch (error) {
-      toast.error("Failed to create user");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user";
+      toast.error(errorMessage);
       console.error(error);
     }
   };
@@ -220,24 +242,61 @@ export function CreateUserDialog({
 
         <div className="space-y-2">
           <Label htmlFor="role">
-            Role <span className="text-red-500">*</span>
+            Role / Permission Group <span className="text-red-500">*</span>
           </Label>
           <Select
-            onValueChange={(value) => setValue("role", value as Role)}
-            defaultValue={Role.SELLER}
+            onValueChange={(value) => {
+              setSelectedValue(value);
+              // Check if it's a permission group (starts with "group:")
+              if (value.startsWith("group:")) {
+                const groupId = value.replace("group:", "");
+                setValue("permissionGroupId", groupId);
+                // Set role based on the group's base role or default to SELLER
+                const group = filteredPermissionGroups?.find(
+                  (g) => g.id === groupId,
+                );
+                setValue("role", (group?.baseRole as Role) || Role.SELLER);
+              } else {
+                // It's a base role
+                setValue("role", value as Role);
+                setValue("permissionGroupId", null);
+              }
+            }}
+            value={selectedValue}
           >
             <SelectTrigger id="role">
-              <SelectValue placeholder="Select a role" />
+              <SelectValue placeholder="Select a role or permission group" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={Role.SELLER}>Seller</SelectItem>
-              <SelectItem value={Role.MANAGER}>Manager</SelectItem>
-              <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+              {/* Base Roles */}
+              <SelectItem value={Role.SELLER}>Seller (Base Role)</SelectItem>
+              <SelectItem value={Role.MANAGER}>Manager (Base Role)</SelectItem>
+              <SelectItem value={Role.ADMIN}>Admin (Base Role)</SelectItem>
               {isSuperAdmin && (
-                <SelectItem value={Role.SUPER_ADMIN}>Super Admin</SelectItem>
+                <SelectItem value={Role.SUPER_ADMIN}>
+                  Super Admin (Base Role)
+                </SelectItem>
               )}
+
+              {/* Permission Groups */}
+              {filteredPermissionGroups &&
+                filteredPermissionGroups.length > 0 && (
+                  <>
+                    <SelectSeparator />
+                    {filteredPermissionGroups.map((group) => (
+                      <SelectItem key={group.id} value={`group:${group.id}`}>
+                        {group.name} (Custom Group)
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
             </SelectContent>
           </Select>
+          {loadingGroups && (
+            <p className="text-xs text-muted-foreground">
+              Loading permission groups...
+            </p>
+          )}
           {errors.role && (
             <p className="text-xs text-red-500">{errors.role.message}</p>
           )}
@@ -352,10 +411,26 @@ export function UpdateUserDialog({
 }) {
   const { updateUser } = useUserMutations();
   const { data: userData } = useGetUserById(user.id);
+  const { data: permissionGroups, isPending: loadingGroups } =
+    usePermissionGroups();
   const { data: session } = useSession();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
+  const isCurrentUser = session?.user?.id === user.id;
+  const isSuperAdminSelfEdit = isSuperAdmin && isCurrentUser;
+
+  // Filter permission groups based on role hierarchy
+  const filteredPermissionGroups = useMemo(() => {
+    if (!permissionGroups) return [];
+    if (isSuperAdmin) return permissionGroups;
+
+    // ADMIN users cannot see/assign SUPER_ADMIN groups
+    return permissionGroups.filter(
+      (group) =>
+        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN",
+    );
+  }, [permissionGroups, isSuperAdmin]);
 
   const {
     register,
@@ -363,13 +438,37 @@ export function UpdateUserDialog({
     formState: { errors },
     reset,
     setValue,
+    control,
   } = useForm<UserUpdate>({
     defaultValues: {
       name: userData?.name || user.name,
       email: userData?.email || user.email,
       role: userData?.role || user.role,
+      permissionGroupId:
+        userData?.permissionGroupId || user.permissionGroupId || null,
     },
   });
+
+  const selectedPermissionGroupId = useWatch({
+    control,
+    name: "permissionGroupId",
+  });
+  const selectedRole = useWatch({ control, name: "role" });
+  const selectedValue = selectedPermissionGroupId
+    ? `group:${selectedPermissionGroupId}`
+    : selectedRole;
+
+  // Update form values when userData changes
+  useEffect(() => {
+    if (userData) {
+      reset({
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        permissionGroupId: userData.permissionGroupId || null,
+      });
+    }
+  }, [userData, reset]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -385,7 +484,9 @@ export function UpdateUserDialog({
       onOpenChange(false);
       reset();
     } catch (error) {
-      toast.error("Failed to update user");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update user";
+      toast.error(errorMessage);
       console.error(error);
     }
   };
@@ -425,23 +526,68 @@ export function UpdateUserDialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="update-role">Role</Label>
+          <Label htmlFor="update-role">Role / Permission Group</Label>
           <Select
-            onValueChange={(value) => setValue("role", value as Role)}
-            defaultValue={userData?.role || user.role}
+            onValueChange={(value) => {
+              if (isSuperAdminSelfEdit) {
+                return;
+              }
+              // Check if it's a permission group (starts with "group:")
+              if (value.startsWith("group:")) {
+                const groupId = value.replace("group:", "");
+                setValue("permissionGroupId", groupId);
+                // Set role based on the group's base role or keep current
+                const group = filteredPermissionGroups?.find(
+                  (g) => g.id === groupId,
+                );
+                setValue("role", (group?.baseRole as Role) || user.role);
+              } else {
+                // It's a base role
+                setValue("role", value as Role);
+                setValue("permissionGroupId", null);
+              }
+            }}
+            value={selectedValue}
+            disabled={isSuperAdminSelfEdit}
           >
             <SelectTrigger id="update-role">
-              <SelectValue placeholder="Select a role" />
+              <SelectValue placeholder="Select a role or permission group" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={Role.SELLER}>Seller</SelectItem>
-              <SelectItem value={Role.MANAGER}>Manager</SelectItem>
-              <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+              {/* Base Roles */}
+              <SelectItem value={Role.SELLER}>Seller (Base Role)</SelectItem>
+              <SelectItem value={Role.MANAGER}>Manager (Base Role)</SelectItem>
+              <SelectItem value={Role.ADMIN}>Admin (Base Role)</SelectItem>
               {isSuperAdmin && (
-                <SelectItem value={Role.SUPER_ADMIN}>Super Admin</SelectItem>
+                <SelectItem value={Role.SUPER_ADMIN}>
+                  Super Admin (Base Role)
+                </SelectItem>
               )}
+
+              {/* Permission Groups */}
+              {filteredPermissionGroups &&
+                filteredPermissionGroups.length > 0 && (
+                  <>
+                    <SelectSeparator />
+                    {filteredPermissionGroups.map((group) => (
+                      <SelectItem key={group.id} value={`group:${group.id}`}>
+                        {group.name} (Custom Group)
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
             </SelectContent>
           </Select>
+          {loadingGroups && (
+            <p className="text-xs text-muted-foreground">
+              Loading permission groups...
+            </p>
+          )}
+          {isSuperAdminSelfEdit && (
+            <p className="text-xs text-muted-foreground">
+              SUPER_ADMIN cannot edit their own role or permission group.
+            </p>
+          )}
           {errors.role && (
             <p className="text-xs text-red-500">{errors.role.message}</p>
           )}
@@ -510,7 +656,9 @@ export function DeactivateUserDialog({
       toast.success("User deactivated successfully");
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to deactivate user");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to deactivate user";
+      toast.error(errorMessage);
       console.error(error);
     }
   };
@@ -573,7 +721,9 @@ export function ReactivateUserDialog({
       toast.success("User reactivated successfully");
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to reactivate user");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reactivate user";
+      toast.error(errorMessage);
       console.error(error);
     }
   };
@@ -624,14 +774,19 @@ export function ResetPasswordDialog({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to reset password");
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Failed to reset password" }));
+        throw new Error(errorData.error || "Failed to reset password");
       }
 
       const data = await response.json();
       setNewPassword(data.password);
       toast.success("Password reset successfully");
     } catch (error) {
-      toast.error("Failed to reset password");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reset password";
+      toast.error(errorMessage);
       console.error(error);
     } finally {
       setIsResetting(false);

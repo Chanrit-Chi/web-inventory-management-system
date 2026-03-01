@@ -191,6 +191,12 @@ export default function SaleDashboardPage() {
 
   // ── derived metrics ──────────────────────────────────────────────────────
   const todayOrders = orders.filter((o) => isToday(new Date(o.createdAt)));
+  const todayCompletedOrders = todayOrders.filter(
+    (o) => o.status === "COMPLETED",
+  ).length;
+  const todayPendingOrders = todayOrders.filter(
+    (o) => o.status === "PENDING",
+  ).length;
   const todayRevenue = todayOrders.reduce(
     (sum, o) => sum + Number(o.totalPrice ?? 0),
     0,
@@ -245,7 +251,7 @@ export default function SaleDashboardPage() {
             icon={ClipboardList}
             label="Orders Today"
             value={todayOrders.length}
-            sub="completed + pending"
+            sub={`Completed ${todayCompletedOrders} + Pending ${todayPendingOrders}`}
             color="bg-[#0e9384]"
           />
           <MetricCard
@@ -290,7 +296,7 @@ export default function SaleDashboardPage() {
               icon={Users}
               label="Customers"
               description="Customer directory"
-              href="/sales/customers"
+              href="/customer"
               color="bg-blue-100 text-blue-600"
             />
             <QuickAction

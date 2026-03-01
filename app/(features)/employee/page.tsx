@@ -6,15 +6,46 @@ import { useGetUsers } from "@/hooks/useUser";
 import { columns } from "./columns";
 import { SharedLayout } from "@/components/shared-layout";
 import { CreateUserDialog } from "./user-dialogs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { usePermission } from "@/hooks/usePermission";
+import { useSession } from "@/lib/auth-client";
+import { Role } from "@prisma/client";
 
 function EmployeeList() {
   const { data, isLoading, error } = useGetUsers();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { can } = usePermission();
+  const { data: session } = useSession();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentUserRole = (session?.user as any)?.role as Role | undefined;
+  const currentUserId = session?.user?.id;
+  const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
 
-  if (isLoading) return <Spinner className="size-8" />;
+  // Filter user list by role hierarchy and self-visibility
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+
+    return data.filter((user) => {
+      // Non-super-admin cannot see super-admin users
+      if (!isSuperAdmin && user.role === Role.SUPER_ADMIN) {
+        return false;
+      }
+
+      // Non-super-admin should not manage themselves in this table
+      if (!isSuperAdmin && currentUserId && user.id === currentUserId) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [data, isSuperAdmin, currentUserId]);
+
+  if (isLoading)
+    return (
+      <div className="items-center justify-center flex min-h-screen w-full">
+        <Spinner className="size-8" />
+      </div>
+    );
   if (error) return <p className="text-red-600">Failed to load users</p>;
 
   return (
@@ -25,7 +56,7 @@ function EmployeeList() {
         addNewLabel="New User"
         onAddNew={() => setCreateDialogOpen(true)}
         columns={columns}
-        data={data || []}
+        data={filteredData}
         rowFilters={[
           {
             columnId: "isActive",

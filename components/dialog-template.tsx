@@ -12,7 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReactNode, useState, useEffect } from "react";
-import { useForm, FieldValues, Path } from "react-hook-form";
+import {
+  useForm,
+  FieldValues,
+  Path,
+  Resolver,
+  DefaultValues,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -101,14 +107,14 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
     formState: { errors },
     reset,
   } = useForm<z.infer<TSchema>>({
-    resolver: (zodResolver as any)(schema),
-    defaultValues: defaultValues as any,
+    resolver: zodResolver(schema) as Resolver<z.infer<TSchema>>,
+    defaultValues: defaultValues as DefaultValues<z.infer<TSchema>>,
   });
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      reset(defaultValues as any);
+      reset(defaultValues as DefaultValues<z.infer<TSchema>>);
     }
   }, [open, reset, defaultValues]);
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/getServerSession";
 import { AttributeValueCreateSchema } from "@/schemas/attribute.schema";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 
 // POST - Add value to attribute
 export async function POST(
@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await requirePermission("product:create");
+    await requirePermissionDBForAPI("product:create");
 
     const { id } = await params;
     const attributeId = Number.parseInt(id);
@@ -73,7 +73,11 @@ export async function POST(
   } catch (error) {
     console.error("Error adding attribute value:", error);
 
-    if (error instanceof Error && error.message.includes("permission")) {
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message.startsWith("Forbidden:")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 

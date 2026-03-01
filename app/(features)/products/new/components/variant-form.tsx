@@ -330,7 +330,7 @@ export function VariantForm() {
       {productType === "variable" && (
         <div className="space-y-6">
           {/* Info Alert */}
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+          <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-800 dark:text-blue-200">
             <Info size={16} className="mt-0.5 shrink-0" />
             <p>
               Select attributes and their values to automatically generate
@@ -366,7 +366,7 @@ export function VariantForm() {
           )}
 
           {selectedAttributes.length > 0 && computedVariants.length === 0 && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-sm text-yellow-800">
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-center text-sm text-yellow-800 dark:text-yellow-200">
               Select at least one value for each attribute to generate variants
             </div>
           )}

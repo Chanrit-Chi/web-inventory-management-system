@@ -61,6 +61,23 @@ async function preventSelfRoleModification(
   }
 }
 
+function preventSuperAdminSelfPermissionGroupModification(
+  currentUserId: string | undefined,
+  targetUserId: string,
+  currentUserRole: Role | undefined,
+  payload: UserUpdate,
+): void {
+  const isSelfUpdate = currentUserId === targetUserId;
+  const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
+  const hasPermissionGroupUpdate = Object.hasOwn(payload, "permissionGroupId");
+
+  if (isSelfUpdate && isSuperAdmin && hasPermissionGroupUpdate) {
+    throw new Error(
+      "Forbidden: SUPER_ADMIN cannot edit their own permission group",
+    );
+  }
+}
+
 async function enforceLastAdminRule(targetUserId: string): Promise<void> {
   const targetUser = await prisma.user.findUnique({
     where: { id: targetUserId },
@@ -92,7 +109,7 @@ async function enforceLastAdminRule(targetUserId: string): Promise<void> {
 
 export const userDbService = {
   fetchUsers: async (): Promise<User[]> => {
-    return prisma.user.findMany({
+    const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -108,8 +125,23 @@ export const userDbService = {
         updatedBy: true,
         deactivatedBy: true,
         deactivatedAt: true,
+        permissionGroupId: true,
+        permissionGroup: {
+          select: {
+            id: true,
+            name: true,
+            priority: true,
+          },
+        },
+        _count: {
+          select: {
+            permissionOverrides: true,
+          },
+        },
       },
     });
+
+    return users as unknown as User[];
   },
 
   fetchUserById: async (id: string): Promise<User | null> => {
@@ -129,6 +161,19 @@ export const userDbService = {
         updatedBy: true,
         deactivatedBy: true,
         deactivatedAt: true,
+        permissionGroupId: true,
+        permissionGroup: {
+          select: {
+            id: true,
+            name: true,
+            priority: true,
+          },
+        },
+        _count: {
+          select: {
+            permissionOverrides: true,
+          },
+        },
       },
     });
   },
@@ -164,6 +209,7 @@ export const userDbService = {
       data: {
         role: userData.role,
         image: userData.image,
+        permissionGroupId: userData.permissionGroupId || null,
         createdBy: currentUserId,
       },
       select: {
@@ -197,6 +243,14 @@ export const userDbService = {
     // Validate: Cannot modify your own role
     await preventSelfRoleModification(currentUserId, id, data.role);
 
+    // Validate: SUPER_ADMIN cannot modify their own permission group
+    preventSuperAdminSelfPermissionGroupModification(
+      currentUserId,
+      id,
+      currentUserRole,
+      data,
+    );
+
     // Validate: If changing role to privileged, must be SUPER_ADMIN
     if (data.role) {
       await validateRoleHierarchy(currentUserRole, data.role, "assign");
@@ -214,6 +268,7 @@ export const userDbService = {
         email: true,
         emailVerified: true,
         role: true,
+        permissionGroupId: true,
         image: true,
         isActive: true,
         createdAt: true,
@@ -222,6 +277,13 @@ export const userDbService = {
         updatedBy: true,
         deactivatedBy: true,
         deactivatedAt: true,
+        permissionGroup: {
+          select: {
+            id: true,
+            name: true,
+            priority: true,
+          },
+        },
       },
     });
   },

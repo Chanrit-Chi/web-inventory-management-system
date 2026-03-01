@@ -47,6 +47,80 @@ interface AdjustInventoryOptions {
   createdBy?: string;
 }
 
+const STOCK_EXPENSE_CATEGORY_NAME = "Stock";
+const AUTO_PO_EXPENSE_NOTE_TAG = "[AUTO_PO_EXPENSE]";
+
+async function syncPurchaseOrderStockExpense(
+  tx: Prisma.TransactionClient,
+  params: {
+    purchaseOrderId: number;
+    oldStatus: string;
+    newStatus: string;
+    totalAmount: number;
+    actorId?: string;
+  },
+) {
+  const { purchaseOrderId, oldStatus, newStatus, totalAmount, actorId } =
+    params;
+
+  const referenceNo = `PO-${purchaseOrderId}`;
+
+  const stockCategory = await tx.expenseCategory.upsert({
+    where: { name: STOCK_EXPENSE_CATEGORY_NAME },
+    update: { isActive: true },
+    create: {
+      name: STOCK_EXPENSE_CATEGORY_NAME,
+      description: "Auto category for completed purchase order stock costs",
+      isActive: true,
+    },
+  });
+
+  const existingAutoExpense = await tx.expense.findFirst({
+    where: {
+      referenceNo,
+      categoryId: stockCategory.id,
+      notes: {
+        contains: AUTO_PO_EXPENSE_NOTE_TAG,
+      },
+    },
+  });
+
+  const shouldTrackAsExpense = newStatus === "COMPLETED";
+  const normalizedAmount = Math.max(0, Number(totalAmount || 0));
+
+  if (shouldTrackAsExpense) {
+    const data = {
+      amount: normalizedAmount,
+      description: `Stock purchase for Purchase Order #${purchaseOrderId}`,
+      expenseDate: new Date(),
+      categoryId: stockCategory.id,
+      referenceNo,
+      notes: `${AUTO_PO_EXPENSE_NOTE_TAG} Auto-generated from completed purchase order`,
+      updatedBy: actorId ?? null,
+    };
+
+    if (existingAutoExpense) {
+      await tx.expense.update({
+        where: { id: existingAutoExpense.id },
+        data,
+      });
+    } else {
+      await tx.expense.create({
+        data: {
+          ...data,
+          createdBy: actorId ?? null,
+        },
+      });
+    }
+
+    return;
+  }
+
+  if (oldStatus === "COMPLETED" && existingAutoExpense) {
+    await tx.expense.delete({ where: { id: existingAutoExpense.id } });
+  }
+}
+
 /**
  * Adjust inventory for purchase order operations.
  * For purchases: receiving stock INCREASES inventory (opposite of sales).
@@ -232,6 +306,14 @@ export const purchaseOrderService = {
         createdBy,
       });
 
+      await syncPurchaseOrderStockExpense(tx, {
+        purchaseOrderId: order.id,
+        oldStatus: "PENDING",
+        newStatus: orderData.status || "COMPLETED",
+        totalAmount,
+        actorId: createdBy,
+      });
+
       return order;
     });
   },
@@ -268,6 +350,9 @@ export const purchaseOrderService = {
         data: updateData as Prisma.PurchaseOrderUpdateInput,
       });
 
+      let finalTotalAmount = Number(updatedOrder.totalAmount ?? 0);
+      let finalStatus = updatedOrder.status as string;
+
       if (purchaseOrderDetails && Array.isArray(purchaseOrderDetails)) {
         await adjustPurchaseInventory(tx, id, {
           oldItems: existingOrder.purchaseOrderDetails,
@@ -301,6 +386,8 @@ export const purchaseOrderService = {
           where: { id },
           data: { totalAmount: newTotal },
         });
+
+        finalTotalAmount = newTotal;
       } else if (
         updateData.status &&
         updateData.status !== existingOrder.status
@@ -313,7 +400,17 @@ export const purchaseOrderService = {
           reason: `Status change for Purchase Order #${id}`,
           createdBy,
         });
+
+        finalStatus = updateData.status as string;
       }
+
+      await syncPurchaseOrderStockExpense(tx, {
+        purchaseOrderId: id,
+        oldStatus: existingOrder.status,
+        newStatus: finalStatus,
+        totalAmount: finalTotalAmount,
+        actorId: createdBy,
+      });
 
       return updatedOrder;
     });

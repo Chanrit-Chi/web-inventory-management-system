@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
 interface AttributeValue {
@@ -70,40 +77,42 @@ export function AttributeSelector({
           return (
             <div
               key={attr.id}
-              className="p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-3"
+              className="p-4 border border-border rounded-lg bg-muted/30 space-y-3"
             >
               <div className="flex items-center gap-3">
-                <select
-                  value={attr.attributeId || ""}
-                  onChange={(e) =>
-                    onUpdateAttributeId(
-                      attr.id,
-                      Number.parseInt(e.target.value),
-                    )
+                <Select
+                  value={
+                    attr.attributeId ? String(attr.attributeId) : undefined
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onValueChange={(value) =>
+                    onUpdateAttributeId(attr.id, Number.parseInt(value))
+                  }
                 >
-                  <option value="">Select attribute...</option>
-                  {attributes
-                    .filter(
-                      (a) =>
-                        a.id === attr.attributeId ||
-                        !selectedAttributes.some(
-                          (sel) => sel.attributeId === a.id,
-                        ),
-                    )
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.displayName}
-                      </option>
-                    ))}
-                </select>
+                  <SelectTrigger className="flex-1 bg-background">
+                    <SelectValue placeholder="Select attribute..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {attributes
+                      .filter(
+                        (a) =>
+                          a.id === attr.attributeId ||
+                          !selectedAttributes.some(
+                            (sel) => sel.attributeId === a.id,
+                          ),
+                      )
+                      .map((a) => (
+                        <SelectItem key={a.id} value={String(a.id)}>
+                          {a.displayName}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   type="button"
                   onClick={() => onRemoveAttribute(attr.id)}
                   size="sm"
                   variant="ghost"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 size={18} />
                 </Button>
@@ -119,7 +128,7 @@ export function AttributeSelector({
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                         attr.selectedValueIds.includes(value.id)
                           ? "bg-primary text-primary-foreground"
-                          : "bg-white text-gray-700 border border-gray-300 hover:border-primary"
+                          : "bg-background text-foreground border border-border hover:border-primary"
                       }`}
                     >
                       {value.displayValue || value.value}
@@ -133,7 +142,7 @@ export function AttributeSelector({
       )}
 
       {selectedAttributes.length === 0 && (
-        <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
+        <div className="p-6 border-2 border-dashed border-border rounded-lg text-center text-muted-foreground">
           Click &quot;Add Attribute&quot; to start creating variants
         </div>
       )}

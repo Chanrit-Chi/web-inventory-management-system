@@ -16,8 +16,8 @@ export {
   ProductUpdateSchema,
   StockMovementCreateSchema,
   StockMovementSchema,
-  batchAdjustmentSchema,
 };
+export { batchAdjustmentSchema } from "./stock-movement.schema";
 import {
   SupplierCreateSchema,
   SupplierSchema,
@@ -28,6 +28,13 @@ import {
   CustomerSchema,
   CustomerUpdateSchema,
 } from "./customer.schema";
+import {
+  ExpenseCategoryCreateSchema,
+  ExpenseCategorySchema,
+  ExpenseCreateSchema,
+  ExpenseSchema,
+  ExpenseUpdateSchema,
+} from "./expense.schema";
 import {
   OrderCreateSchema,
   OrderSchema,
@@ -140,6 +147,12 @@ export type SupplierUpdate = z.infer<typeof SupplierUpdateSchema>;
 export type Customer = z.infer<typeof CustomerSchema>;
 export type CustomerCreate = z.infer<typeof CustomerCreateSchema>;
 export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
+
+export type ExpenseCategory = z.infer<typeof ExpenseCategorySchema>;
+export type ExpenseCategoryCreate = z.infer<typeof ExpenseCategoryCreateSchema>;
+export type Expense = z.infer<typeof ExpenseSchema>;
+export type ExpenseCreate = z.infer<typeof ExpenseCreateSchema>;
+export type ExpenseUpdate = z.infer<typeof ExpenseUpdateSchema>;
 
 export type Order = z.infer<typeof OrderSchema>;
 export type OrderCreate = z.infer<typeof OrderCreateSchema>;

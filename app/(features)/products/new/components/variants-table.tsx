@@ -33,51 +33,51 @@ export function VariantsTable({
         <Label className="text-base font-semibold">
           Generated Variants ({computedVariants.length})
         </Label>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           You can edit prices for each variant
         </span>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   SKU
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Variant
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Cost
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Price
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Stock
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Reorder
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Reserved
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Active
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {computedVariants.map((variant, index) => {
                 const currentVariant = currentVariants[index];
                 return (
-                  <tr key={variant.sku} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                  <tr key={variant.sku} className="hover:bg-muted/40">
+                    <td className="px-4 py-3 text-sm text-foreground font-mono">
                       {variant.sku}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm text-foreground">
                       {variant.variantName}
                     </td>
                     <td className="px-4 py-3">
@@ -173,7 +173,7 @@ export function VariantsTable({
                             e.target.checked,
                           )
                         }
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        className="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
                       />
                     </td>
                   </tr>

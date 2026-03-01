@@ -29,6 +29,8 @@ export const ProductVariantSchema = z.object({
             // Structure from DB
             z.object({
               value: z.string(),
+              displayValue: z.string().optional(),
+              colorHex: z.string().nullable().optional(),
               attribute: z.object({
                 name: z.string(),
               }),

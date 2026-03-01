@@ -43,18 +43,24 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { productData, attributeSelections } = data;
+    const { productData } = data;
     console.log("Received product data:", JSON.stringify(productData, null, 2));
     const product =
       await productDbService.createProductWithVariants(productData);
     return NextResponse.json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating product:", error);
 
-    if (error.code === "P2002" && error.meta?.target) {
-      const target = error.meta.target;
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      "meta" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
+      const target = (error as { meta?: { target?: string } }).meta?.target;
       return NextResponse.json(
-        { error: `A product with this ${target} already exists.` },
+        { error: `A product with this ${target ?? "value"} already exists.` },
         { status: 409 },
       );
     }

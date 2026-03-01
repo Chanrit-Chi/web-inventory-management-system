@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/getServerSession";
 import { AttributeCreateSchema } from "@/schemas/attribute.schema";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 
 // GET - List all attributes with their values
 export async function GET() {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permission
-    await requirePermission("product:create");
+    await requirePermissionDBForAPI("product:create");
 
     const body = await request.json();
     const validatedData = AttributeCreateSchema.parse(body);
@@ -74,7 +74,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating attribute:", error);
 
-    if (error instanceof Error && error.message.includes("permission")) {
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message.startsWith("Forbidden:")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 

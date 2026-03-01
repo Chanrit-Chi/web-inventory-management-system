@@ -7,7 +7,6 @@ import {
   HandCoins,
   Package,
   Receipt,
-  ShoppingCart,
   TrendingUp,
 } from "lucide-react";
 import React from "react";
@@ -16,7 +15,8 @@ import Link from "next/link";
 import { isToday, startOfMonth } from "date-fns";
 import { useGetSales } from "@/hooks/useSale";
 import { useGetProducts } from "@/hooks/useProduct";
-import { OrderWithRelations } from "@/schemas/type-export.schema";
+import { useGetExpenses } from "@/hooks/useExpense";
+import { Expense, OrderWithRelations } from "@/schemas/type-export.schema";
 import { Spinner } from "@/components/ui/spinner";
 
 function fmt(val: number) {
@@ -28,9 +28,11 @@ function fmt(val: number) {
 
 export default function DashboardOverview() {
   const { data: salesData, isLoading: salesLoading } = useGetSales(1, 100);
+  const { data: expensesData, isLoading: expensesLoading } = useGetExpenses();
   const { data: productsData } = useGetProducts(1, 1);
 
   const orders = (salesData?.data ?? []) as OrderWithRelations[];
+  const expenses: Expense[] = expensesData ?? [];
   const totalProductCount = productsData?.pagination?.total ?? 0;
 
   const monthStart = startOfMonth(new Date());
@@ -45,15 +47,21 @@ export default function DashboardOverview() {
     0,
   );
   const pendingOrders = orders.filter((o) => o.status === "PENDING");
-  const completedOrders = orders.filter(
-    (o) => o.status === "COMPLETED" && new Date(o.createdAt) >= monthStart,
-  );
   const pendingAmount = pendingOrders.reduce(
     (sum, o) => sum + Number(o.totalPrice ?? 0),
     0,
   );
 
-  if (salesLoading) {
+  const monthExpenses = expenses.filter(
+    (expense) => new Date(expense.expenseDate) >= monthStart,
+  );
+  const monthExpenseAmount = monthExpenses.reduce(
+    (sum, expense) => sum + Number(expense.amount ?? 0),
+    0,
+  );
+  const netMonth = monthRevenue - monthExpenseAmount;
+
+  if (salesLoading || expensesLoading) {
     return (
       <div className="flex items-center justify-center py-10">
         <Spinner className="size-6" />
@@ -165,23 +173,24 @@ export default function DashboardOverview() {
           <div className="flex flex-col">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-sm font-medium">Today&apos;s Orders</h3>
-                <p className="text-2xl text-[#092c4c] dark:text-blue-400 font-bold">
-                  {todayOrders.length}
+                <h3 className="text-sm font-medium">Month Expenses</h3>
+                <p className="text-2xl text-red-600 dark:text-red-400 font-bold">
+                  {fmt(monthExpenseAmount)}
                 </p>
               </div>
-              <ShoppingCart className="h-12 w-12 text-[#092c4c] dark:text-blue-400" />
+              <Receipt className="h-12 w-12 text-red-600 dark:text-red-400" />
             </div>
-            <Separator className="my-2 bg-[#092c4c] dark:bg-blue-400" />
+            <Separator className="my-2 bg-red-600 dark:bg-red-400" />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-blue-600 dark:text-blue-400 bg-neutral-50 dark:bg-neutral-800 w-max px-2 rounded-full mt-1">
-                {fmt(todayRevenue)}
+              <p className="text-xs text-red-600 dark:text-red-400 bg-neutral-50 dark:bg-neutral-800 w-max px-2 rounded-full mt-1">
+                {monthExpenses.length} expense
+                {monthExpenses.length === 1 ? "" : "s"}
               </p>
               <Link
-                href="/sales/all-sale"
-                className="text-xs underline text-[#092c4c] dark:text-blue-400"
+                href="/expenses"
+                className="text-xs underline text-red-600 dark:text-red-400"
               >
-                View All
+                View Expenses
               </Link>
             </div>
           </div>
@@ -190,9 +199,9 @@ export default function DashboardOverview() {
           <div className="flex flex-col">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-sm font-medium">Completed (Month)</h3>
+                <h3 className="text-sm font-medium">Net (Month)</h3>
                 <p className="text-2xl text-[#0e9384] dark:text-teal-400 font-bold">
-                  {completedOrders.length}
+                  {fmt(netMonth)}
                 </p>
               </div>
               <CheckCircle2 className="h-12 w-12 text-[#0e9384] dark:text-teal-400" />
@@ -200,10 +209,10 @@ export default function DashboardOverview() {
             <Separator className="my-2 bg-[#0e9384] dark:bg-teal-400" />
             <div className="flex justify-between items-center">
               <p className="text-xs text-teal-600 dark:text-teal-400 bg-neutral-50 dark:bg-neutral-800 w-max px-2 rounded-full mt-1">
-                of {monthOrders.length} total
+                Revenue - Expense
               </p>
-              <Link href="/sales/all-sale" className="text-xs underline">
-                View Sales
+              <Link href="/expenses" className="text-xs underline">
+                View Expenses
               </Link>
             </div>
           </div>

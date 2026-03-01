@@ -1,474 +1,1039 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Minus, Search, Filter, ShoppingCart } from "lucide-react";
+import { useMemo, useState } from "react";
+import Decimal from "decimal.js";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { SharedLayout } from "@/components/shared-layout";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import Link from "next/link";
-const img = "https://picsum.photos/200/300";
+import {
+  ArrowLeft,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  UserPlus,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetProducts } from "@/hooks/useProduct";
+import { useGetCategories } from "@/hooks/useCategory";
+import { useGetCustomers } from "@/hooks/useCustomer";
+import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
+import { useSaleMutations } from "@/hooks/useSale";
+import { CreateCustomerDialog } from "../../customer/customer-dialogs";
+import type { OrderWithDetails, Product } from "@/schemas/type-export.schema";
 
-const POSOrderPage = () => {
-  const [cart, setCart] = useState([
-    {
-      id: 1,
-      name: "T-Shirt Zee Jkt48 X Senkanji",
-      size: "L",
-      price: 10.86,
-      quantity: 1,
-      image: img,
-    },
-    {
-      id: 2,
-      name: "Trucker Zee Jacket X JKT48",
-      size: "M",
-      price: 19.12,
-      quantity: 2,
-      image: img,
-    },
-    {
-      id: 3,
-      name: "Hoodie Fortune JKT48 Beige",
-      size: "L",
-      price: 31.95,
-      quantity: 2,
-      image: img,
-    },
-    {
-      id: 4,
-      name: "Paperbag",
-      size: "Normal Size",
-      price: 0.32,
-      quantity: 1,
-      image: img,
-    },
-  ]);
+type PosVariant = {
+  variantId: number;
+  sku: string;
+  sizeKey: string | null;
+  sizeLabel: string | null;
+  colorKey: string | null;
+  colorLabel: string | null;
+  colorHex?: string;
+  stock: number;
+  price: number;
+};
 
-  const [activeCategory, setActiveCategory] = useState("All Items");
-  const [selectedSizes, setSelectedSizes] = useState<Record<number, string>>(
-    {},
+type PosProduct = {
+  id: string;
+  name: string;
+  categoryId: number;
+  image?: string;
+  variants: PosVariant[];
+};
+
+type CartItem = {
+  productId: string;
+  variantId: number;
+  name: string;
+  variantLabel: string;
+  price: number;
+  quantity: number;
+  stock: number;
+  image?: string;
+};
+
+type VariantOption = {
+  key: string;
+  label: string;
+  colorHex?: string;
+};
+
+const DEFAULT_VARIANT_KEY = "__default__";
+
+const normalizeOptionKey = (value: string) => value.trim().toLowerCase();
+
+const toNumber = (value: unknown): number => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toNumber" in value &&
+    typeof (value as { toNumber?: () => number }).toNumber === "function"
+  ) {
+    return (value as { toNumber: () => number }).toNumber();
+  }
+  return 0;
+};
+
+const extractVariantMeta = (variant: Product["variants"][number]) => {
+  let sizeKey: string | null = null;
+  let sizeLabel: string | null = null;
+  let colorKey: string | null = null;
+  let colorLabel: string | null = null;
+  let colorHex: string | undefined;
+
+  for (const attribute of variant.attributes ?? []) {
+    const attrValue = attribute.value;
+    if (!attrValue || typeof attrValue === "string") continue;
+
+    const name = attrValue.attribute?.name?.toLowerCase() ?? "";
+    const rawValue = attrValue.value?.trim() || "";
+    if (!rawValue) continue;
+    const displayValue =
+      (typeof attrValue.displayValue === "string" &&
+        attrValue.displayValue.trim()) ||
+      rawValue;
+
+    if (name.includes("size")) {
+      sizeKey = normalizeOptionKey(rawValue);
+      sizeLabel = displayValue;
+    }
+
+    if (name.includes("color") || name.includes("colour")) {
+      colorKey = normalizeOptionKey(rawValue);
+      colorLabel = displayValue;
+      colorHex =
+        typeof attrValue.colorHex === "string" && attrValue.colorHex.trim()
+          ? attrValue.colorHex
+          : undefined;
+    }
+  }
+
+  return { sizeKey, sizeLabel, colorKey, colorLabel, colorHex };
+};
+
+const getVariantSizeKey = (variant: PosVariant) =>
+  variant.sizeKey ?? DEFAULT_VARIANT_KEY;
+
+const getVariantColorKey = (variant: PosVariant) =>
+  variant.colorKey ?? DEFAULT_VARIANT_KEY;
+
+const hasSizeOrColor = (variant: PosVariant) =>
+  Boolean(variant.sizeLabel || variant.colorLabel);
+
+const getVariantChipLabel = (variant: PosVariant) => {
+  if (!hasSizeOrColor(variant)) {
+    return `Default (${variant.stock})`;
+  }
+
+  const size = variant.sizeLabel ?? "-";
+  const color = variant.colorLabel ?? "-";
+  return `${size}/${color} (${variant.stock})`;
+};
+
+const getVariantLineLabel = (variant: PosVariant) => {
+  const labels: string[] = [];
+  if (variant.sizeLabel) labels.push(`Size: ${variant.sizeLabel}`);
+  if (variant.colorLabel) labels.push(`Color: ${variant.colorLabel}`);
+  return labels.length > 0 ? labels.join(" · ") : "Default variant";
+};
+
+const getSizeOptions = (variants: PosVariant[]): VariantOption[] => {
+  const map = new Map<string, VariantOption>();
+
+  for (const variant of variants) {
+    if (!variant.sizeKey || !variant.sizeLabel) continue;
+    if (!map.has(variant.sizeKey)) {
+      map.set(variant.sizeKey, {
+        key: variant.sizeKey,
+        label: variant.sizeLabel,
+      });
+    }
+  }
+
+  return Array.from(map.values());
+};
+
+const getColorOptions = (variants: PosVariant[]): VariantOption[] => {
+  const map = new Map<string, VariantOption>();
+
+  for (const variant of variants) {
+    if (!variant.colorKey || !variant.colorLabel) continue;
+    if (!map.has(variant.colorKey)) {
+      map.set(variant.colorKey, {
+        key: variant.colorKey,
+        label: variant.colorLabel,
+        colorHex: variant.colorHex,
+      });
+    }
+  }
+
+  return Array.from(map.values());
+};
+
+const findBestVariant = (
+  variants: PosVariant[],
+  sizeKey?: string,
+  colorKey?: string,
+) => {
+  const matchBySelection = variants.find((variant) => {
+    const isSizeMatch = !sizeKey || getVariantSizeKey(variant) === sizeKey;
+    const isColorMatch = !colorKey || getVariantColorKey(variant) === colorKey;
+    return isSizeMatch && isColorMatch && variant.stock > 0;
+  });
+
+  if (matchBySelection) return matchBySelection;
+
+  return variants.find((variant) => variant.stock > 0) || variants[0];
+};
+
+const isSizeDisabled = (
+  variants: PosVariant[],
+  sizeKey: string,
+  selectedColor?: string,
+) => {
+  return !variants.some((variant) => {
+    const sizeMatch = getVariantSizeKey(variant) === sizeKey;
+    const colorMatch =
+      !selectedColor || getVariantColorKey(variant) === selectedColor;
+    return sizeMatch && colorMatch && variant.stock > 0;
+  });
+};
+
+const isColorDisabled = (
+  variants: PosVariant[],
+  colorKey: string,
+  selectedSize?: string,
+) => {
+  return !variants.some((variant) => {
+    const colorMatch = getVariantColorKey(variant) === colorKey;
+    const sizeMatch =
+      !selectedSize || getVariantSizeKey(variant) === selectedSize;
+    return colorMatch && sizeMatch && variant.stock > 0;
+  });
+};
+
+function PosPageContent() {
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
+    Record<string, number>
+  >({});
+  const [selectedSizeByProduct, setSelectedSizeByProduct] = useState<
+    Record<string, string | undefined>
+  >({});
+  const [selectedColorByProduct, setSelectedColorByProduct] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
+  const [status, setStatus] = useState<"COMPLETED" | "PENDING" | "CANCELLED">(
+    "COMPLETED",
+  );
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [taxPercent, setTaxPercent] = useState(0);
+  const [openCreateCustomer, setOpenCreateCustomer] = useState(false);
+
+  const { data: productsResponse, isLoading: loadingProducts } = useGetProducts(
+    1,
+    200,
+    search || undefined,
+    { isActive: "true" },
+  );
+  const { data: customers, isLoading: loadingCustomers } = useGetCustomers();
+  const { data: categories } = useGetCategories();
+  const { data: paymentMethods, isLoading: loadingPaymentMethods } =
+    useGetPaymentMethods();
+  const { addSale } = useSaleMutations();
+
+  const products = useMemo<PosProduct[]>(() => {
+    const rows =
+      (productsResponse as { data?: Product[] } | undefined)?.data ?? [];
+
+    return rows.map((product) => {
+      const variants: PosVariant[] = (product.variants ?? [])
+        .filter((variant) => variant.isActive)
+        .map((variant) => {
+          const { sizeKey, sizeLabel, colorKey, colorLabel, colorHex } =
+            extractVariantMeta(variant);
+          const sellingPrice = toNumber(variant.sellingPrice);
+          const costPrice = toNumber(variant.costPrice);
+          return {
+            variantId: variant.id ?? 0,
+            sku: variant.sku,
+            sizeKey,
+            sizeLabel,
+            colorKey,
+            colorLabel,
+            colorHex,
+            stock: variant.stock ?? 0,
+            price: sellingPrice > 0 ? sellingPrice : costPrice,
+          };
+        })
+        .filter((variant) => variant.variantId > 0);
+
+      return {
+        id: product.id,
+        name: product.name,
+        categoryId: product.categoryId,
+        image: product.image || undefined,
+        variants,
+      };
+    });
+  }, [productsResponse]);
+
+  const categoryTabs = useMemo(
+    () => [
+      { id: "all", name: "All Products" },
+      ...((categories ?? []).map((category) => ({
+        id: String(category.id),
+        name: category.name,
+      })) as Array<{ id: string; name: string }>),
+    ],
+    [categories],
   );
 
-  const customer = [
-    {
-      name: "Prabowo Sasmito",
-      phone: "xxxxxxxx",
-    },
-    {
-      name: "Budi Santoso",
-      phone: "xxxxxxxx",
-    },
-    {
-      name: "Siti Aminah",
-      phone: "xxxxxxxx",
-    },
-  ];
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === "all") return products;
 
-  const products = [
-    {
-      id: 1,
-      name: "Hoodie Fortune JKT48 Beige",
-      price: 31.95,
-      sizes: ["S", "M", "L", "XL", "2XL", "3XL"],
-      image: img,
-      category: "Hoodie",
-    },
-    {
-      id: 2,
-      name: "T-Shirt Zee Jkt48 X Senkanji",
-      price: 10.86,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 3,
-      name: "T-Shirt Shani Jkt48 X Senkanji",
-      price: 10.86,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 4,
-      name: "T-Shirt Christy Jkt48 X Senkanji",
-      price: 19.17,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 5,
-      name: "T-Shirt Oversize Jkt48",
-      price: 11.82,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 6,
-      name: "T-Shirt Oversize Jkt48 #11",
-      price: 11.82,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 7,
-      name: "T-Shirt Oversize Jkt48 Red",
-      price: 11.82,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Tshirt",
-    },
-    {
-      id: 8,
-      name: "Hoodie Star Mocociu JKT48",
-      price: 38.34,
-      sizes: ["S", "M", "L", "XL"],
-      image: img,
-      category: "Hoodie",
-    },
-  ];
+    const categoryId = Number(selectedCategory);
+    if (Number.isNaN(categoryId)) return products;
 
-  const handleSizeSelect = (productId: number, size: string) => {
-    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
+    return products.filter((product) => product.categoryId === categoryId);
+  }, [products, selectedCategory]);
+
+  const subtotal = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cart],
+  );
+  const discountAmount = useMemo(
+    () => (subtotal * discountPercent) / 100,
+    [subtotal, discountPercent],
+  );
+  const taxAmount = useMemo(
+    () => ((subtotal - discountAmount) * taxPercent) / 100,
+    [subtotal, discountAmount, taxPercent],
+  );
+  const total = useMemo(
+    () => subtotal - discountAmount + taxAmount,
+    [subtotal, discountAmount, taxAmount],
+  );
+
+  const selectVariant = (productId: string, variantId: number) => {
+    setSelectedVariantByProduct((prev) => ({
+      ...prev,
+      [productId]: variantId,
+    }));
   };
 
-  const addToCart = (product: (typeof products)[0]) => {
-    const selectedSize = selectedSizes[product.id] || product.sizes[0];
+  const selectSize = (product: PosProduct, sizeKey: string) => {
+    setSelectedSizeByProduct((prev) => ({ ...prev, [product.id]: sizeKey }));
 
-    const existingItemIndex = cart.findIndex(
-      (item) => item.name === product.name && item.size === selectedSize,
-    );
-
-    if (existingItemIndex > -1) {
-      setCart(
-        cart.map((item, index) =>
-          index === existingItemIndex
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        ),
+    const currentColorKey = selectedColorByProduct[product.id];
+    const canKeepCurrentColor =
+      currentColorKey &&
+      product.variants.some(
+        (variant) =>
+          getVariantSizeKey(variant) === sizeKey &&
+          getVariantColorKey(variant) === currentColorKey &&
+          variant.stock > 0,
       );
-    } else {
-      const newItem = {
-        id: Date.now(),
-        name: product.name,
-        size: selectedSize,
-        price: product.price,
-        quantity: 1,
-        image: product.image,
-      };
-      setCart([...cart, newItem]);
+
+    let nextColorKey = currentColorKey;
+    if (!canKeepCurrentColor) {
+      nextColorKey =
+        product.variants.find(
+          (variant) =>
+            getVariantSizeKey(variant) === sizeKey && variant.stock > 0,
+        )?.colorKey ?? undefined;
+    }
+
+    if (nextColorKey) {
+      setSelectedColorByProduct((prev) => ({
+        ...prev,
+        [product.id]: nextColorKey,
+      }));
+    }
+
+    const variant = findBestVariant(product.variants, sizeKey, nextColorKey);
+    if (variant) {
+      selectVariant(product.id, variant.variantId);
     }
   };
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCart(
-      cart
-        .map((item) =>
-          item.id === id ? { ...item, quantity: item.quantity + delta } : item,
-        )
-        .filter((item) => item.quantity > 0),
+  const selectColor = (product: PosProduct, colorKey: string) => {
+    setSelectedColorByProduct((prev) => ({ ...prev, [product.id]: colorKey }));
+
+    const currentSizeKey = selectedSizeByProduct[product.id];
+    const canKeepCurrentSize =
+      currentSizeKey &&
+      product.variants.some(
+        (variant) =>
+          getVariantColorKey(variant) === colorKey &&
+          getVariantSizeKey(variant) === currentSizeKey &&
+          variant.stock > 0,
+      );
+
+    let nextSizeKey = currentSizeKey;
+    if (!canKeepCurrentSize) {
+      nextSizeKey =
+        product.variants.find(
+          (variant) =>
+            getVariantColorKey(variant) === colorKey && variant.stock > 0,
+        )?.sizeKey ?? undefined;
+    }
+
+    if (nextSizeKey) {
+      setSelectedSizeByProduct((prev) => ({
+        ...prev,
+        [product.id]: nextSizeKey,
+      }));
+    }
+
+    const variant = findBestVariant(product.variants, nextSizeKey, colorKey);
+    if (variant) {
+      selectVariant(product.id, variant.variantId);
+    }
+  };
+
+  const addToCart = (product: PosProduct) => {
+    if (product.variants.length === 0) {
+      toast.error("This product has no variant configured");
+      return;
+    }
+
+    const selectedId = selectedVariantByProduct[product.id];
+    const selectedVariant =
+      product.variants.find((variant) => variant.variantId === selectedId) ||
+      product.variants.find((variant) => variant.stock > 0) ||
+      product.variants[0];
+
+    if (!selectedVariant || selectedVariant.stock <= 0) {
+      toast.error("This variant is out of stock");
+      return;
+    }
+
+    setCart((prev) => {
+      const idx = prev.findIndex(
+        (item) =>
+          item.productId === product.id &&
+          item.variantId === selectedVariant.variantId,
+      );
+
+      if (idx >= 0) {
+        const updated = [...prev];
+        const item = updated[idx];
+        if (item.quantity >= item.stock) {
+          toast.error(`Maximum stock is ${item.stock}`);
+          return prev;
+        }
+        updated[idx] = {
+          ...item,
+          quantity: item.quantity + 1,
+        };
+        return updated;
+      }
+
+      const label = getVariantLineLabel(selectedVariant);
+
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          variantId: selectedVariant.variantId,
+          name: product.name,
+          variantLabel: label,
+          price: selectedVariant.price,
+          quantity: 1,
+          stock: selectedVariant.stock,
+          image: product.image,
+        },
+      ];
+    });
+  };
+
+  const changeQty = (productId: string, variantId: number, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.productId !== productId || item.variantId !== variantId) {
+            return item;
+          }
+
+          const nextQty = item.quantity + delta;
+          if (nextQty <= 0) return null;
+          if (nextQty > item.stock) {
+            toast.error(`Maximum stock is ${item.stock}`);
+            return item;
+          }
+
+          return { ...item, quantity: nextQty };
+        })
+        .filter((item): item is CartItem => item !== null),
     );
   };
 
-  const filteredProducts =
-    activeCategory === "All Items"
-      ? products
-      : products.filter((product) => product.category === activeCategory);
+  const checkout = () => {
+    if (!customerId || !paymentMethodId || cart.length === 0) {
+      toast.error("Please select customer, payment method, and add items");
+      return;
+    }
 
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const discount = 0;
-  const tax = subtotal * 0.1;
-  const total = subtotal - discount + tax;
+    const payload: OrderWithDetails = {
+      customerId,
+      status,
+      paymentMethodId,
+      totalPrice: new Decimal(total),
+      discountPercent,
+      discountAmount: new Decimal(discountAmount),
+      taxPercent,
+      taxAmount: new Decimal(taxAmount),
+      orderDetails: cart.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: new Decimal(item.price),
+      })),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const toastId = toast.loading("Processing sale...");
+    addSale.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Sale completed", { id: toastId });
+        setCart([]);
+        setDiscountPercent(0);
+        setTaxPercent(0);
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || "Failed to complete sale", {
+          id: toastId,
+        });
+      },
+    });
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Products Section */}
-        <div className="flex-1 overflow-auto md:pt-2">
-          <div className="mx-4 md:mb-6">
-            <div className="flex items-center justify-between mb-4 gap-2">
-              <h2 className="text-lg md:text-xl font-semibold">Product</h2>
-              <div className="flex items-center gap-2 mt-2 md:gap-4">
-                <div className="relative">
-                  <Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 bg-background w-32 md:w-auto"
-                  />
-                </div>
-                <button className="p-2 border rounded-lg hover:bg-accent">
-                  <Filter size={24} />
-                </button>
-              </div>
-            </div>
+    <div className="w-full px-4 md:px-6 py-6 space-y-4">
+      <h1 className="text-2xl font-bold flex items-center gap-2">
+        <ShoppingCart className="size-6 text-primary" /> Point of Sale
+      </h1>
 
-            <div className="flex justify-between">
-              <div className="flex gap-2 md:gap-4 mb-4 md:mb-6 overflow-x-auto scrollbar-hide">
-                {["All Items", "Hoodie", "Pants", "Tshirt"].map((category) => (
-                  <Button
-                    key={category}
-                    onClick={() => setActiveCategory(category)}
-                    className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                      activeCategory === category
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-foreground border hover:bg-accent"
-                    }`}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-              <Button className="hover-pointer">
-                <Link href="/products/product-list" className="text-sm">
-                  Return
-                </Link>
-              </Button>
-            </div>
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 xl:items-start">
+        <div className="xl:col-span-3 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-9"
+              placeholder="Search products..."
+            />
           </div>
 
-          <div className="grid ml-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 md:gap-2">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-card rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow border"
-              >
-                <div className="bg-muted rounded-lg mb-2 md:mb-3 h-32 sm:h-40 lg:h-48 flex items-center justify-center">
-                  <Image
-                    src={product.image}
-                    width={200}
-                    height={300}
-                    alt={product.name}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-                <h3 className="font-medium text-xs sm:text-sm mb-1 md:mb-2 line-clamp-2 truncate">
-                  {product.name}
-                </h3>
-                <div className="text-base md:text-lg font-bold mb-2 md:mb-3">
-                  ${product.price}
-                </div>
-                <div className="flex flex-wrap gap-0.5 md:gap-1 mb-2 md:mb-3">
-                  {product.sizes.map((size) => (
-                    <Button
-                      key={size}
-                      onClick={() => handleSizeSelect(product.id, size)}
-                      className={`flex-1 min-w-[28px] md:min-w-[32px] py-0 md:py-0.5 text-[9px] md:text-[10px] border rounded cursor-pointer transition-colors ${
-                        selectedSizes[product.id] === size
-                          ? "bg-green-500 text-white"
-                          : "hover:bg-accent hover:text-accent-foreground"
+          {loadingProducts ? (
+            <p className="text-sm text-muted-foreground">Loading products...</p>
+          ) : (
+            <>
+              <div className="border rounded-xl p-1 flex gap-1 overflow-x-auto">
+                {categoryTabs.map((tab) => {
+                  const isActive = selectedCategory === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(tab.id)}
+                      className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap min-w-40 transition ${
+                        isActive
+                          ? "bg-card border border-border font-semibold"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {size}
-                    </Button>
-                  ))}
-                </div>
-                <Button
-                  onClick={() => addToCart(product)}
-                  className="w-full py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 cursor-pointer"
-                >
-                  <Plus size={14} className="md:hidden" />
-                  <Plus size={16} className="hidden md:block" />
-                  <span className="hidden sm:inline">Add</span>
-                </Button>
+                      {tab.name}
+                    </button>
+                  );
+                })}
               </div>
-            ))}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredProducts.map((product) => {
+                  const hasVariants = product.variants.length > 0;
+                  const hasSizeDimension = product.variants.some(
+                    (variant) => variant.sizeKey,
+                  );
+                  const hasColorDimension = product.variants.some(
+                    (variant) => variant.colorKey,
+                  );
+                  const hasAnySizeOrColor =
+                    hasSizeDimension || hasColorDimension;
+                  const sizeOptions = getSizeOptions(product.variants);
+                  const colorOptions = getColorOptions(product.variants);
+                  const selectedId = selectedVariantByProduct[product.id];
+                  const selectedSizeKey =
+                    selectedSizeByProduct[product.id] ||
+                    product.variants.find((v) => v.variantId === selectedId)
+                      ?.sizeKey ||
+                    product.variants.find((v) => v.stock > 0)?.sizeKey ||
+                    undefined;
+                  const selectedColorKey =
+                    selectedColorByProduct[product.id] ||
+                    product.variants.find((v) => v.variantId === selectedId)
+                      ?.colorKey ||
+                    product.variants.find((v) => v.stock > 0)?.colorKey ||
+                    undefined;
+                  const selectedVariant =
+                    product.variants.find((v) => v.variantId === selectedId) ||
+                    findBestVariant(
+                      product.variants,
+                      selectedSizeKey,
+                      selectedColorKey,
+                    );
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="border rounded-xl p-3 bg-card flex h-full flex-col gap-3"
+                    >
+                      <div className="h-40 rounded-lg bg-muted overflow-hidden relative">
+                        {product.image ? (
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+                            No image
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="font-semibold line-clamp-2">
+                          {product.name}
+                        </p>
+                        {hasVariants && selectedVariant ? (
+                          <p className="text-sm text-primary font-medium">
+                            ${selectedVariant.price.toFixed(2)}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground font-medium">
+                            Variant not configured
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          {hasAnySizeOrColor
+                            ? "Available size/color"
+                            : "Available option"}
+                        </p>
+                        {hasVariants && selectedVariant ? (
+                          <div className="space-y-2">
+                            {hasSizeDimension && (
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground">
+                                  Size
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {sizeOptions.map((size) => {
+                                    const disabled = isSizeDisabled(
+                                      product.variants,
+                                      size.key,
+                                      hasColorDimension
+                                        ? selectedColorKey
+                                        : undefined,
+                                    );
+                                    const isSelected =
+                                      selectedSizeKey === size.key;
+                                    let sizeButtonClass =
+                                      "bg-background hover:bg-accent";
+                                    if (disabled) {
+                                      sizeButtonClass =
+                                        "bg-muted text-muted-foreground border-muted-foreground/20 cursor-not-allowed";
+                                    }
+                                    if (isSelected) {
+                                      sizeButtonClass =
+                                        "bg-primary text-primary-foreground border-primary";
+                                    }
+
+                                    return (
+                                      <button
+                                        key={size.key}
+                                        type="button"
+                                        onClick={() =>
+                                          selectSize(product, size.key)
+                                        }
+                                        disabled={disabled}
+                                        className={`text-[10px] px-2 py-1 rounded-full border transition ${sizeButtonClass}`}
+                                      >
+                                        {size.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {hasColorDimension && (
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground">
+                                  Color
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {colorOptions.map((color) => {
+                                    const disabled = isColorDisabled(
+                                      product.variants,
+                                      color.key,
+                                      hasSizeDimension
+                                        ? selectedSizeKey
+                                        : undefined,
+                                    );
+                                    const isSelected =
+                                      selectedColorKey === color.key;
+                                    let colorButtonClass =
+                                      "bg-background hover:bg-accent";
+                                    if (disabled) {
+                                      colorButtonClass =
+                                        "bg-muted text-muted-foreground border-muted-foreground/20 cursor-not-allowed";
+                                    }
+                                    if (isSelected) {
+                                      colorButtonClass =
+                                        "bg-primary text-primary-foreground border-primary";
+                                    }
+
+                                    return (
+                                      <button
+                                        key={color.key}
+                                        type="button"
+                                        onClick={() =>
+                                          selectColor(product, color.key)
+                                        }
+                                        disabled={disabled}
+                                        className={`text-[10px] px-2 py-1 rounded-full border transition inline-flex items-center gap-1 ${colorButtonClass}`}
+                                      >
+                                        <span
+                                          className="size-3 rounded-full border border-black/20"
+                                          style={
+                                            color.colorHex
+                                              ? {
+                                                  backgroundColor:
+                                                    color.colorHex,
+                                                }
+                                              : undefined
+                                          }
+                                        />
+                                        <span>{color.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {!hasAnySizeOrColor && (
+                              <div className="flex flex-wrap gap-1">
+                                {product.variants.map((variant) => (
+                                  <button
+                                    key={variant.variantId}
+                                    type="button"
+                                    onClick={() =>
+                                      selectVariant(
+                                        product.id,
+                                        variant.variantId,
+                                      )
+                                    }
+                                    className={`text-[10px] px-2 py-1 rounded-full border ${
+                                      selectedVariant.variantId ===
+                                      variant.variantId
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-background hover:bg-accent"
+                                    }`}
+                                  >
+                                    {getVariantChipLabel(variant)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            <p className="text-[10px] text-muted-foreground">
+                              Selected: {getVariantChipLabel(selectedVariant)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 w-max">
+                            No size/color variant
+                          </div>
+                        )}
+                      </div>
+
+                      <Button
+                        className="w-full mt-auto"
+                        onClick={() => addToCart(product)}
+                        disabled={
+                          !hasVariants ||
+                          !selectedVariant ||
+                          selectedVariant.stock <= 0
+                        }
+                      >
+                        <Plus className="size-4 mr-1" /> Add to Cart
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="space-y-4 self-start pr-1 xl:fixed xl:right-6 xl:top-20 xl:w-[20rem] xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/sales/all-sale">
+              <ArrowLeft className="size-4 mr-1" /> Back to Sale
+            </Link>
+          </Button>
+
+          <div className="border rounded-xl p-4 bg-card space-y-3">
+            <div>
+              <Label>Customer</Label>
+              <div className="flex gap-2 mt-1">
+                <Select value={customerId ?? ""} onValueChange={setCustomerId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Customer</SelectLabel>
+                      {loadingCustomers ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : (
+                        (customers || []).map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  onClick={() => setOpenCreateCustomer(true)}
+                >
+                  <UserPlus className="size-4" />
+                </Button>
+                <CreateCustomerDialog
+                  open={openCreateCustomer}
+                  onOpenChange={setOpenCreateCustomer}
+                  onSuccess={(customer) => setCustomerId(customer.id)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Payment Method</Label>
+              <Select
+                value={paymentMethodId ? String(paymentMethodId) : ""}
+                onValueChange={(value) => setPaymentMethodId(Number(value))}
+              >
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue placeholder="Select payment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Payment Method</SelectLabel>
+                    {loadingPaymentMethods ? (
+                      <SelectItem value="loading" disabled>
+                        Loading...
+                      </SelectItem>
+                    ) : (
+                      (paymentMethods || []).map((method) => (
+                        <SelectItem key={method.id} value={String(method.id)}>
+                          {method.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as "COMPLETED" | "PENDING" | "CANCELLED")
+                }
+              >
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="border rounded-xl p-4 bg-card space-y-3">
+            <h2 className="font-semibold">Cart</h2>
+            <div className="max-h-72 overflow-y-auto space-y-2">
+              {cart.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No items in cart
+                </p>
+              )}
+              {cart.map((item) => (
+                <div
+                  key={`${item.productId}-${item.variantId}`}
+                  className="border rounded-lg p-2"
+                >
+                  <div className="flex justify-between">
+                    <div className="flex items-start gap-2">
+                      <div className="relative size-12 rounded-md overflow-hidden bg-muted shrink-0">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-[10px] text-muted-foreground">
+                            No image
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium line-clamp-1">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {item.variantLabel}
+                        </p>
+                        <p className="text-sm font-semibold">
+                          ${item.price.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-7"
+                        onClick={() =>
+                          changeQty(item.productId, item.variantId, -1)
+                        }
+                      >
+                        <Minus className="size-3" />
+                      </Button>
+                      <span className="text-sm w-5 text-center">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-7"
+                        onClick={() =>
+                          changeQty(item.productId, item.variantId, 1)
+                        }
+                      >
+                        <Plus className="size-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Discount %</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={discountPercent}
+                    onChange={(event) =>
+                      setDiscountPercent(Number(event.target.value) || 0)
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Tax %</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={taxPercent}
+                    onChange={(event) =>
+                      setTaxPercent(Number(event.target.value) || 0)
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Discount</span>
+                <span>-${discountAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Tax</span>
+                <span>${taxAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-base pt-1 border-t">
+                <span>Total</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={checkout}
+              disabled={addSale.isPending || cart.length === 0}
+            >
+              {addSale.isPending ? "Processing..." : "Process Transaction"}
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Cart Button */}
-      <div className="lg:hidden fixed bottom-4 right-4 z-50">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button className="rounded-full h-14 w-14 shadow-lg">
-              <div className="relative">
-                <ShoppingCart size={24} />
-                {cart.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cart.length}
-                  </span>
-                )}
-              </div>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:w-96 p-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Shopping Cart</SheetTitle>
-            </SheetHeader>
-            <OrderDetailsSidebar
-              cart={cart}
-              customer={customer}
-              updateQuantity={updateQuantity}
-              subtotal={subtotal}
-              discount={discount}
-              tax={tax}
-              total={total}
-            />
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Desktop Order Details Sidebar */}
-      <div className="hidden lg:flex w-96 bg-card border-l flex-col">
-        <OrderDetailsSidebar
-          cart={cart}
-          customer={customer}
-          updateQuantity={updateQuantity}
-          subtotal={subtotal}
-          discount={discount}
-          tax={tax}
-          total={total}
-        />
       </div>
     </div>
   );
-};
+}
 
-// Order Details Component
-const OrderDetailsSidebar = ({
-  cart,
-  customer,
-  updateQuantity,
-  subtotal,
-  discount,
-  tax,
-  total,
-}: any) => (
-  <>
-    <div className="p-4 md:p-6 border-b">
-      <div className="flex items-center justify-between my-4">
-        <h2 className="text-lg md:text-xl font-semibold">Order Details</h2>
-        <span className="text-sm text-muted-foreground">#666</span>
-      </div>
-
-      <div className="bg-muted rounded-lg p-3 md:p-4">
-        <div className="text-xs md:text-sm text-muted-foreground mb-2">
-          Customer Information
-        </div>
-        <div className="flex items-center gap-3 justify-between">
-          <div>
-            <div className="font-medium text-sm md:text-base">
-              {customer[0].name}
-            </div>
-            <div className="text-xs md:text-sm text-muted-foreground">
-              Tel: {customer[0].phone}
-            </div>
-          </div>
-          <div>
-            <Button className="text-xs md:text-sm px-3 md:px-4 py-2">
-              {customer[0].name ? "Change" : "Add"}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="flex-1 overflow-auto p-4 md:p-6">
-      <h3 className="font-semibold mb-4">Items</h3>
-      <div className="space-y-4">
-        {cart.map((item: any) => (
-          <div key={item.id} className="flex gap-3">
-            <div className="w-12 h-16 md:w-16 md:h-20 bg-muted rounded-lg shrink-0">
-              <Image
-                src={item.image}
-                width={200}
-                height={300}
-                alt={item.name}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-xs md:text-sm mb-1 truncate">
-                {item.name}
-              </h4>
-              <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Size {item.size}
-                  </div>
-                  <div className="flex justify-between font-bold text-sm md:text-base">
-                    ${item.price}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="flex items-center justify-center gap-1 md:gap-2 bg-muted rounded-full p-0.5">
-                    <Button
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="rounded-full size-6 md:size-8 p-0"
-                    >
-                      <Minus size={12} className="md:hidden" />
-                      <Minus size={14} className="hidden md:block" />
-                    </Button>
-                    <span className="text-xs md:text-sm font-medium w-5 md:w-6 text-center">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="rounded-full size-6 md:size-8 p-0"
-                    >
-                      <Plus size={12} className="md:hidden" />
-                      <Plus size={14} className="hidden md:block" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="border-t p-4 md:p-6">
-      <div className="space-y-3 mb-4">
-        <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-muted-foreground">Item</span>
-          <span className="font-medium">{cart.length} Items</span>
-        </div>
-        <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-muted-foreground">Sub Total</span>
-          <span className="font-medium">${subtotal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-muted-foreground">Membership Discount</span>
-          <span className="font-medium text-red-500 dark:text-red-400">
-            -${discount.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex justify-between text-xs md:text-sm">
-          <span className="text-muted-foreground">Tax (10%)</span>
-          <span className="font-medium">${tax.toFixed(2)}</span>
-        </div>
-        <div className="border-t pt-3 flex justify-between">
-          <span className="font-semibold text-sm md:text-base">Total</span>
-          <span className="font-bold text-lg md:text-xl">
-            ${total.toFixed(2)}
-          </span>
-        </div>
-      </div>
-
-      <Button className="w-full py-2.5 md:py-3 rounded-lg text-sm md:text-base font-semibold transition-colors">
-        Process Transaction
-      </Button>
-    </div>
-  </>
-);
-
-export default POSOrderPage;
+export default function PosPage() {
+  return <PosPageContent />;
+}

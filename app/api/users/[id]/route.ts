@@ -1,5 +1,5 @@
 import { userDbService } from "@/lib/services/db/userDbService";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 import { UserUpdateSchema } from "@/schemas/user.schema";
 import { NextResponse } from "next/server";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("user:read");
+    await requirePermissionDBForAPI("user:read");
 
     const { id } = await params;
     if (!id) {
@@ -24,8 +24,12 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching user:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message.startsWith("Forbidden:")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
 
     return NextResponse.json(
@@ -40,7 +44,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("user:update");
+    await requirePermissionDBForAPI("user:update");
 
     const { id } = await params;
     if (!id) {
@@ -55,8 +59,24 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating user:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof Error) {
+      // Handle authorization errors
+      if (error.message.startsWith("Unauthorized")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      if (error.message.startsWith("Forbidden:")) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+
+      // Handle role hierarchy violations
+      if (
+        error.message.includes("Only SUPER_ADMIN") ||
+        error.message.includes("Cannot modify") ||
+        error.message.includes("Cannot deactivate the last")
+      ) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
     }
 
     return NextResponse.json(
@@ -71,7 +91,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("user:delete");
+    await requirePermissionDBForAPI("user:delete");
 
     const { id } = await params;
     if (!id) {
@@ -83,8 +103,23 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting user:", error);
 
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof Error) {
+      // Handle authorization errors
+      if (error.message.startsWith("Unauthorized")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      if (error.message.startsWith("Forbidden:")) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+
+      // Handle role hierarchy violations
+      if (
+        error.message.includes("Only SUPER_ADMIN") ||
+        error.message.includes("Cannot deactivate the last")
+      ) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
     }
 
     return NextResponse.json(

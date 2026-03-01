@@ -15,6 +15,20 @@ export const UserSchema = z.object({
   updatedBy: z.string().nullable().optional(),
   deactivatedBy: z.string().nullable().optional(),
   deactivatedAt: z.date().nullable().optional(),
+  permissionGroupId: z.string().nullable().optional(),
+  permissionGroup: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      priority: z.number(),
+    })
+    .nullable()
+    .optional(),
+  _count: z
+    .object({
+      permissionOverrides: z.number(),
+    })
+    .optional(),
 });
 
 export const UserCreateSchema = z.object({
@@ -26,6 +40,7 @@ export const UserCreateSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .optional(),
   image: z.string().nullable().optional(),
+  permissionGroupId: z.string().nullable().optional(),
 });
 
 export const UserUpdateSchema = z
@@ -34,6 +49,7 @@ export const UserUpdateSchema = z
     email: z.email("Invalid email address").optional(),
     role: z.enum(Role).optional(),
     image: z.string().nullable().optional(),
+    permissionGroupId: z.string().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",

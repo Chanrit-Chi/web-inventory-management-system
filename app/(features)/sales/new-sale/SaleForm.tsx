@@ -24,7 +24,7 @@ import {
   type SaleOrderDetail,
 } from "../components/OrderDetailsTable";
 import { OrderSummary } from "../components/OrderSummary";
-import { CreateCustomerDialog } from "./customer/customer-dialogs";
+import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import { useGetCustomers } from "@/hooks/useCustomer";
 import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
 import { useSaleMutations } from "@/hooks/useSale";

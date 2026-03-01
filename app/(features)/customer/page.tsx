@@ -14,7 +14,12 @@ function CustomerList() {
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const { can } = usePermission();
 
-  if (isLoading) return <Spinner className="size-8" />;
+  if (isLoading)
+    return (
+      <div className="items-center justify-center flex min-h-screen w-full">
+        <Spinner className="size-8" />
+      </div>
+    );
   if (error) return <p className="text-red-600">Error loading customers</p>;
   return (
     <div className="w-full px-4 md:px-6 py-6">

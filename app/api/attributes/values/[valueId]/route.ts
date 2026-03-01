@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/getServerSession";
 import { AttributeValueUpdateSchema } from "@/schemas/attribute.schema";
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 
 // PATCH - Update attribute value
 export async function PATCH(
@@ -16,7 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await requirePermission("product:update");
+    await requirePermissionDBForAPI("product:update");
 
     const { valueId } = await params;
     const id = Number.parseInt(valueId);
@@ -83,7 +83,11 @@ export async function PATCH(
   } catch (error) {
     console.error("Error updating attribute value:", error);
 
-    if (error instanceof Error && error.message.includes("permission")) {
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message.startsWith("Forbidden:")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 
@@ -106,7 +110,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await requirePermission("product:delete");
+    await requirePermissionDBForAPI("product:delete");
 
     const { valueId } = await params;
     const id = Number.parseInt(valueId);
@@ -136,7 +140,11 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting attribute value:", error);
 
-    if (error instanceof Error && error.message.includes("permission")) {
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message.startsWith("Forbidden:")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 

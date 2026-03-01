@@ -49,6 +49,8 @@ const selectProductFields = {
             select: {
               id: true,
               value: true,
+              displayValue: true,
+              colorHex: true,
               attribute: {
                 select: {
                   id: true,
@@ -129,6 +131,8 @@ const mapProductResponse = (result: ProductWithRelations | null) => {
             value: a.value
               ? {
                   value: a.value.value,
+                  displayValue: a.value.displayValue,
+                  colorHex: a.value.colorHex,
                   attribute: { name: a.value.attribute?.name },
                 }
               : undefined,

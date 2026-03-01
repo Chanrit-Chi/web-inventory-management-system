@@ -7,21 +7,25 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String
-  role          Role      @default(SELLER)
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  createdBy     String?
-  updatedBy     String?
-  deactivatedBy String?
-  deactivatedAt DateTime?
-  sessions      Session[]
-  accounts      Account[]
+  id                  String                   @id
+  name                String
+  role                Role                     @default(SELLER)
+  email               String
+  emailVerified       Boolean                  @default(false)
+  image               String?
+  isActive            Boolean                  @default(true)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  createdBy           String?
+  updatedBy           String?
+  deactivatedBy       String?
+  deactivatedAt       DateTime?
+  permissionGroupId   String?
+  permissionGroup     PermissionGroup?         @relation(fields: [permissionGroupId], references: [id])
+  sessions            Session[]
+  accounts            Account[]
+  permissionOverrides UserPermissionOverride[]
+  auditLogsCreated    PermissionAuditLog[]     @relation("AuditLogCreatedBy")
 
   @@unique([email])
   @@map("user")
@@ -80,6 +84,98 @@ enum Role {
   ADMIN
   MANAGER
   SUPER_ADMIN
+}
+
+// Permission Management System
+
+model Permission {
+  id               String                   @id @default(cuid())
+  name             String                   @unique // e.g., "product:create"
+  resource         String // e.g., "product"
+  action           String // e.g., "create"
+  description      String?
+  category         PermissionCategory       @default(CRUD)
+  createdAt        DateTime                 @default(now())
+  groupPermissions GroupPermission[]
+  userOverrides    UserPermissionOverride[]
+  auditLogs        PermissionAuditLog[]
+
+  @@index([resource, action])
+  @@map("permission")
+}
+
+model PermissionGroup {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  priority    Int               @default(0) // Higher priority wins in conflicts
+  isDefault   Boolean           @default(false) // True for base role groups
+  baseRole    Role? // Link to base role if this is a default group
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  permissions GroupPermission[]
+  users       User[]
+
+  @@map("permission_group")
+}
+
+model GroupPermission {
+  id           String          @id @default(cuid())
+  groupId      String
+  group        PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission      @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@unique([groupId, permissionId])
+  @@index([groupId])
+  @@index([permissionId])
+  @@map("group_permission")
+}
+
+model UserPermissionOverride {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  granted      Boolean // true = grant additional permission, false = revoke from role/group
+  reason       String?
+  expiresAt    DateTime? // Optional expiry for temporary access
+  createdAt    DateTime   @default(now())
+  createdBy    String?
+
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
+  @@index([expiresAt]) // For cleanup queries
+  @@map("user_permission_override")
+}
+
+model PermissionAuditLog {
+  id             String      @id @default(cuid())
+  action         String // "granted" | "revoked" | "created" | "deleted"
+  targetType     String // "user" | "group" | "role"
+  targetId       String // userId or groupId
+  targetName     String // For display
+  permissionId   String?
+  permission     Permission? @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+  permissionName String? // Denormalized for history retention
+  reason         String?
+  metadata       Json? // Additional context
+  createdAt      DateTime    @default(now())
+  createdBy      String
+  createdByUser  User        @relation("AuditLogCreatedBy", fields: [createdBy], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("permission_audit_log")
+}
+
+enum PermissionCategory {
+  CRUD
+  FEATURE
 }
 
 // Inventory section
@@ -305,11 +401,43 @@ model OrderDetail {
 }
 
 model PaymentMethod {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ExpenseCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  amount          Decimal         @db.Decimal(10, 2)
+  description     String
+  expenseDate     DateTime        @default(now())
+  categoryId      Int
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id])
+  paymentMethodId Int?
+  paymentMethod   PaymentMethod?  @relation(fields: [paymentMethodId], references: [id])
+  referenceNo     String?
+  notes           String?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([expenseDate])
+  @@index([categoryId])
+  @@index([paymentMethodId])
 }
 
 model PurchaseOrder {

@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetSales } from "@/hooks/useSale";
 import { useGetInvoices } from "@/hooks/useInvoice";
 import { useGetQuotations } from "@/hooks/useQuotation";
+import { useGetExpenses } from "@/hooks/useExpense";
 import {
   OrderWithRelations,
   QuotationWithItems,
@@ -58,6 +59,10 @@ const chartConfig = {
     label: "Revenue",
     color: "hsl(142, 76%, 36%)",
   },
+  expense: {
+    label: "Expense",
+    color: "hsl(0, 72%, 51%)",
+  },
   orders: {
     label: "Orders",
     color: "hsl(217, 91%, 53%)",
@@ -78,10 +83,12 @@ export default function RevenueExpenseChart() {
     1,
     8,
   );
+  const { data: expensesData, isLoading: expensesLoading } = useGetExpenses();
   const { data: quotationsData, isLoading: quotationsLoading } =
     useGetQuotations(1, 8);
 
   const recentOrders = (recentSalesData?.data ?? []) as OrderWithRelations[];
+  const recentExpenses = expensesData ?? [];
   const recentInvoices = (invoicesData?.data ?? []) as (OrderWithRelations & {
     invoiceNumber?: string;
   })[];
@@ -90,28 +97,42 @@ export default function RevenueExpenseChart() {
   // Build monthly chart data from real orders for the selected year
   const chartData = useMemo(() => {
     const rawOrders = (allSalesData?.data ?? []) as OrderWithRelations[];
+    const rawExpenses = expensesData ?? [];
     const year = Number(selectedYear);
     return MONTHS.map((month, i) => {
       const monthOrders = rawOrders.filter((o) => {
         const d = new Date(o.createdAt as unknown as string);
         return d.getFullYear() === year && d.getMonth() === i;
       });
+      const monthExpenses = rawExpenses.filter((expense) => {
+        const d = new Date(expense.expenseDate as unknown as string);
+        return d.getFullYear() === year && d.getMonth() === i;
+      });
       const revenue = monthOrders.reduce(
         (sum, o) => sum + Number(o.totalPrice ?? 0),
         0,
       );
+      const expense = monthExpenses.reduce(
+        (sum, item) => sum + Number(item.amount ?? 0),
+        0,
+      );
       const orders = monthOrders.length;
-      return { month, revenue, orders };
+      return { month, revenue, expense, orders };
     });
-  }, [allSalesData, selectedYear]);
+  }, [allSalesData, expensesData, selectedYear]);
+
+  const chartSeriesData = useMemo(
+    () =>
+      chartData.map((item) => ({
+        ...item,
+        expense: -item.expense,
+      })),
+    [chartData],
+  );
 
   const totalRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
-  const totalOrders = chartData.reduce((sum, d) => sum + d.orders, 0);
-  const avgMonthly =
-    totalOrders > 0
-      ? totalRevenue / chartData.filter((d) => d.revenue > 0).length || 0
-      : 0;
-
+  const totalExpense = chartData.reduce((sum, d) => sum + d.expense, 0);
+  const netRevenue = totalRevenue - totalExpense;
   return (
     <div className="grid auto-rows-min gap-4 lg:grid-cols-2">
       <div className="w-auto min-h-screen">
@@ -141,7 +162,7 @@ export default function RevenueExpenseChart() {
             <Separator className="my-2" />
             <CardDescription>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                {chartLoading ? (
+                {chartLoading || expensesLoading ? (
                   <div className="col-span-3 flex justify-center py-4">
                     <Spinner className="size-5" />
                   </div>
@@ -161,24 +182,28 @@ export default function RevenueExpenseChart() {
                         </CardTitle>
                       </CardHeader>
                     </Card>
-                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                    <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
                       <CardHeader className="pb-2">
-                        <CardDescription className="text-blue-600 dark:text-blue-400 font-semibold">
-                          Total Orders
+                        <CardDescription className="text-red-600 dark:text-red-400 font-semibold">
+                          Total Expenses
                         </CardDescription>
-                        <CardTitle className="text-2xl text-blue-700 dark:text-blue-300">
-                          {totalOrders.toLocaleString()}
+                        <CardTitle className="text-2xl text-red-700 dark:text-red-300">
+                          $
+                          {totalExpense.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </CardTitle>
                       </CardHeader>
                     </Card>
                     <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
                       <CardHeader className="pb-2">
                         <CardDescription className="text-purple-600 dark:text-purple-400 font-semibold">
-                          Avg Monthly
+                          Net Revenue
                         </CardDescription>
                         <CardTitle className="text-2xl text-purple-700 dark:text-purple-300">
                           $
-                          {avgMonthly.toLocaleString(undefined, {
+                          {netRevenue.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -191,14 +216,15 @@ export default function RevenueExpenseChart() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {chartLoading ? (
+            {chartLoading || expensesLoading ? (
               <div className="flex justify-center py-10">
                 <Spinner className="size-6" />
               </div>
             ) : (
               <ChartContainer config={chartConfig} className="w-full">
                 <BarChart
-                  data={chartData}
+                  data={chartSeriesData}
+                  stackOffset="sign"
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -212,25 +238,49 @@ export default function RevenueExpenseChart() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    tickFormatter={(v) =>
-                      v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`
-                    }
+                    tickFormatter={(v) => {
+                      const prefix = v < 0 ? "-" : "";
+                      const absoluteValue = Math.abs(v);
+                      if (absoluteValue >= 1000) {
+                        return `${prefix}$${(absoluteValue / 1000).toFixed(0)}k`;
+                      }
+                      return `${prefix}$${absoluteValue}`;
+                    }}
                   />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
-                        formatter={(value, name) =>
-                          name === "revenue"
-                            ? `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                            : String(value)
-                        }
+                        formatter={(value, name) => {
+                          const amount = Number(value);
+                          const formatted = Math.abs(amount).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            },
+                          );
+
+                          if (name === "expense") {
+                            return `-$${formatted}`;
+                          }
+
+                          return `$${formatted}`;
+                        }}
                       />
                     }
                   />
                   <Bar
                     dataKey="revenue"
+                    stackId="monthly"
                     fill="var(--color-revenue)"
                     radius={[6, 6, 0, 0]}
+                    maxBarSize={48}
+                  />
+                  <Bar
+                    dataKey="expense"
+                    stackId="monthly"
+                    fill="var(--color-expense)"
+                    radius={[0, 0, 6, 6]}
                     maxBarSize={48}
                   />
                 </BarChart>
@@ -369,10 +419,49 @@ export default function RevenueExpenseChart() {
               </TabsContent>
 
               <TabsContent value="expense">
-                <CardDescription className="mt-4">
-                  {/*TODO / */}
-                  Expense transactions will be displayed here.
-                </CardDescription>
+                {expensesLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Spinner className="size-5" />
+                  </div>
+                ) : (
+                  <>
+                    {recentExpenses.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4 mt-4">
+                        No recent expenses
+                      </p>
+                    )}
+                    {recentExpenses.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {recentExpenses.slice(0, 8).map((expense) => (
+                          <div
+                            key={expense.id}
+                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {expense.description}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {expense.category?.name ?? "Uncategorized"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold text-red-600 dark:text-red-400">
+                                -${Number(expense.amount ?? 0).toFixed(2)}
+                              </span>
+                              <span className="text-xs text-muted-foreground w-16 text-right">
+                                {format(
+                                  new Date(expense.expenseDate),
+                                  "MMM dd",
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="invoice">

@@ -87,7 +87,7 @@ export default function ManagerDashboard() {
                 label: "Customers",
                 description: "Manage customer records",
                 icon: Users,
-                href: "/sales/new-sale/customer",
+                href: "/customer",
                 color: "text-sky-600",
                 bg: "bg-sky-50 dark:bg-sky-950/40",
               },

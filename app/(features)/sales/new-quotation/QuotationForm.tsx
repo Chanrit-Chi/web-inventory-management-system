@@ -24,7 +24,7 @@ import {
   type SaleOrderDetail,
 } from "../components/OrderDetailsTable";
 import { OrderSummary } from "../components/OrderSummary";
-import { CreateCustomerDialog } from "../new-sale/customer/customer-dialogs";
+import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import { useGetCustomers } from "@/hooks/useCustomer";
 import { useQuotationMutations } from "@/hooks/useQuotation";
 import { QuotationWithItems } from "@/schemas/type-export.schema";
@@ -151,7 +151,7 @@ export function QuotationForm({
     }
 
     // Use input type for payload construction
-    const payload: any = {
+    const payload = {
       customerId,
       status,
       issueDate: new Date(),

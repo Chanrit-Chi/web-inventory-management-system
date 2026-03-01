@@ -3,13 +3,14 @@
 import * as React from "react";
 import {
   Banknote,
+  BookUser,
   ChartNoAxesCombined,
   FileChartColumnIncreasing,
   FolderKanban,
   LayoutDashboard,
   NotebookText,
   PackageSearch,
-  Users,
+  Shield,
   WalletCards,
   Warehouse,
 } from "lucide-react";
@@ -27,7 +28,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
-import { NavReports } from "./nav-reports";
 import Link from "next/link";
 import { hasPermission, Permission } from "@/lib/rbac";
 import { Role } from "@prisma/client";
@@ -150,29 +150,69 @@ const data = {
       icon: WalletCards,
       items: [
         {
+          title: "Expenses",
+          url: "/expenses",
+          permission: "expense:read",
+        },
+        {
           title: "Purchase Order",
           url: "/purchase/order",
           permission: "purchase_order:read",
+        },
+        // {
+        //   title: "Supplier",
+        //   url: "/purchase/supplier",
+        //   permission: "supplier:read",
+        // },
+      ],
+    },
+
+    {
+      title: "HR Management",
+      url: "#",
+      icon: BookUser,
+      items: [
+        {
+          title: "Employee",
+          url: "/employee",
+          permission: "employee:read",
         },
         {
           title: "Supplier",
           url: "/purchase/supplier",
           permission: "supplier:read",
         },
+        {
+          title: "Customer",
+          url: "/customer",
+          permission: "customer:read",
+        },
       ],
     },
   ],
   navSecondary: [
+    // {
+    //   title: "Manage Employee",
+    //   url: "/employee",
+    //   icon: Users,
+    //   permission: "user:read",
+    // },
     {
-      title: "Manage Employee",
-      url: "/employee",
-      icon: Users,
-      permission: "user:read",
+      title: "Permissions",
+      url: "/settings/permissions",
+      icon: Shield,
+      permission: "permission:admin",
     },
     {
       title: "Sale Report",
       url: "/sale/report",
       icon: ChartNoAxesCombined,
+      permission: "report:read",
+    },
+    {
+      title: "Expense Report",
+      url: "/expense/report",
+      icon: FileChartColumnIncreasing,
       permission: "report:read",
     },
     {

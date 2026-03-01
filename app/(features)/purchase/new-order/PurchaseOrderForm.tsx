@@ -401,7 +401,7 @@ export function PurchaseOrderItemsTable({
           <Package className="size-6 text-primary" />
         </div>
         <p className="text-sm text-muted-foreground">
-          No items added yet. Click "Add Products" to start.
+          No items added yet. Click &quot;Add Products&quot; to start.
         </p>
       </div>
     );
