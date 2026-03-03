@@ -18,7 +18,7 @@ interface VariantsTableProps {
   readonly onUpdateVariantField: (
     index: number,
     field: string,
-    value: number | boolean,
+    value: number | boolean | string,
   ) => void;
 }
 
@@ -45,6 +45,9 @@ export function VariantsTable({
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   SKU
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Barcode
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Variant
@@ -76,6 +79,19 @@ export function VariantsTable({
                   <tr key={variant.sku} className="hover:bg-muted/40">
                     <td className="px-4 py-3 text-sm text-foreground font-mono">
                       {variant.sku}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="text"
+                        value={
+                          (currentVariant as { barcode?: string | null })
+                            ?.barcode ?? ""
+                        }
+                        onChange={(e) =>
+                          onUpdateVariantField(index, "barcode", e.target.value)
+                        }
+                        className="w-36 h-8 text-sm"
+                      />
                     </td>
                     <td className="px-4 py-3 text-sm text-foreground">
                       {variant.variantName}

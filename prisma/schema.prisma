@@ -235,6 +235,7 @@ model ProductVariant {
   product   Product @relation(fields: [productId], references: [id])
   productId String
   sku       String  @unique
+  barcode   String? @unique
 
   costPrice    Decimal @default(0) @db.Decimal(10, 2)
   sellingPrice Decimal @default(0) @db.Decimal(10, 2)

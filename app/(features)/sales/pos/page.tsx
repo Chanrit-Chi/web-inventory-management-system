@@ -13,6 +13,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BarcodeScannerPanel } from "@/components/barcode-scanner-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetProducts } from "@/hooks/useProduct";
+import { usePermission } from "@/hooks/usePermission";
 import { useGetCategories } from "@/hooks/useCategory";
 import { useGetCustomers } from "@/hooks/useCustomer";
 import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
 import { useSaleMutations } from "@/hooks/useSale";
+import { lookupVariantByCode, normalizeScannedCode } from "@/lib/barcode-scan";
 import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import type { OrderWithDetails, Product } from "@/schemas/type-export.schema";
 
@@ -62,6 +65,26 @@ type CartItem = {
   quantity: number;
   stock: number;
   image?: string;
+};
+
+type LookupVariant = {
+  id?: number;
+  sku?: string;
+  barcode?: string | null;
+  stock?: number;
+  sellingPrice?: unknown;
+  costPrice?: unknown;
+  product?: {
+    id?: string;
+    name?: string;
+    image?: string | null;
+  };
+  attributes?: Array<{
+    value?: {
+      attribute?: { name?: string | null };
+      value?: string | null;
+    };
+  }>;
 };
 
 type VariantOption = {
@@ -231,6 +254,9 @@ const isColorDisabled = (
 
 function PosPageContent() {
   const [search, setSearch] = useState("");
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
     Record<string, number>
@@ -263,6 +289,8 @@ function PosPageContent() {
   const { data: paymentMethods, isLoading: loadingPaymentMethods } =
     useGetPaymentMethods();
   const { addSale } = useSaleMutations();
+  const { can, isPending: permissionPending } = usePermission();
+  const canUseScanner = !permissionPending && can("barcode:read");
 
   const products = useMemo<PosProduct[]>(() => {
     const rows =
@@ -491,6 +519,103 @@ function PosPageContent() {
     );
   };
 
+  const mapLookupVariantLabel = (variant: LookupVariant) => {
+    const labels =
+      variant.attributes
+        ?.map((attr) => {
+          const name = attr.value?.attribute?.name;
+          const value = attr.value?.value;
+          if (!name || !value) return null;
+          return `${name}: ${value}`;
+        })
+        .filter((item): item is string => Boolean(item)) ?? [];
+
+    return labels.length > 0 ? labels.join(" · ") : "Default variant";
+  };
+
+  const addLookupVariantToCart = (variant: LookupVariant) => {
+    if (!variant.id || !variant.product?.id || !variant.product?.name) {
+      toast.error("Unable to map scanned variant to product");
+      return;
+    }
+
+    const stock = variant.stock ?? 0;
+    if (stock <= 0) {
+      toast.error("This variant is out of stock");
+      return;
+    }
+
+    const sellingPrice = toNumber(variant.sellingPrice);
+    const costPrice = toNumber(variant.costPrice);
+    const price = sellingPrice > 0 ? sellingPrice : costPrice;
+    const variantLabel = mapLookupVariantLabel(variant);
+
+    setCart((prev) => {
+      const idx = prev.findIndex(
+        (item) =>
+          item.productId === variant.product?.id &&
+          item.variantId === variant.id,
+      );
+
+      if (idx >= 0) {
+        const updated = [...prev];
+        const item = updated[idx];
+
+        if (item.quantity >= item.stock) {
+          toast.error(`Maximum stock is ${item.stock}`);
+          return prev;
+        }
+
+        updated[idx] = {
+          ...item,
+          quantity: item.quantity + 1,
+        };
+        return updated;
+      }
+
+      return [
+        ...prev,
+        {
+          productId: variant.product.id,
+          variantId: variant.id,
+          name: variant.product.name,
+          variantLabel,
+          price,
+          quantity: 1,
+          stock,
+          image: variant.product.image || undefined,
+        },
+      ];
+    });
+
+    toast.success("Scanned product added");
+  };
+
+  const submitBarcodeLookup = async (rawCode: string) => {
+    if (!canUseScanner) {
+      toast.error("You do not have permission to use barcode scanner");
+      return;
+    }
+
+    const code = normalizeScannedCode(rawCode);
+    if (!code) return;
+
+    setIsScanning(true);
+    try {
+      const variant = await lookupVariantByCode<LookupVariant>(code);
+
+      if (!variant) {
+        toast.error("No product variant found for scanned code");
+        return;
+      }
+
+      addLookupVariantToCart(variant);
+      setBarcodeInput("");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const checkout = () => {
     if (!customerId || !paymentMethodId || cart.length === 0) {
       toast.error("Please select customer, payment method, and add items");
@@ -540,14 +665,67 @@ function PosPageContent() {
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 xl:items-start">
         <div className="xl:col-span-3 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-9"
-              placeholder="Search products..."
-            />
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="pl-9"
+                placeholder="Search products..."
+              />
+            </div>
+
+            {canUseScanner && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={barcodeInput}
+                  onChange={(event) => setBarcodeInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void submitBarcodeLookup(barcodeInput);
+                    }
+                  }}
+                  placeholder="Scan barcode or enter SKU"
+                  className="max-w-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void submitBarcodeLookup(barcodeInput)}
+                  disabled={isScanning}
+                >
+                  {isScanning ? "Scanning..." : "Scan"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCameraScanner((prev) => !prev)}
+                  disabled={isScanning}
+                >
+                  {showCameraScanner ? "Close Camera" : "Camera Scan"}
+                </Button>
+              </div>
+            )}
+
+            {canUseScanner && (
+              <BarcodeScannerPanel
+                active={showCameraScanner}
+                onDetected={(code) => {
+                  if (isScanning) return;
+                  setBarcodeInput(code);
+                  void submitBarcodeLookup(code);
+                }}
+              />
+            )}
+
+            {!permissionPending && !canUseScanner && (
+              <p className="text-xs text-muted-foreground">
+                You don&apos;t have permission (`barcode:read`) to use scanner
+                controls.
+              </p>
+            )}
           </div>
 
           {loadingProducts ? (

@@ -7,6 +7,13 @@ export const useGetProductVariantBySku = (sku: string) =>
     queryFn: () => productVariantApiService.fetchVariantBySku(sku),
   });
 
+export const useGetProductVariantByBarcode = (barcode: string) =>
+  useQuery({
+    queryKey: ["productVariant", "barcode", barcode],
+    queryFn: () => productVariantApiService.fetchVariantByBarcode(barcode),
+    enabled: !!barcode,
+  });
+
 export const useGetProductVariantById = (id: number) =>
   useQuery({
     queryKey: ["productVariant", id],

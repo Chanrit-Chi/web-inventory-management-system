@@ -32,7 +32,26 @@ export const productVariantApiService = {
   },
 
   fetchVariantBySku: async (sku: string): Promise<ProductVariant | null> => {
-    const res = await fetch(`/api/products/variants/${sku}`);
+    const res = await fetch(
+      `/api/products/variants/sku/${encodeURIComponent(sku)}`,
+    );
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ error: "Failed to fetch product variant" }));
+      throw new Error(errorData.error || "Failed to fetch product variant");
+    }
+
+    return res.json();
+  },
+
+  fetchVariantByBarcode: async (
+    barcode: string,
+  ): Promise<ProductVariant | null> => {
+    const res = await fetch(
+      `/api/products/variants/barcode/${encodeURIComponent(barcode)}`,
+    );
 
     if (!res.ok) {
       const errorData = await res

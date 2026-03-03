@@ -5,6 +5,7 @@ export const ProductVariantSchema = z.object({
   id: z.number().int().optional(),
   productId: z.string().optional(),
   sku: z.string().min(1, "Variant name is required"),
+  barcode: z.string().trim().optional().nullable(),
   costPrice: moneySchema,
   sellingPrice: moneySchema,
   stock: positiveInt.min(0, "Stock cannot be negative").default(0),

@@ -28,6 +28,7 @@ import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetSales } from "@/hooks/useSale";
+import { useGetPurchaseOrders } from "@/hooks/usePurchaseOrder";
 import { useGetInvoices } from "@/hooks/useInvoice";
 import { useGetQuotations } from "@/hooks/useQuotation";
 import { useGetExpenses } from "@/hooks/useExpense";
@@ -74,11 +75,34 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) =>
   String(CURRENT_YEAR - i),
 );
 
+function getPurchaseStatusClass(status: string) {
+  if (status === "COMPLETED") {
+    return "bg-green-50 text-green-700 border-green-200";
+  }
+  if (status === "PENDING") {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+  return "bg-red-50 text-red-700 border-red-200";
+}
+
 export default function RevenueExpenseChart() {
   const [selectedYear, setSelectedYear] = useState(String(CURRENT_YEAR));
+  const [activeTab, setActiveTab] = useState<
+    "sales" | "purchase" | "quotation" | "expense" | "invoice"
+  >("sales");
+
+  const viewAllHrefMap: Record<typeof activeTab, string> = {
+    sales: "/sales/all-sale",
+    purchase: "/purchase/order",
+    quotation: "/sales/quotations",
+    expense: "/expenses",
+    invoice: "/sales/invoice",
+  };
 
   const { data: allSalesData, isLoading: chartLoading } = useGetSales(1, 1000);
   const { data: recentSalesData, isLoading: salesLoading } = useGetSales(1, 8);
+  const { data: purchaseOrdersData, isLoading: purchaseLoading } =
+    useGetPurchaseOrders(1, 8);
   const { data: invoicesData, isLoading: invoicesLoading } = useGetInvoices(
     1,
     8,
@@ -88,6 +112,13 @@ export default function RevenueExpenseChart() {
     useGetQuotations(1, 8);
 
   const recentOrders = (recentSalesData?.data ?? []) as OrderWithRelations[];
+  const recentPurchaseOrders = (purchaseOrdersData?.data ?? []) as Array<{
+    id: number;
+    totalAmount?: number | string | null;
+    status: string;
+    createdAt: Date | string;
+    supplier?: { name?: string | null } | null;
+  }>;
   const recentExpenses = expensesData ?? [];
   const recentInvoices = (invoicesData?.data ?? []) as (OrderWithRelations & {
     invoiceNumber?: string;
@@ -295,13 +326,29 @@ export default function RevenueExpenseChart() {
             <div className="flex justify-between items-center">
               <CardTitle>Recent Transactions</CardTitle>
               <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md bg-background min-w-30">
-                <Link href="#" className="text-sm text-primary underline">
+                <Link
+                  href={viewAllHrefMap[activeTab]}
+                  className="text-sm text-primary underline"
+                >
                   View All
                 </Link>
               </div>
             </div>
             <Separator className="my-2" />
-            <Tabs defaultValue="sales" className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) =>
+                setActiveTab(
+                  value as
+                    | "sales"
+                    | "purchase"
+                    | "quotation"
+                    | "expense"
+                    | "invoice",
+                )
+              }
+              className="w-full"
+            >
               <TabsList className={"w-full items-stretch"}>
                 <TabsTrigger value="sales">Sales</TabsTrigger>
                 <TabsTrigger value="purchase">Purchase</TabsTrigger>
@@ -365,10 +412,53 @@ export default function RevenueExpenseChart() {
               </TabsContent>
 
               <TabsContent value="purchase">
-                <CardDescription className="mt-4">
-                  {/*TODO / */}
-                  Purchase transactions will be displayed here.
-                </CardDescription>
+                {purchaseLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Spinner className="size-5" />
+                  </div>
+                ) : (
+                  <>
+                    {recentPurchaseOrders.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4 mt-4">
+                        No recent purchases
+                      </p>
+                    )}
+                    {recentPurchaseOrders.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {recentPurchaseOrders.map((purchase) => (
+                          <div
+                            key={purchase.id}
+                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {purchase.supplier?.name ?? "Unknown Supplier"}
+                              </span>
+                              <span className="text-xs text-muted-foreground font-mono">
+                                #PO-{purchase.id}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold">
+                                ${Number(purchase.totalAmount ?? 0).toFixed(2)}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${getPurchaseStatusClass(purchase.status)}`}
+                              >
+                                {purchase.status.charAt(0) +
+                                  purchase.status.slice(1).toLowerCase()}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground w-16 text-right">
+                                {format(new Date(purchase.createdAt), "MMM dd")}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="quotation">

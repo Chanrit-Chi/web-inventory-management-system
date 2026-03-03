@@ -21,6 +21,17 @@ export function SingleProductForm({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <FormField label="Barcode" error={errors.variants?.[0]?.barcode?.message}>
+        <Input
+          type="text"
+          placeholder="Scan or enter barcode"
+          value={variant.barcode ?? ""}
+          onChange={(e) => {
+            updateSingleVariant({ barcode: e.target.value || null });
+          }}
+        />
+      </FormField>
+
       <FormField
         label="Cost Price"
         required

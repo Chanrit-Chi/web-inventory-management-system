@@ -28,7 +28,6 @@ This application uses [Better-Auth](https://better-auth.com) for authentication.
    ```
 
    Required variables:
-
    - `DATABASE_URL`: Your PostgreSQL connection string
    - `BETTER_AUTH_SECRET`: A random secret key (generate with `openssl rand -base64 32`)
    - `BETTER_AUTH_URL`: Your application URL (http://localhost:3000 for development)
@@ -49,19 +48,16 @@ This application uses [Better-Auth](https://better-auth.com) for authentication.
 ### Components
 
 1. **Login Form** (`components/ui/login-form.tsx`):
-
    - Email and password login
    - Error handling
    - Loading states
 
 2. **Signup Form** (`components/ui/signup-form.tsx`):
-
    - User registration with name, email, and password
    - Password confirmation
    - Validation
 
 3. **User Navigation** (`components/auth/user-nav.tsx`):
-
    - Display user info
    - Sign out button
 
@@ -149,7 +145,6 @@ The client-side configuration connects to the Better-Auth API at `/api/auth`.
 2. Navigate to `http://localhost:3000/user_auth`
 
 3. Create a new account:
-
    - Enter your name, email, and password
    - Click "Create Account"
    - You'll be automatically signed in and redirected
@@ -167,6 +162,34 @@ The authentication system uses these tables:
 - `session`: Manages user sessions
 - `account`: Stores account credentials and OAuth data
 - `verification`: Handles email verification tokens
+
+## Permission Seeding Workflow
+
+This project uses `prisma/seed-permissions.ts` to create/update permission data.
+
+### When you should run it
+
+Run permission seeding when you:
+
+- Add a new RBAC resource (example: `shipment`)
+- Add a new CRUD permission key (example: `shipment:create`)
+- Add a new feature permission key (example: `analytics:read`)
+- Change role/group access rules in `ResourceMatrix` or `FeatureAccess`
+
+### When you usually don't need it
+
+- UI-only feature changes that don't introduce new permission keys
+- Refactors that keep permission names and matrix rules unchanged
+
+### Command
+
+```bash
+npm run seed:permissions
+```
+
+### Why rerunning is safe
+
+The seed script uses `upsert`, so rerunning it updates/ensures required records exist without creating duplicates.
 
 ## Troubleshooting
 

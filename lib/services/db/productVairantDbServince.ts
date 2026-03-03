@@ -11,6 +11,7 @@ const selectVariantListFields = {
   id: true,
   productId: true,
   sku: true,
+  barcode: true,
   costPrice: true,
   sellingPrice: true,
   stock: true,
@@ -56,6 +57,7 @@ const selectVariantDetailFields = {
   id: true,
   productId: true,
   sku: true,
+  barcode: true,
   costPrice: true,
   sellingPrice: true,
   stock: true,
@@ -214,6 +216,15 @@ export const ProductVariantDbService = {
   fetchVariantsBySku: async (sku: string): Promise<ProductVariant | null> => {
     return await prisma.productVariant.findUnique({
       where: { sku },
+      select: selectVariantDetailFields,
+    });
+  },
+
+  fetchVariantByBarcode: async (
+    barcode: string,
+  ): Promise<ProductVariant | null> => {
+    return await prisma.productVariant.findFirst({
+      where: { barcode },
       select: selectVariantDetailFields,
     });
   },

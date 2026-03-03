@@ -6,6 +6,7 @@ import {
 } from "@/schemas/product.schema";
 import { getServerSession } from "@/lib/getServerSession";
 import { hasPermission } from "@/lib/rbac";
+import { ensureAccountableVariants } from "@/lib/variant-accountability";
 
 import {
   Product,
@@ -237,6 +238,10 @@ export const productDbService = {
 
     const { productAttributes, variants, supplierId, ...validatedCore } =
       ProductCreateSchema.parse(data);
+    const normalizedVariants = ensureAccountableVariants(
+      variants,
+      validatedCore.sku,
+    );
 
     return await prisma.$transaction(async (tx) => {
       // 1. Create the product
@@ -266,8 +271,8 @@ export const productDbService = {
       }
 
       // 3. Create variants from frontend data
-      if (variants && variants.length > 0) {
-        for (const variant of variants) {
+      if (normalizedVariants.length > 0) {
+        for (const variant of normalizedVariants) {
           const { attributes, ...variantData } = variant;
           // Remove ID and ProductID if existing to avoid passing them to create
           delete (variantData as { id?: number }).id;
@@ -358,9 +363,19 @@ export const productDbService = {
 
       // 3. Update variants (Smart Upsert + Cleanup)
       if (variants) {
+        const currentProduct = await tx.product.findUnique({
+          where: { id },
+          select: { sku: true },
+        });
+
+        const normalizedVariants = ensureAccountableVariants(
+          variants,
+          scalarFields.sku ?? currentProduct?.sku ?? "DEFAULT-SKU",
+        );
+
         const handledIds = new Set<number>();
 
-        for (const variant of variants) {
+        for (const variant of normalizedVariants) {
           const { id: variantId, attributes, ...variantData } = variant;
 
           // Upsert by ID if available, otherwise by SKU to be resilient to lost IDs

@@ -116,6 +116,7 @@ export function VariantForm() {
 
       return {
         sku: `${productSku}-${skuSuffix}`,
+        barcode: "",
         variantName: combination.map((attr) => attr.value).join(" / "),
         costPrice: defaultPrices.costPrice,
         sellingPrice: defaultPrices.sellingPrice,
@@ -143,6 +144,7 @@ export function VariantForm() {
           return {
             id: existing?.id,
             sku: v.sku,
+            barcode: existing?.barcode ?? null,
             costPrice: existing ? existing.costPrice : new Decimal(v.costPrice),
             sellingPrice: existing
               ? existing.sellingPrice
@@ -197,6 +199,7 @@ export function VariantForm() {
     const defaultVariant = {
       id: 0,
       sku: productSku || "DEFAULT-SKU",
+      barcode: null,
       costPrice: new Decimal(0),
       sellingPrice: new Decimal(0),
       stock: 0,
@@ -218,13 +221,16 @@ export function VariantForm() {
   const updateVariantField = (
     index: number,
     field: string,
-    value: number | boolean,
+    value: number | boolean | string,
   ) => {
     const currentVariants = watch("variants") || [];
     const updatedVariants = currentVariants.map((variant, i) => {
       if (i === index) {
         if (field === "costPrice" || field === "sellingPrice") {
           return { ...variant, [field]: new Decimal(value as number) };
+        }
+        if (field === "barcode") {
+          return { ...variant, barcode: (value as string) || null };
         }
         return { ...variant, [field]: value };
       }
