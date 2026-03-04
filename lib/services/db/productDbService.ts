@@ -92,6 +92,24 @@ type ProductWithRelations = Prisma.ProductGetPayload<{
   select: typeof selectProductFields;
 }>;
 
+const maskCostPriceForSeller = <
+  T extends { variants?: Array<Record<string, unknown>> | null },
+>(
+  product: T | null,
+  role?: Role,
+): T | null => {
+  if (!product || role !== Role.SELLER) return product;
+
+  return {
+    ...product,
+    variants:
+      product.variants?.map((variant) => ({
+        ...variant,
+        costPrice: null,
+      })) ?? [],
+  };
+};
+
 const mapProductResponse = (result: ProductWithRelations | null) => {
   if (!result) return null;
 
@@ -150,6 +168,9 @@ export const productDbService = {
     search?: string,
     filters?: Record<string, string>,
   ) => {
+    const session = await getServerSession();
+    const currentRole = (session?.user as { role?: Role } | undefined)?.role;
+
     const skip = (page - 1) * limit;
 
     // Build where clause for filtering
@@ -208,8 +229,12 @@ export const productDbService = {
       prisma.product.count({ where }),
     ]);
 
+    const mappedProducts = products
+      .map(mapProductResponse)
+      .map((product) => maskCostPriceForSeller(product, currentRole));
+
     return {
-      data: products.map(mapProductResponse),
+      data: mappedProducts,
       pagination: {
         page,
         limit,
@@ -220,11 +245,15 @@ export const productDbService = {
   },
 
   fetchProductById: async (id: string) => {
+    const session = await getServerSession();
+    const currentRole = (session?.user as { role?: Role } | undefined)?.role;
+
     const result = await prisma.product.findUnique({
       where: { id },
       select: selectProductFields,
     });
-    return mapProductResponse(result);
+    const mappedProduct = mapProductResponse(result);
+    return maskCostPriceForSeller(mappedProduct, currentRole);
   },
 
   createProductWithVariants: async (data: ProductCreate): Promise<Product> => {

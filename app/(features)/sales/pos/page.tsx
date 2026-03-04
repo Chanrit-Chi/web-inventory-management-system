@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Decimal from "decimal.js";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,12 +8,12 @@ import {
   ArrowLeft,
   Minus,
   Plus,
+  ScanLine,
   Search,
   ShoppingCart,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { BarcodeScannerPanel } from "@/components/barcode-scanner-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -256,7 +256,10 @@ function PosPageContent() {
   const [search, setSearch] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [scanMode, setScanMode] = useState(false);
+  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
+  const didAutoFocusRef = useRef(false);
+  const scanSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
     Record<string, number>
@@ -291,6 +294,20 @@ function PosPageContent() {
   const { addSale } = useSaleMutations();
   const { can, isPending: permissionPending } = usePermission();
   const canUseScanner = !permissionPending && can("barcode:read");
+
+  useEffect(() => {
+    if (!canUseScanner || didAutoFocusRef.current) return;
+    barcodeInputRef.current?.focus();
+    didAutoFocusRef.current = true;
+  }, [canUseScanner]);
+
+  useEffect(() => {
+    return () => {
+      if (scanSubmitTimerRef.current) {
+        clearTimeout(scanSubmitTimerRef.current);
+      }
+    };
+  }, []);
 
   const products = useMemo<PosProduct[]>(() => {
     const rows =
@@ -611,9 +628,23 @@ function PosPageContent() {
 
       addLookupVariantToCart(variant);
       setBarcodeInput("");
+      barcodeInputRef.current?.focus();
     } finally {
       setIsScanning(false);
     }
+  };
+
+  const scheduleScanSubmit = (value: string) => {
+    if (!scanMode || isScanning) return;
+
+    if (scanSubmitTimerRef.current) {
+      clearTimeout(scanSubmitTimerRef.current);
+    }
+
+    scanSubmitTimerRef.current = setTimeout(() => {
+      if (!value.trim()) return;
+      void submitBarcodeLookup(value);
+    }, 100);
   };
 
   const checkout = () => {
@@ -679,8 +710,13 @@ function PosPageContent() {
             {canUseScanner && (
               <div className="flex flex-wrap items-center gap-2">
                 <Input
+                  ref={barcodeInputRef}
                   value={barcodeInput}
-                  onChange={(event) => setBarcodeInput(event.target.value)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setBarcodeInput(value);
+                    scheduleScanSubmit(value);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
@@ -700,24 +736,21 @@ function PosPageContent() {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setShowCameraScanner((prev) => !prev)}
-                  disabled={isScanning}
+                  variant={scanMode ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => {
+                    setScanMode((prev) => !prev);
+                    barcodeInputRef.current?.focus();
+                  }}
+                  aria-label={
+                    scanMode
+                      ? "Disable laser scan mode"
+                      : "Enable laser scan mode"
+                  }
                 >
-                  {showCameraScanner ? "Close Camera" : "Camera Scan"}
+                  <ScanLine className="size-4" />
                 </Button>
               </div>
-            )}
-
-            {canUseScanner && (
-              <BarcodeScannerPanel
-                active={showCameraScanner}
-                onDetected={(code) => {
-                  if (isScanning) return;
-                  setBarcodeInput(code);
-                  void submitBarcodeLookup(code);
-                }}
-              />
             )}
 
             {!permissionPending && !canUseScanner && (

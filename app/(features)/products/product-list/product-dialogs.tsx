@@ -4,6 +4,7 @@ import {
   Category,
 } from "@/schemas/type-export.schema";
 import { useProductMutations } from "@/hooks/useProduct";
+import { usePermission } from "@/hooks/usePermission";
 import { toast } from "sonner";
 import {
   Package,
@@ -322,6 +323,8 @@ function ProductDateDisplay({ date }: { readonly date: string | Date }) {
 
 function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
   const variants = product.variants ?? [];
+  const { role } = usePermission();
+  const canViewCostPrice = role !== "SELLER";
 
   if (variants.length === 0) {
     return (
@@ -351,11 +354,13 @@ function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
               Stock
             </th>
             <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
-              Cost
-            </th>
-            <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
               Selling
             </th>
+            {canViewCostPrice && (
+              <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+                Cost
+              </th>
+            )}
             <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
               Status
             </th>
@@ -365,8 +370,10 @@ function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
           {variants.map((v) => {
             const attrs =
               v.attributes
-                ?.map((a) => a.value?.value)
-                .filter(Boolean)
+                ?.map((a) =>
+                  typeof a.value === "string" ? a.value : a.value?.value,
+                )
+                .filter((value): value is string => Boolean(value))
                 .join(" / ") || "Default";
             const isLow = (v.stock ?? 0) < 10;
 
@@ -388,12 +395,14 @@ function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
                     <span className="ml-1 text-[10px] text-red-500">low</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right text-slate-600">
-                  {fmt(v.costPrice as unknown as number)}
-                </td>
                 <td className="px-3 py-2 text-right font-semibold text-slate-800">
                   {fmt(v.sellingPrice as unknown as number)}
                 </td>
+                {canViewCostPrice && (
+                  <td className="px-3 py-2 text-right text-slate-600">
+                    {fmt(v.costPrice as unknown as number)}
+                  </td>
+                )}
                 <td className="px-3 py-2 text-center">
                   {v.isActive ? (
                     <Badge

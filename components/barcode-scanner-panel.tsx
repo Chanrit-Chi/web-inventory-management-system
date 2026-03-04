@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BrowserMultiFormatReader,
   type IScannerControls,
@@ -36,8 +36,8 @@ export function BarcodeScannerPanel({
   const zxingReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const zxingControlsRef = useRef<IScannerControls | null>(null);
   const lastDetectedAtRef = useRef<number>(0);
+  const wasActiveRef = useRef(false);
 
-  const [isStarting, setIsStarting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,17 +49,20 @@ export function BarcodeScannerPanel({
     typeof navigator !== "undefined" &&
     Boolean(navigator.mediaDevices?.getUserMedia);
 
-  const emitDetectedCode = (value: string) => {
-    if (!value) return;
+  const emitDetectedCode = useCallback(
+    (value: string) => {
+      if (!value) return;
 
-    const now = Date.now();
-    if (now - lastDetectedAtRef.current < 1200) return;
-    lastDetectedAtRef.current = now;
+      const now = Date.now();
+      if (now - lastDetectedAtRef.current < 1200) return;
+      lastDetectedAtRef.current = now;
 
-    onDetected(value);
-  };
+      onDetected(value);
+    },
+    [onDetected],
+  );
 
-  const stopScanner = () => {
+  const stopScanner = useCallback(() => {
     if (frameRef.current) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
@@ -80,19 +83,9 @@ export function BarcodeScannerPanel({
     }
 
     setIsRunning(false);
-  };
+  }, []);
 
-  useEffect(() => {
-    if (!active) {
-      stopScanner();
-    }
-
-    return () => {
-      stopScanner();
-    };
-  }, [active]);
-
-  const detectLoop = () => {
+  const detectLoop = useCallback(() => {
     const video = videoRef.current;
     const detector = detectorRef.current;
 
@@ -131,12 +124,11 @@ export function BarcodeScannerPanel({
       .finally(() => {
         frameRef.current = requestAnimationFrame(detectLoop);
       });
-  };
+  }, [emitDetectedCode, isRunning]);
 
-  const startWithNativeDetector = async () => {
+  const startWithNativeDetector = useCallback(async () => {
     if (isRunning) return;
 
-    setIsStarting(true);
     setError(null);
 
     try {
@@ -175,12 +167,10 @@ export function BarcodeScannerPanel({
     } catch {
       setError("Unable to access camera. Please allow camera permission.");
       stopScanner();
-    } finally {
-      setIsStarting(false);
     }
-  };
+  }, [detectLoop, globalWindow, isRunning, stopScanner]);
 
-  const startWithZxingFallback = async () => {
+  const startWithZxingFallback = useCallback(async () => {
     if (isRunning) return;
 
     if (!hasMediaDevices) {
@@ -193,13 +183,10 @@ export function BarcodeScannerPanel({
       return;
     }
 
-    setIsStarting(true);
     setError(null);
 
     try {
-      if (!zxingReaderRef.current) {
-        zxingReaderRef.current = new BrowserMultiFormatReader();
-      }
+      zxingReaderRef.current ??= new BrowserMultiFormatReader();
 
       const controls = await zxingReaderRef.current.decodeFromVideoDevice(
         undefined,
@@ -216,19 +203,37 @@ export function BarcodeScannerPanel({
     } catch {
       setError("Unable to access camera. Please allow camera permission.");
       stopScanner();
-    } finally {
-      setIsStarting(false);
     }
-  };
+  }, [emitDetectedCode, hasMediaDevices, isRunning, stopScanner]);
 
-  const startScanner = async () => {
+  const startScanner = useCallback(async () => {
     if (isDetectorSupported) {
       await startWithNativeDetector();
       return;
     }
 
     await startWithZxingFallback();
-  };
+  }, [isDetectorSupported, startWithNativeDetector, startWithZxingFallback]);
+
+  useEffect(() => {
+    if (active && !wasActiveRef.current) {
+      startScanner().catch(() => {
+        setError("Unable to start scanner.");
+      });
+    }
+
+    if (!active && wasActiveRef.current) {
+      stopScanner();
+    }
+
+    wasActiveRef.current = active;
+  }, [active, startScanner, stopScanner]);
+
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, [stopScanner]);
 
   if (!active) return null;
 
@@ -236,26 +241,9 @@ export function BarcodeScannerPanel({
     <div className="rounded-md border bg-background p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">Camera Scanner</p>
-        {isRunning ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={stopScanner}
-          >
-            Stop Camera
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void startScanner()}
-            disabled={isStarting}
-          >
-            {isStarting ? "Starting..." : "Start Camera"}
-          </Button>
-        )}
+        <div className="text-xs text-muted-foreground">
+          {isRunning ? "Scanning..." : "Opening camera..."}
+        </div>
       </div>
 
       <video
@@ -278,6 +266,12 @@ export function BarcodeScannerPanel({
       )}
 
       {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {isRunning && (
+        <Button type="button" variant="outline" size="sm" onClick={stopScanner}>
+          Stop Camera
+        </Button>
+      )}
 
       <p className="text-xs text-muted-foreground">
         Tip: point the camera at a barcode and keep it steady for 1-2 seconds.

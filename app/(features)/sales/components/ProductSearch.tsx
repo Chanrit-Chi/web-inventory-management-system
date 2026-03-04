@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
-import { Search } from "lucide-react";
+import { ScanLine, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { BarcodeScannerPanel } from "@/components/barcode-scanner-panel";
 import { useGetProducts } from "@/hooks/useProduct";
 import { usePermission } from "@/hooks/usePermission";
-import { lookupVariantByCode, normalizeScannedCode } from "@/lib/barcode-scan";
+import { lookupVariantByCode } from "@/lib/barcode-scan";
 import { Product } from "@/schemas/type-export.schema";
 
 export interface ProductForSale {
@@ -32,7 +31,7 @@ interface DecimalLike {
   toNumber: () => number;
 }
 
-const getPriceValue = (val: DecimalLike | string): number => {
+const getPriceValue = (val: DecimalLike | string | number): number => {
   if (val == null) return 0;
   if (typeof val === "number") return val;
   if (typeof val === "string") return Number.parseFloat(val);
@@ -40,6 +39,19 @@ const getPriceValue = (val: DecimalLike | string): number => {
     return val.toNumber();
   }
   return 0;
+};
+
+const getAttributeDisplay = (value: unknown): string => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    const obj = value as {
+      attribute?: { name?: string };
+      value?: string;
+    };
+    return `${obj.attribute?.name}: ${obj.value}`;
+  }
+  return "";
 };
 
 // Process products into ProductForSale format
@@ -61,11 +73,7 @@ const processProductsForSale = (products: Product[]): ProductForSale[] => {
         // Create variant description from attributes
         const variantDescription =
           variant.attributes
-            ?.map((attr) =>
-              attr.value
-                ? `${attr.value.attribute?.name}: ${attr.value.value}`
-                : "",
-            )
+            ?.map((attr) => getAttributeDisplay(attr.value))
             .filter(Boolean)
             .join(" ") || "";
 
@@ -102,9 +110,26 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [scanMode, setScanMode] = useState(false);
+  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
+  const didAutoFocusRef = useRef(false);
+  const scanSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { can, isPending: permissionPending } = usePermission();
   const canUseScanner = !permissionPending && can("barcode:read");
+
+  useEffect(() => {
+    if (!canUseScanner || didAutoFocusRef.current) return;
+    barcodeInputRef.current?.focus();
+    didAutoFocusRef.current = true;
+  }, [canUseScanner]);
+
+  useEffect(() => {
+    return () => {
+      if (scanSubmitTimerRef.current) {
+        clearTimeout(scanSubmitTimerRef.current);
+      }
+    };
+  }, []);
 
   // Debounce search input
   useEffect(() => {
@@ -250,47 +275,23 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
       handleAddProduct(product);
       toast.success("Scanned product added");
       setBarcodeInput("");
+      barcodeInputRef.current?.focus();
     } finally {
       setIsScanning(false);
     }
   };
 
-  const handleDetectedFromCamera = (code: string) => {
-    if (!canUseScanner || isScanning) return;
-    const normalized = normalizeScannedCode(code);
-    if (!normalized) return;
-    setBarcodeInput(normalized);
-    void (async () => {
-      setIsScanning(true);
-      try {
-        const variant = await lookupVariantByCode(normalized);
+  const scheduleScanSubmit = (value: string) => {
+    if (!scanMode || isScanning) return;
 
-        if (!variant) {
-          toast.error("No product variant found for scanned code");
-          return;
-        }
+    if (scanSubmitTimerRef.current) {
+      clearTimeout(scanSubmitTimerRef.current);
+    }
 
-        const product = variantToProductForSale(
-          variant as Parameters<typeof variantToProductForSale>[0],
-        );
-
-        if (!product) {
-          toast.error("Unable to map scanned item to sale product");
-          return;
-        }
-
-        if (product.stock <= 0) {
-          toast.error(`${product.name} is out of stock!`);
-          return;
-        }
-
-        handleAddProduct(product);
-        toast.success("Scanned product added");
-        setBarcodeInput("");
-      } finally {
-        setIsScanning(false);
-      }
-    })();
+    scanSubmitTimerRef.current = setTimeout(() => {
+      if (!value.trim()) return;
+      void handleBarcodeSubmit();
+    }, 100);
   };
 
   const renderSearchResults = () => {
@@ -397,16 +398,21 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
           {canUseScanner && (
             <>
               <input
+                ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBarcodeInput(value);
+                  scheduleScanSubmit(value);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     void handleBarcodeSubmit();
                   }
                 }}
-                placeholder="Scan barcode or enter SKU"
+                placeholder="Search barcode or enter SKU"
                 className="h-9 w-56 rounded-md border bg-background px-3 text-sm"
               />
               <Button
@@ -416,16 +422,23 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
                 disabled={isScanning}
                 className="px-3"
               >
-                {isScanning ? "Scanning..." : "Scan"}
+                {isScanning ? "Searching..." : "Search"}
               </Button>
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => setShowCameraScanner((prev) => !prev)}
-                disabled={isScanning}
-                className="px-3"
+                variant={scanMode ? "default" : "outline"}
+                size="icon"
+                onClick={() => {
+                  setScanMode((prev) => !prev);
+                  barcodeInputRef.current?.focus();
+                }}
+                aria-label={
+                  scanMode
+                    ? "Disable laser scan mode"
+                    : "Enable laser scan mode"
+                }
               >
-                {showCameraScanner ? "Close Camera" : "Camera Scan"}
+                <ScanLine className="size-4" />
               </Button>
             </>
           )}
@@ -437,15 +450,6 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
           </Button>
         </div>
       </div>
-
-      {canUseScanner && (
-        <div className="mb-4">
-          <BarcodeScannerPanel
-            active={showCameraScanner}
-            onDetected={handleDetectedFromCamera}
-          />
-        </div>
-      )}
 
       {!permissionPending && !canUseScanner && (
         <p className="mb-4 text-xs text-muted-foreground">
