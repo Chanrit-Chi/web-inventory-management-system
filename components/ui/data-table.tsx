@@ -1,5 +1,10 @@
 "use client";
 
+import * as React from "react";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "./date-range-picker";
+import { parseISO } from "date-fns";
+
 import {
   ColumnDef,
   flexRender,
@@ -57,7 +62,6 @@ interface DataTableProps<TData, TValue> {
   readonly columns: ColumnDef<TData, TValue>[];
   readonly data: TData[];
   readonly searchPlaceholder?: string;
-  readonly searchKey?: string;
   readonly showAddNew?: boolean;
   readonly addNewLabel?: string;
   readonly addNewDisabled?: boolean;
@@ -68,7 +72,6 @@ interface DataTableProps<TData, TValue> {
   // Server-side pagination
   readonly paginationMeta?: PaginationMeta;
   readonly onPageChange?: (page: number) => void;
-  readonly onPageSizeChange?: (pageSize: number) => void;
   // Row filters - filter rows based on column values
   readonly rowFilters?: ColumnFilter[];
   // Server-side search and filtering
@@ -76,13 +79,17 @@ interface DataTableProps<TData, TValue> {
   readonly onFilterChange?: (filters: Record<string, string>) => void;
   readonly searchValue?: string;
   readonly filterValues?: Record<string, string>;
+  readonly dateFilter?: {
+    startDateKey?: string;
+    endDateKey?: string;
+    label?: string;
+  };
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   searchPlaceholder = "Search...",
-  searchKey,
   showSearch = true,
   showAddNew = false,
   addNewLabel = "Add New",
@@ -92,18 +99,21 @@ export function DataTable<TData, TValue>({
   showPagination = true,
   paginationMeta,
   onPageChange,
-  onPageSizeChange,
   rowFilters: filterConfigs = [],
   onSearchChange,
   onFilterChange,
   searchValue,
   filterValues = {},
+  dateFilter,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
   const [searchInput, setSearchInput] = useState(searchValue || "");
+  const [pendingRange, setPendingRange] = useState<DateRange | undefined>(
+    undefined,
+  );
 
   const isServerSidePagination = !!paginationMeta;
 
@@ -161,23 +171,13 @@ export function DataTable<TData, TValue>({
 
     // Notify parent for server-side filtering
     if (isServerSidePagination && onFilterChange) {
-      const newFilters =
-        value === "all"
-          ? columnFilters.filter((f) => f.id !== columnId)
-          : [
-              ...columnFilters.filter((f) => f.id !== columnId),
-              { id: columnId, value },
-            ];
-
-      const filterObj = newFilters.reduce(
-        (acc, f) => {
-          acc[f.id] = f.value as string;
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-
-      onFilterChange(filterObj);
+      const newFilters = { ...filterValues };
+      if (value === "all") {
+        delete newFilters[columnId];
+      } else {
+        newFilters[columnId] = value;
+      }
+      onFilterChange(newFilters);
     }
   };
 
@@ -204,6 +204,7 @@ export function DataTable<TData, TValue>({
     setSearchInput("");
     setGlobalFilter("");
     setColumnFilters([]);
+    setPendingRange(undefined);
 
     // Notify parent to clear server-side filters
     if (isServerSidePagination) {
@@ -224,6 +225,79 @@ export function DataTable<TData, TValue>({
     }
     // For server-side filtering, get value from filterValues prop
     return filterValues[columnId] || "all";
+  };
+
+  const currentRange: DateRange | undefined = React.useMemo(() => {
+    if (!dateFilter) return undefined;
+    const from = filterValues[dateFilter.startDateKey || "startDate"];
+    const to = filterValues[dateFilter.endDateKey || "endDate"];
+
+    return {
+      from: from ? parseISO(from) : undefined,
+      to: to ? parseISO(to) : undefined,
+    };
+  }, [filterValues, dateFilter]);
+
+  // Sync pending range with current range from props
+  useEffect(() => {
+    // Only update if currentRange from props is different from pendingRange
+    const isDifferent =
+      currentRange?.from?.getTime() !== pendingRange?.from?.getTime() ||
+      currentRange?.to?.getTime() !== pendingRange?.to?.getTime();
+
+    if (!isDifferent) return;
+
+    // If currentRange is present (complete), we should definitely sync it
+    if (currentRange?.from && currentRange?.to) {
+      setPendingRange(currentRange);
+      return;
+    }
+
+    // If currentRange is empty, we only reset pendingRange if it was already complete
+    // or if it was also empty. This prevents resetting partial selections (1 click)
+    // when the parent re-renders before the 2nd click.
+    if (!currentRange) {
+      const isPendingPartial = pendingRange?.from && !pendingRange?.to;
+
+      if (!isPendingPartial) {
+        setPendingRange(undefined);
+      }
+    }
+  }, [currentRange, pendingRange]);
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (!dateFilter || !onFilterChange) return;
+
+    setPendingRange(range);
+
+    // ONLY apply if we have a full range (from AND to) OR it's being cleared (completely undefined)
+    // We also check that from and to are different to avoid 1-click filtering being triggered
+    // by some calendar versions that set 'to' equal to 'from' on the first click.
+    const isSelectionComplete =
+      !!range?.from &&
+      !!range?.to &&
+      range.from.getTime() !== range.to.getTime();
+    const isSelectionCleared = range === undefined;
+
+    if (isSelectionComplete || isSelectionCleared) {
+      const newFilters = { ...filterValues };
+      const startKey = dateFilter.startDateKey || "startDate";
+      const endKey = dateFilter.endDateKey || "endDate";
+
+      if (range?.from) {
+        newFilters[startKey] = range.from.toISOString();
+      } else {
+        delete newFilters[startKey];
+      }
+
+      if (range?.to) {
+        newFilters[endKey] = range.to.toISOString();
+      } else {
+        delete newFilters[endKey];
+      }
+
+      onFilterChange(newFilters);
+    }
   };
 
   const hasActiveFilters =
@@ -249,7 +323,7 @@ export function DataTable<TData, TValue>({
                   onClick={handleSearchClick}
                   variant="outline"
                   size="icon"
-                  className="shrink-0"
+                  className="shrink-0 bg-transparent"
                 >
                   <Search className="h-4 w-4" />
                 </Button>
@@ -265,7 +339,7 @@ export function DataTable<TData, TValue>({
                     handleFilterChange(filter.columnId, value)
                   }
                 >
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-45">
                     <SelectValue placeholder={filter.label} />
                   </SelectTrigger>
                   <SelectContent>
@@ -278,6 +352,15 @@ export function DataTable<TData, TValue>({
                   </SelectContent>
                 </Select>
               ))}
+
+              {dateFilter && (
+                <DatePickerWithRange
+                  date={pendingRange}
+                  onDateChange={handleDateRangeChange}
+                  placeholder={dateFilter.label}
+                  className="w-full sm:w-auto"
+                />
+              )}
 
               {hasActiveFilters && (
                 <Button
@@ -383,8 +466,8 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       {showPagination && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 mt-1 sticky bottom-0 bg-background border-t">
-          <div className="text-sm text-muted-foreground text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 mt-1 sticky bottom-0 border rounded-lg backdrop-blur-md">
+          <div className="text-sm text-muted-foreground text-center sm:text-left p-2">
             {isServerSidePagination ? (
               <>
                 Showing {(paginationMeta.page - 1) * paginationMeta.limit + 1}{" "}
@@ -443,7 +526,7 @@ export function DataTable<TData, TValue>({
                     ? paginationMeta.page >= paginationMeta.totalPages
                     : !table.getCanNextPage()
                 }
-                className="flex-1 sm:flex-none"
+                className="flex-1 sm:flex-none mr-2"
               >
                 Next
               </Button>

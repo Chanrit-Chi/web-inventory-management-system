@@ -11,22 +11,11 @@ import { Decimal } from "decimal.js";
 import { cartesianProduct } from "@/utils/cartesianProduct";
 import { SingleProductForm } from "./single-product-form";
 import { VariantDefaultsForm } from "./variant-defaults-form";
-import { AttributeSelector } from "./attribute-selector";
+import { AttributeSelector, Attribute } from "./attribute-selector";
 import { VariantsTable } from "./variants-table";
 import { ProductFormValues } from "./product-form";
 
 // Types for attribute selection
-interface AttributeValue {
-  id: number;
-  value: string;
-}
-
-interface Attribute {
-  id: number;
-  name: string;
-  values: AttributeValue[];
-}
-
 interface AttributeSelectionState {
   id: string;
   attributeId: number | null;
@@ -36,9 +25,7 @@ interface AttributeSelectionState {
 export function VariantForm() {
   const { watch, setValue } = useFormContext<ProductFormValues>();
 
-  const [productType, setProductType] = useState<"single" | "variable">(
-    "single",
-  );
+  const productType = watch("productType");
   const [selectedAttributes, setSelectedAttributes] = useState<
     AttributeSelectionState[]
   >([]);
@@ -65,7 +52,7 @@ export function VariantForm() {
       // Initialize state from form values if editing
       const initialType =
         watch("attributeSelections")?.length > 0 ? "variable" : "single";
-      setProductType(initialType);
+      setValue("productType", initialType);
 
       const initialSelections = watch("attributeSelections");
       if (initialSelections && initialSelections.length > 0) {
@@ -80,7 +67,7 @@ export function VariantForm() {
       }
     }
     fetchAttributes();
-  }, [watch, setSelectedAttributes]); // Include watch to react to initialData load
+  }, [watch, setSelectedAttributes, setValue]); // Include watch and setValue to react to initialData load
 
   // Compute variants whenever selections change
   const computedVariants = useMemo(() => {
@@ -244,12 +231,9 @@ export function VariantForm() {
   );
 
   const handleProductTypeChange = (type: "single" | "variable") => {
-    setProductType(type);
-    if (type === "single") {
-      setSelectedAttributes([]);
-      setValue("variants", []);
-      setValue("productAttributes", []);
-    }
+    setValue("productType", type);
+    // Data is no longer cleared here to prevent data loss.
+    // It will be sanitized on submission in product-form.tsx.
   };
 
   const addAttribute = () => {

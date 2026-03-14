@@ -124,8 +124,17 @@ export const invoiceService = {
     pageSize?: number;
     search?: string;
     status?: InvoiceStatus;
+    startDate?: string;
+    endDate?: string;
   }) => {
-    const { page = 1, pageSize = 10, search, status } = params;
+    const {
+      page = 1,
+      pageSize = 10,
+      search,
+      status,
+      startDate,
+      endDate,
+    } = params;
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.InvoiceWhereInput = {
@@ -135,6 +144,18 @@ export const invoiceService = {
           { invoiceNumber: { contains: search, mode: "insensitive" } },
           { customer: { name: { contains: search, mode: "insensitive" } } },
         ],
+      }),
+      ...((startDate || endDate) && {
+        issuedDate: {
+          ...(startDate && { gte: new Date(startDate) }),
+          ...(endDate && {
+            lte: (() => {
+              const d = new Date(endDate);
+              d.setHours(23, 59, 59, 999);
+              return d;
+            })(),
+          }),
+        },
       }),
     };
 

@@ -3,6 +3,7 @@ import {
   Expense,
   ExpenseCategory,
   ExpenseCategoryCreate,
+  ExpenseCategoryUpdate,
   ExpenseCreate,
   ExpenseUpdate,
 } from "@/schemas/type-export.schema";
@@ -191,14 +192,14 @@ export const expenseDbService = {
 
   updateCategory: async (
     id: number,
-    data: Pick<ExpenseCategoryCreate, "name" | "description">,
+    data: ExpenseCategoryUpdate,
   ): Promise<ExpenseCategory> => {
     return prisma.expenseCategory.update({
       where: { id },
       data: {
-        name: data.name.trim(),
-        description: data.description ?? null,
-        isActive: true,
+        name: data.name?.trim(),
+        description: data.description ?? undefined,
+        isActive: data.isActive,
       },
     }) as unknown as Promise<ExpenseCategory>;
   },

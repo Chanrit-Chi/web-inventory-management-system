@@ -12,6 +12,7 @@ import {
   Search,
   ShoppingCart,
   UserPlus,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -393,34 +394,26 @@ function PosPageContent() {
     setSelectedSizeByProduct((prev) => ({ ...prev, [product.id]: sizeKey }));
 
     const currentColorKey = selectedColorByProduct[product.id];
-    const canKeepCurrentColor =
-      currentColorKey &&
-      product.variants.some(
-        (variant) =>
-          getVariantSizeKey(variant) === sizeKey &&
-          getVariantColorKey(variant) === currentColorKey &&
-          variant.stock > 0,
-      );
 
-    let nextColorKey = currentColorKey;
-    if (!canKeepCurrentColor) {
-      nextColorKey =
-        product.variants.find(
-          (variant) =>
-            getVariantSizeKey(variant) === sizeKey && variant.stock > 0,
-        )?.colorKey ?? undefined;
-    }
+    const hasSizeDimension = product.variants.some((v) => v.sizeKey);
+    const hasColorDimension = product.variants.some((v) => v.colorKey);
 
-    if (nextColorKey) {
-      setSelectedColorByProduct((prev) => ({
-        ...prev,
-        [product.id]: nextColorKey,
-      }));
-    }
+    const isCompleteSelection =
+      (!hasColorDimension || currentColorKey) &&
+      (!hasSizeDimension || sizeKey);
 
-    const variant = findBestVariant(product.variants, sizeKey, nextColorKey);
-    if (variant) {
-      selectVariant(product.id, variant.variantId);
+    if (isCompleteSelection) {
+      const variant = findBestVariant(product.variants, sizeKey, currentColorKey);
+      if (variant) {
+        selectVariant(product.id, variant.variantId);
+      }
+    } else {
+      // Clear variant selection if incomplete
+      setSelectedVariantByProduct((prev) => {
+        const next = { ...prev };
+        delete next[product.id];
+        return next;
+      });
     }
   };
 
@@ -428,34 +421,26 @@ function PosPageContent() {
     setSelectedColorByProduct((prev) => ({ ...prev, [product.id]: colorKey }));
 
     const currentSizeKey = selectedSizeByProduct[product.id];
-    const canKeepCurrentSize =
-      currentSizeKey &&
-      product.variants.some(
-        (variant) =>
-          getVariantColorKey(variant) === colorKey &&
-          getVariantSizeKey(variant) === currentSizeKey &&
-          variant.stock > 0,
-      );
 
-    let nextSizeKey = currentSizeKey;
-    if (!canKeepCurrentSize) {
-      nextSizeKey =
-        product.variants.find(
-          (variant) =>
-            getVariantColorKey(variant) === colorKey && variant.stock > 0,
-        )?.sizeKey ?? undefined;
-    }
+    const hasSizeDimension = product.variants.some((v) => v.sizeKey);
+    const hasColorDimension = product.variants.some((v) => v.colorKey);
 
-    if (nextSizeKey) {
-      setSelectedSizeByProduct((prev) => ({
-        ...prev,
-        [product.id]: nextSizeKey,
-      }));
-    }
+    const isCompleteSelection =
+      (!hasColorDimension || colorKey) &&
+      (!hasSizeDimension || currentSizeKey);
 
-    const variant = findBestVariant(product.variants, nextSizeKey, colorKey);
-    if (variant) {
-      selectVariant(product.id, variant.variantId);
+    if (isCompleteSelection) {
+      const variant = findBestVariant(product.variants, currentSizeKey, colorKey);
+      if (variant) {
+        selectVariant(product.id, variant.variantId);
+      }
+    } else {
+      // Clear variant selection if incomplete
+      setSelectedVariantByProduct((prev) => {
+        const next = { ...prev };
+        delete next[product.id];
+        return next;
+      });
     }
   };
 
@@ -466,13 +451,12 @@ function PosPageContent() {
     }
 
     const selectedId = selectedVariantByProduct[product.id];
-    const selectedVariant =
-      product.variants.find((variant) => variant.variantId === selectedId) ||
-      product.variants.find((variant) => variant.stock > 0) ||
-      product.variants[0];
+    const selectedVariant = product.variants.find(
+      (variant) => variant.variantId === selectedId,
+    );
 
-    if (!selectedVariant || selectedVariant.stock <= 0) {
-      toast.error("This variant is out of stock");
+    if (!selectedVariant) {
+      toast.error("Please select an option (size/color)");
       return;
     }
 
@@ -567,11 +551,14 @@ function PosPageContent() {
     const price = sellingPrice > 0 ? sellingPrice : costPrice;
     const variantLabel = mapLookupVariantLabel(variant);
 
+    const productId = variant.product.id;
+    const variantId = variant.id;
+    const productName = variant.product.name;
+    const productImage = variant.product.image || undefined;
+
     setCart((prev) => {
       const idx = prev.findIndex(
-        (item) =>
-          item.productId === variant.product?.id &&
-          item.variantId === variant.id,
+        (item) => item.productId === productId && item.variantId === variantId,
       );
 
       if (idx >= 0) {
@@ -593,14 +580,14 @@ function PosPageContent() {
       return [
         ...prev,
         {
-          productId: variant.product.id,
-          variantId: variant.id,
-          name: variant.product.name,
+          productId,
+          variantId,
+          name: productName,
           variantLabel,
           price,
           quantity: 1,
           stock,
-          image: variant.product.image || undefined,
+          image: productImage,
         },
       ];
     });
@@ -697,59 +684,65 @@ function PosPageContent() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 xl:items-start">
         <div className="xl:col-span-3 space-y-4">
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="pl-9"
-                placeholder="Search products..."
-              />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="pl-9 w-full"
+                  placeholder="Search products..."
+                />
+              </div>
             </div>
 
             {canUseScanner && (
               <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  ref={barcodeInputRef}
-                  value={barcodeInput}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setBarcodeInput(value);
-                    scheduleScanSubmit(value);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      void submitBarcodeLookup(barcodeInput);
+                <div className="flex-1 min-w-52 sm:max-w-sm">
+                  <Input
+                    ref={barcodeInputRef}
+                    value={barcodeInput}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setBarcodeInput(value);
+                      scheduleScanSubmit(value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void submitBarcodeLookup(barcodeInput);
+                      }
+                    }}
+                    placeholder="Scan barcode or SKU"
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void submitBarcodeLookup(barcodeInput)}
+                    disabled={isScanning}
+                  >
+                    {isScanning ? "..." : "Scan"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={scanMode ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => {
+                      setScanMode((prev) => !prev);
+                      barcodeInputRef.current?.focus();
+                    }}
+                    aria-label={
+                      scanMode
+                        ? "Disable laser scan mode"
+                        : "Enable laser scan mode"
                     }
-                  }}
-                  placeholder="Scan barcode or enter SKU"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void submitBarcodeLookup(barcodeInput)}
-                  disabled={isScanning}
-                >
-                  {isScanning ? "Scanning..." : "Scan"}
-                </Button>
-                <Button
-                  type="button"
-                  variant={scanMode ? "default" : "outline"}
-                  size="icon"
-                  onClick={() => {
-                    setScanMode((prev) => !prev);
-                    barcodeInputRef.current?.focus();
-                  }}
-                  aria-label={
-                    scanMode
-                      ? "Disable laser scan mode"
-                      : "Enable laser scan mode"
-                  }
-                >
-                  <ScanLine className="size-4" />
-                </Button>
+                  >
+                    <ScanLine className="size-4" />
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -765,7 +758,7 @@ function PosPageContent() {
             <p className="text-sm text-muted-foreground">Loading products...</p>
           ) : (
             <>
-              <div className="border rounded-xl p-1 flex gap-1 overflow-x-auto">
+              <div className="border rounded-xl p-1 flex gap-1 overflow-x-auto scrollbar-hide">
                 {categoryTabs.map((tab) => {
                   const isActive = selectedCategory === tab.id;
                   return (
@@ -773,9 +766,9 @@ function PosPageContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => setSelectedCategory(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap min-w-40 transition ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
                         isActive
-                          ? "bg-card border border-border font-semibold"
+                          ? "bg-card border border-border shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -799,25 +792,11 @@ function PosPageContent() {
                   const sizeOptions = getSizeOptions(product.variants);
                   const colorOptions = getColorOptions(product.variants);
                   const selectedId = selectedVariantByProduct[product.id];
-                  const selectedSizeKey =
-                    selectedSizeByProduct[product.id] ||
-                    product.variants.find((v) => v.variantId === selectedId)
-                      ?.sizeKey ||
-                    product.variants.find((v) => v.stock > 0)?.sizeKey ||
-                    undefined;
-                  const selectedColorKey =
-                    selectedColorByProduct[product.id] ||
-                    product.variants.find((v) => v.variantId === selectedId)
-                      ?.colorKey ||
-                    product.variants.find((v) => v.stock > 0)?.colorKey ||
-                    undefined;
-                  const selectedVariant =
-                    product.variants.find((v) => v.variantId === selectedId) ||
-                    findBestVariant(
-                      product.variants,
-                      selectedSizeKey,
-                      selectedColorKey,
-                    );
+                  const selectedSizeKey = selectedSizeByProduct[product.id];
+                  const selectedColorKey = selectedColorByProduct[product.id];
+                  const selectedVariant = product.variants.find(
+                    (v) => v.variantId === selectedId,
+                  );
 
                   return (
                     <div
@@ -844,12 +823,12 @@ function PosPageContent() {
                           {product.name}
                         </p>
                         {hasVariants && selectedVariant ? (
-                          <p className="text-sm text-primary font-medium">
+                          <p className="text-sm text-primary font-bold">
                             ${selectedVariant.price.toFixed(2)}
                           </p>
                         ) : (
-                          <p className="text-sm text-muted-foreground font-medium">
-                            Variant not configured
+                          <p className="text-sm text-amber-600 font-medium">
+                            Select an option
                           </p>
                         )}
                       </div>
@@ -860,7 +839,7 @@ function PosPageContent() {
                             ? "Available size/color"
                             : "Available option"}
                         </p>
-                        {hasVariants && selectedVariant ? (
+                        {hasVariants ? (
                           <div className="space-y-2">
                             {hasSizeDimension && (
                               <div className="space-y-1">
@@ -878,17 +857,6 @@ function PosPageContent() {
                                     );
                                     const isSelected =
                                       selectedSizeKey === size.key;
-                                    let sizeButtonClass =
-                                      "bg-background hover:bg-accent";
-                                    if (disabled) {
-                                      sizeButtonClass =
-                                        "bg-muted text-muted-foreground border-muted-foreground/20 cursor-not-allowed";
-                                    }
-                                    if (isSelected) {
-                                      sizeButtonClass =
-                                        "bg-primary text-primary-foreground border-primary";
-                                    }
-
                                     return (
                                       <button
                                         key={size.key}
@@ -897,8 +865,15 @@ function PosPageContent() {
                                           selectSize(product, size.key)
                                         }
                                         disabled={disabled}
-                                        className={`text-[10px] px-2 py-1 rounded-full border transition ${sizeButtonClass}`}
+                                        className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 flex items-center gap-1.5 ${
+                                          isSelected
+                                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105 z-10 font-bold"
+                                            : disabled
+                                              ? "bg-muted/30 text-muted-foreground/40 border-muted-foreground/5 cursor-not-allowed"
+                                              : "bg-background/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                        }`}
                                       >
+                                        {isSelected && <Check className="size-3" />}
                                         {size.label}
                                       </button>
                                     );
@@ -922,19 +897,7 @@ function PosPageContent() {
                                         : undefined,
                                     );
                                     const isSelected =
-                                      selectedColorKey === color.key;
-                                    let colorButtonClass =
-                                      "bg-background hover:bg-accent";
-                                    if (disabled) {
-                                      colorButtonClass =
-                                        "bg-muted text-muted-foreground border-muted-foreground/20 cursor-not-allowed";
-                                    }
-                                    if (isSelected) {
-                                      colorButtonClass =
-                                        "bg-primary text-primary-foreground border-primary";
-                                    }
-
-                                    return (
+                                      selectedColorKey === color.key;                                     return (
                                       <button
                                         key={color.key}
                                         type="button"
@@ -942,22 +905,36 @@ function PosPageContent() {
                                           selectColor(product, color.key)
                                         }
                                         disabled={disabled}
-                                        className={`text-[10px] px-2 py-1 rounded-full border transition inline-flex items-center gap-1 ${colorButtonClass}`}
+                                        className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 inline-flex items-center gap-2 ${
+                                          isSelected
+                                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105 z-10 font-bold"
+                                            : disabled
+                                              ? "bg-muted/30 text-muted-foreground/40 border-muted-foreground/5 cursor-not-allowed"
+                                              : "bg-background/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                        }`}
                                       >
-                                        <span
-                                          className="size-3 rounded-full border border-black/20"
-                                          style={
-                                            color.colorHex
-                                              ? {
-                                                  backgroundColor:
-                                                    color.colorHex,
-                                                }
-                                              : undefined
-                                          }
-                                        />
+                                        <div className="relative">
+                                          <span
+                                            className="block size-3 rounded-full border border-black/10"
+                                            style={
+                                              color.colorHex
+                                                ? {
+                                                    backgroundColor:
+                                                      color.colorHex,
+                                                  }
+                                                : undefined
+                                            }
+                                          />
+                                          {isSelected && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <Check className="size-2 text-primary-foreground drop-shadow-sm" />
+                                            </div>
+                                          )}
+                                        </div>
                                         <span>{color.label}</span>
                                       </button>
                                     );
+
                                   })}
                                 </div>
                               </div>
@@ -976,7 +953,7 @@ function PosPageContent() {
                                       )
                                     }
                                     className={`text-[10px] px-2 py-1 rounded-full border ${
-                                      selectedVariant.variantId ===
+                                      selectedVariant?.variantId ===
                                       variant.variantId
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-background hover:bg-accent"
@@ -987,14 +964,15 @@ function PosPageContent() {
                                 ))}
                               </div>
                             )}
-
-                            <p className="text-[10px] text-muted-foreground">
-                              Selected: {getVariantChipLabel(selectedVariant)}
-                            </p>
-                          </div>
+                             <p className="text-[10px] text-muted-foreground pt-1">
+                               Selected: {selectedVariant ? (
+                                 <span className="text-primary font-bold">{getVariantChipLabel(selectedVariant)}</span>
+                               ) : "None"}
+                             </p>
+                           </div>
                         ) : (
                           <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 w-max">
-                            No size/color variant
+                            No variants available
                           </div>
                         )}
                       </div>
@@ -1002,11 +980,8 @@ function PosPageContent() {
                       <Button
                         className="w-full mt-auto"
                         onClick={() => addToCart(product)}
-                        disabled={
-                          !hasVariants ||
-                          !selectedVariant ||
-                          selectedVariant.stock <= 0
-                        }
+                        disabled={!selectedVariant}
+                        variant={selectedVariant ? "default" : "outline"}
                       >
                         <Plus className="size-4 mr-1" /> Add to Cart
                       </Button>

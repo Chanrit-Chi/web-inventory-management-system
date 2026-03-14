@@ -31,6 +31,7 @@ import {
 import {
   ExpenseCategoryCreateSchema,
   ExpenseCategorySchema,
+  ExpenseCategoryUpdateSchema,
   ExpenseCreateSchema,
   ExpenseSchema,
   ExpenseUpdateSchema,
@@ -150,6 +151,7 @@ export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
 
 export type ExpenseCategory = z.infer<typeof ExpenseCategorySchema>;
 export type ExpenseCategoryCreate = z.infer<typeof ExpenseCategoryCreateSchema>;
+export type ExpenseCategoryUpdate = z.infer<typeof ExpenseCategoryUpdateSchema>;
 export type Expense = z.infer<typeof ExpenseSchema>;
 export type ExpenseCreate = z.infer<typeof ExpenseCreateSchema>;
 export type ExpenseUpdate = z.infer<typeof ExpenseUpdateSchema>;

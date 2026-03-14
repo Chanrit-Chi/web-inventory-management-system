@@ -24,6 +24,19 @@ export const quotationService = {
       where.status = filters.status as QuotationStatus;
     }
 
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {
+        ...(filters?.startDate && { gte: new Date(filters.startDate) }),
+        ...(filters?.endDate && {
+          lte: (() => {
+            const d = new Date(filters.endDate);
+            d.setHours(23, 59, 59, 999);
+            return d;
+          })(),
+        }),
+      };
+    }
+
     const [quotations, total] = await Promise.all([
       prisma.quotation.findMany({
         where,

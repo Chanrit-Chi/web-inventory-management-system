@@ -49,6 +49,8 @@ export const productApiService = {
     if (filters) {
       if (filters.isActive) params.append("isActive", filters.isActive);
       if (filters.category) params.append("category", filters.category);
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
     }
 
     const res = await fetch(`/api/products?${params.toString()}`);

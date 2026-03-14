@@ -1,0 +1,4 @@
+productSku,name,description,category,unit,variantSku,costPrice,sellingPrice,stock,reorderLevel,attr1Name,attr1Value,attr2Name,attr2Value
+PROD-001,T-Shirt,Premium Cotton Shirt,Apparel,pcs,TSHIRT-RED-M,10,20,100,20,Color,Red,Size,M
+PROD-001,T-Shirt,Premium Cotton Shirt,Apparel,pcs,TSHIRT-BLUE-L,10,20,50,10,Color,Blue,Size,L
+PROD-002,Laptop Bag,Waterproof bag,Accessories,pcs,BAG-001,30,60,30,5,,, ,

@@ -36,6 +36,8 @@ export const quotationApiService = {
 
     if (search) params.append("search", search);
     if (filters?.status) params.append("status", filters.status);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
 
     const res = await fetch(`/api/quotations?${params.toString()}`);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

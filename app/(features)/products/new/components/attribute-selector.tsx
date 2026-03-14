@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
-interface AttributeValue {
+export interface AttributeValue {
   id: number;
   value: string;
   displayValue: string;
 }
 
-interface Attribute {
+export interface Attribute {
   id: number;
   name: string;
   displayName: string;

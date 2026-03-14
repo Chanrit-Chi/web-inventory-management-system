@@ -64,6 +64,8 @@ export const saleApiService = {
       if (filters["paymentMethod.name"]) {
         params.append("paymentMethod", filters["paymentMethod.name"]);
       }
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
     }
 
     const res = await fetch(`/api/sales?${params.toString()}`);

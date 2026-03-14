@@ -4,7 +4,7 @@ import { SharedLayout } from "@/components/shared-layout";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Download,
   RefreshCcw,
@@ -25,8 +25,15 @@ import {
   DeleteProductDialog,
   ReactivateProductDialog,
 } from "./product-dialogs";
+import { ImportProductDialog } from "./import-dialog";
+import { ProductExportDropdown } from "./product-export-dropdown";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ViewMode = "table" | "grid";
 
@@ -63,18 +70,8 @@ function ProductCard({ product }: { readonly product: ProductWithVariants }) {
           ) : (
             <ShoppingBag className="size-12 text-muted-foreground/40" />
           )}
-          {/* Status badge */}
           <div className="absolute top-2 right-2">
-            <Badge
-              variant="outline"
-              className={
-                isActive
-                  ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300"
-                  : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300"
-              }
-            >
-              {isActive ? "Active" : "Inactive"}
-            </Badge>
+            <StatusBadge status={product.isActive} />
           </div>
         </div>
 
@@ -104,24 +101,24 @@ function ProductCard({ product }: { readonly product: ProductWithVariants }) {
         <div className="border-t flex divide-x">
           <button
             onClick={() => setViewOpen(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
           >
             <Eye className="size-3.5" />
             View
           </button>
           <Link
             href={`/products/edit/${product.id}`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
           >
             <Edit className="size-3.5" />
             Edit
           </Link>
           <button
             onClick={() => setDeleteOpen(true)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors cursor-pointer hover:bg-muted ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors cursor-pointer ${
               isActive
-                ? "text-red-500 hover:text-red-600"
-                : "text-green-500 hover:text-green-600"
+                ? "text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
             }`}
           >
             {isActive ? "Deactivate" : "Reactivate"}
@@ -171,10 +168,11 @@ function ProductGrid({
 
 function ProductList() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [importOpen, setImportOpen] = useState(false);
   const { can } = usePermission();
 
   const {
@@ -220,11 +218,34 @@ function ProductList() {
     <div className="w-full min-h-full flex flex-col px-2 py-2 overflow-hidden">
       <h1 className="text-xl font-bold mb-1">Product List</h1>
       <div className="flex justify-end items-center gap-2 mb-1">
-        <Button className="btn btn-primary">XLSX</Button>
-        <Button className="btn btn-primary">
-          <Download className="size-4" />
-          Import
-        </Button>
+        <ProductExportDropdown search={search} filters={filters} />
+        {can("import:read") ? (
+          <Button
+            className="btn btn-primary"
+            onClick={() => setImportOpen(true)}
+          >
+            <Download className="size-4" />
+            Import
+          </Button>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  className="btn btn-primary"
+                  disabled
+                  style={{ pointerEvents: "none" }}
+                >
+                  <Download className="size-4" />
+                  Import
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>No Permission</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
         <Button
           onClick={() => refetch()}
           disabled={isFetching}
@@ -271,10 +292,6 @@ function ProductList() {
             addNewHref="/products/new"
             paginationMeta={products?.pagination}
             onPageChange={(newPage) => setPage(newPage)}
-            onPageSizeChange={(newLimit) => {
-              setLimit(newLimit);
-              setPage(1);
-            }}
             onSearchChange={handleSearchChange}
             onFilterChange={handleFilterChange}
             searchValue={search}
@@ -294,6 +311,10 @@ function ProductList() {
                 options: categoryOptions,
               },
             ]}
+            dateFilter={{
+              startDateKey: "startDate",
+              endDateKey: "endDate",
+            }}
           />
         ) : (
           <ProductGrid
@@ -301,6 +322,12 @@ function ProductList() {
           />
         )}
       </div>
+
+      <ImportProductDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImportSuccess={() => refetch()}
+      />
     </div>
   );
 }

@@ -212,6 +212,19 @@ export const productDbService = {
       if (Number.isInteger(categoryId)) {
         where.categoryId = categoryId;
       }
+
+      if (filters.startDate || filters.endDate) {
+        where.createdAt = {
+          ...(filters.startDate && { gte: new Date(filters.startDate) }),
+          ...(filters.endDate && {
+            lte: (() => {
+              const d = new Date(filters.endDate);
+              d.setHours(23, 59, 59, 999);
+              return d;
+            })(),
+          }),
+        };
+      }
     }
 
     console.log("Product search query:", search);
@@ -534,5 +547,188 @@ export const productDbService = {
 
       return mapProductResponse(reactivated) as unknown as Product;
     });
+  },
+
+  importProducts: async (productsData: Record<string, unknown>[]) => {
+    const session = await getServerSession();
+    if (
+      !session?.user ||
+      !hasPermission(session.user.role as Role, "product:create")
+    ) {
+      throw new Error("Unauthorized: Insufficient permissions");
+    }
+
+    const results = {
+      success: 0,
+      updated: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    const normalize = (val: unknown) => val?.toString().trim() || "";
+
+    // 1. Group data by Product SKU
+    const productGroups = new Map<string, Record<string, unknown>[]>();
+    for (const data of productsData) {
+      const pSku = normalize(data.productSku || data.sku); // Fallback to 'sku' if 'productSku' is missing
+      if (!pSku) {
+        results.failed++;
+        results.errors.push("Missing Product SKU for a row");
+        continue;
+      }
+      if (!productGroups.has(pSku)) {
+        productGroups.set(pSku, []);
+      }
+      productGroups.get(pSku)!.push(data);
+    }
+
+    // 2. Process each Product Group
+    for (const [pSku, rows] of productGroups.entries()) {
+      try {
+        const firstRow = rows[0];
+
+        await prisma.$transaction(async (tx) => {
+          // A. Resolve Category
+          const categoryName = normalize(firstRow.category) || "Uncategorized";
+          let category = await tx.category.findUnique({
+            where: { name: categoryName },
+          });
+          if (!category) {
+            category = await tx.category.create({
+              data: { name: categoryName },
+            });
+          }
+
+          // B. Resolve Unit
+          const unitName = normalize(firstRow.unit) || "pcs";
+          let unit = await tx.unit.findUnique({ where: { name: unitName } });
+          if (!unit) {
+            unit = await tx.unit.create({ data: { name: unitName } });
+          }
+
+          // C. Upsert Product
+          const existingProduct = await tx.product.findUnique({
+            where: { sku: pSku },
+          });
+          let product;
+          const productData = {
+            name: normalize(firstRow.name) || "Untitled Product",
+            description:
+              normalize(firstRow.description) || "No description provided",
+            categoryId: category.id,
+            unitId: unit.id,
+          };
+
+          if (existingProduct) {
+            product = await tx.product.update({
+              where: { id: existingProduct.id },
+              data: productData,
+            });
+            results.updated++;
+          } else {
+            product = await tx.product.create({
+              data: { ...productData, sku: pSku },
+            });
+            results.success++;
+          }
+
+          // D. Process Variants in this group
+          for (const row of rows) {
+            const vSku = normalize(row.variantSku || row.sku);
+            if (!vSku)
+              throw new Error(`Missing Variant SKU for product ${pSku}`);
+
+            const variantData = {
+              costPrice: new Prisma.Decimal(normalize(row.costPrice) || "0"),
+              sellingPrice: new Prisma.Decimal(
+                normalize(row.sellingPrice) || "0",
+              ),
+              stock: Math.max(0, parseInt(normalize(row.stock) || "0")),
+              reorderLevel: Math.max(
+                0,
+                parseInt(normalize(row.reorderLevel) || "0"),
+              ),
+              isActive: true,
+            };
+
+            const variant = await tx.productVariant.upsert({
+              where: { sku: vSku },
+              update: variantData,
+              create: { ...variantData, productId: product.id, sku: vSku },
+            });
+
+            // E. Process Attributes (e.g., attr1Name/attr1Value, attr2Name/attr2Value)
+            for (let i = 1; i <= 3; i++) {
+              const attrName = normalize(row[`attr${i}Name`]);
+              const attrVal = normalize(row[`attr${i}Value`]);
+
+              if (attrName && attrVal) {
+                // Resolve Attribute
+                let attribute = await tx.productAttribute.findUnique({
+                  where: { name: attrName.toLowerCase() },
+                });
+                if (!attribute) {
+                  attribute = await tx.productAttribute.create({
+                    data: {
+                      name: attrName.toLowerCase(),
+                      displayName: attrName,
+                    },
+                  });
+                }
+
+                // Ensure Product linked to Attribute
+                await tx.productOnAttribute.upsert({
+                  where: {
+                    productId_attributeId: {
+                      productId: product.id,
+                      attributeId: attribute.id,
+                    },
+                  },
+                  update: {},
+                  create: { productId: product.id, attributeId: attribute.id },
+                });
+
+                // Resolve Attribute Value
+                let value = await tx.productAttributeValue.findUnique({
+                  where: {
+                    attributeId_value: {
+                      attributeId: attribute.id,
+                      value: attrVal.toLowerCase(),
+                    },
+                  },
+                });
+                if (!value) {
+                  value = await tx.productAttributeValue.create({
+                    data: {
+                      attributeId: attribute.id,
+                      value: attrVal.toLowerCase(),
+                      displayValue: attrVal,
+                    },
+                  });
+                }
+
+                // Link Variant to Attribute Value
+                await tx.productVariantAttribute.upsert({
+                  where: {
+                    variantId_valueId: {
+                      variantId: variant.id,
+                      valueId: value.id,
+                    },
+                  },
+                  update: {},
+                  create: { variantId: variant.id, valueId: value.id },
+                });
+              }
+            }
+          }
+        });
+      } catch (error: unknown) {
+        results.failed++;
+        const message = error instanceof Error ? error.message : String(error);
+        results.errors.push(`Product SKU ${pSku}: ${message}`);
+      }
+    }
+
+    return results;
   },
 } as const;

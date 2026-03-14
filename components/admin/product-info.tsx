@@ -226,11 +226,8 @@ export default function ProductInfo() {
               <CircleAlert className="h-4 w-4 text-yellow-400" />
               <h4 className="font-bold">Low Stock Products</h4>
             </div>
-            <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md bg-background min-w-30">
-              <Link
-                href="/stock/adjust"
-                className="text-sm text-primary underline"
-              >
+            <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md min-w-30">
+              <Link href="/stock/adjust" className="text-sm underline">
                 Adjust Stock
               </Link>
             </div>
@@ -342,35 +339,35 @@ export default function ProductInfo() {
                         .reduce((acc, c) => acc + (c.codePointAt(0) ?? 0), 0) %
                       colors.length;
                     return (
-                    <div key={order.id} className="flex items-center gap-3">
-                      <div
-                        className={`size-10 shrink-0 rounded-md ${colors[colorIdx]} flex items-center justify-center text-xs font-bold`}
-                      >
-                        {initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {order.customer?.name ?? "Guest"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          ${Number(order.totalPrice ?? 0).toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {formatDateDisplay(
-                            order.createdAt as unknown as string,
-                          )}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] mt-0.5 ${statusStyle[order.status] ?? "bg-muted"}`}
+                      <div key={order.id} className="flex items-center gap-3">
+                        <div
+                          className={`size-10 shrink-0 rounded-md ${colors[colorIdx]} flex items-center justify-center text-xs font-bold`}
                         >
-                          {order.status.charAt(0) +
-                            order.status.slice(1).toLowerCase()}
-                        </Badge>
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {order.customer?.name ?? "Guest"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ${Number(order.totalPrice ?? 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end shrink-0">
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateDisplay(
+                              order.createdAt as unknown as string,
+                            )}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] mt-0.5 ${statusStyle[order.status] ?? "bg-muted"}`}
+                          >
+                            {order.status.charAt(0) +
+                              order.status.slice(1).toLowerCase()}
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
                     );
                   })}
                 </div>

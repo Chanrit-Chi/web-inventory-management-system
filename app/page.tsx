@@ -11,9 +11,15 @@ export default function Home() {
   const role = (session?.user as { role?: string })?.role || "Unknown";
 
   let dashboardLink: React.ReactNode = null;
-  if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER") {
+  if (role === "SUPER_ADMIN" || role === "ADMIN") {
     dashboardLink = (
       <Link href="/dashboard/admin">
+        <Button size="lg">Go to Dashboard</Button>
+      </Link>
+    );
+  } else if (role === "MANAGER") {
+    dashboardLink = (
+      <Link href="/dashboard/manager">
         <Button size="lg">Go to Dashboard</Button>
       </Link>
     );
@@ -24,7 +30,6 @@ export default function Home() {
       </Link>
     );
   }
-
   const mainContent = session ? (
     <div className="space-y-6">
       <h2 className="text-4xl font-bold">Welcome back, {session.user.name}!</h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef, Row } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { Eye, Edit, Trash, ArrowRightLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,23 +69,8 @@ export const columns: ColumnDef<QuotationListing>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const variants: Record<
-        string,
-        "secondary" | "info" | "success" | "destructive" | "warning" | "default"
-      > = {
-        DRAFT: "secondary",
-        SENT: "info",
-        ACCEPTED: "success",
-        REJECTED: "destructive",
-        EXPIRED: "warning",
-        CONVERTED: "default",
-      };
-      const status = row.getValue("status");
-      return (
-        <Badge variant={variants[status as string] || "default"}>
-          {status as string}
-        </Badge>
-      );
+      const status = row.getValue("status") as string;
+      return <StatusBadge status={status} />;
     },
   },
   {
@@ -117,7 +102,7 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
           onClick={() => setViewOpen(true)}
           title="View Details"
         >
-          <Eye className="h-4 w-4 text-sky-600" />
+          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         </Button>
 
         {/* Edit Quotation */}
@@ -138,11 +123,11 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
               >
                 {quotation.status !== "CONVERTED" && can("quotation:update") ? (
                   <Link href={`/sales/quotations/edit/${quotation.id}`}>
-                    <Edit className="h-4 w-4 text-amber-600" />
+                    <Edit className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   </Link>
                 ) : (
                   <Edit
-                    className={`h-4 w-4 ${quotation.status === "CONVERTED" ? "text-slate-400" : "text-amber-600"}`}
+                    className={`h-4 w-4 ${quotation.status === "CONVERTED" ? "text-slate-400 dark:text-slate-600" : "text-amber-600 dark:text-amber-400"}`}
                   />
                 )}
               </Button>

@@ -41,12 +41,12 @@ type Quotation = QuotationWithItems;
 
 function StatusBadge({ status }: { readonly status: string }) {
   const styles = {
-    DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-    SENT: "bg-blue-100 text-blue-700 border-blue-200",
-    ACCEPTED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    REJECTED: "bg-red-100 text-red-700 border-red-200",
-    EXPIRED: "bg-amber-100 text-amber-700 border-amber-200",
-    CONVERTED: "bg-slate-100 text-slate-700 border-slate-200",
+    DRAFT: "bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600/50",
+    SENT: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50",
+    ACCEPTED: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50",
+    REJECTED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50",
+    EXPIRED: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/50",
+    CONVERTED: "bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-600/50",
   };
 
   const icons = {
@@ -60,7 +60,7 @@ function StatusBadge({ status }: { readonly status: string }) {
 
   const style =
     styles[status as keyof typeof styles] ||
-    "bg-gray-100 text-gray-700 border-gray-200";
+    "bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600/50";
   const Icon = icons[status as keyof typeof styles] || Info;
 
   return (
@@ -168,12 +168,12 @@ export function ConvertQuotationDialog({
 }
 const QuotationContent = forwardRef<
   HTMLDivElement,
-  { quotation: Quotation; isProforma?: boolean }
->(({ quotation, isProforma = false }, ref) => {
+  { quotation: Quotation}
+>(({ quotation}, ref) => {
   return (
     <div ref={ref}>
       <DocumentLayout
-        title={isProforma ? "Proforma Invoice" : "Quotation"}
+        title="Quotation"
         documentNumber={quotation.quotationNumber}
         date={format(new Date(quotation.issueDate), "PPP")}
         dueDate={format(new Date(quotation.validUntil), "PPP")}
@@ -220,8 +220,6 @@ export function ViewQuotationDialog({
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [isProforma, setIsProforma] = useState(false);
-
   const handlePrint = useReactToPrint({
     contentRef,
     documentTitle: `Quotation ${quotation?.quotationNumber}`,
@@ -262,18 +260,9 @@ export function ViewQuotationDialog({
             <div className="sticky top-0 bg-background/95 backdrop-blur-md border-b py-4 px-6 flex items-center justify-between z-10">
               <div className="flex items-center gap-4">
                 <h2 className="text-xl font-semibold">
-                  {isProforma ? "Proforma Invoice" : "Quotation"}{" "}
-                  {quotation.quotationNumber}
+                  Quotation {quotation.quotationNumber}
                 </h2>
-                <div className="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                    Proforma Mode
-                  </span>
-                  <Switch
-                    checked={isProforma}
-                    onCheckedChange={setIsProforma}
-                  />
-                </div>
+                
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -306,18 +295,18 @@ export function ViewQuotationDialog({
             <QuotationContent
               ref={contentRef}
               quotation={quotation}
-              isProforma={isProforma}
+              
             />
           </div>
         </div>
         {autoPrint && isPrinting && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-20">
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
             <div className="text-center">
               <Printer className="h-12 w-12 text-blue-500 animate-bounce mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-700">
+              <p className="text-lg font-medium text-foreground">
                 Preparing Print Job...
               </p>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 The print dialog will open automatically.
               </p>
             </div>

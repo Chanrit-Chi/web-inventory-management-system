@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 
 import { StockMovementWithRelations } from "@/schemas/type-export.schema";
@@ -39,23 +39,7 @@ export const columns: ColumnDef<StockMovementWithRelations>[] = [
     header: "Type",
     cell: ({ row }) => {
       const type = row.getValue("movementType") as string;
-
-      const styleMap: Record<string, string> = {
-        INITIAL:    "bg-blue-50   text-blue-700   border-blue-200",
-        SALE:       "bg-red-50    text-red-700    border-red-200",
-        PURCHASE:   "bg-green-50  text-green-700  border-green-200",
-        ADJUSTMENT: "bg-amber-50  text-amber-700  border-amber-200",
-        RETURN:     "bg-purple-50 text-purple-700 border-purple-200",
-        DAMAGE:     "bg-orange-50 text-orange-700 border-orange-200",
-      };
-
-      const style = styleMap[type] ?? "bg-muted text-muted-foreground border-border";
-
-      return (
-        <Badge variant="outline" className={`capitalize text-xs font-medium border ${style}`}>
-          {type.toLowerCase()}
-        </Badge>
-      );
+      return <StatusBadge status={type} />;
     },
   },
   {

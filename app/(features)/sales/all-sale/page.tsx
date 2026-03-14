@@ -10,10 +10,11 @@ import { BanknoteArrowDown, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { usePermission } from "@/hooks/usePermission";
+import { SaleExportDropdown } from "./sale-export-dropdown";
 
 function Sale() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const { can } = usePermission();
@@ -61,7 +62,7 @@ function Sale() {
         <h1 className="text-2xl font-bold">Sales</h1>
       </div>
       <div className="flex justify-end items-center gap-2">
-        <Button className="btn btn-primary">XLSX</Button>
+        <SaleExportDropdown search={search} filters={filters} />
         <Button
           onClick={() => refetch()}
           disabled={isFetching}
@@ -83,10 +84,6 @@ function Sale() {
         addNewHref="/sales/new-sale"
         paginationMeta={sales?.pagination}
         onPageChange={(newPage) => setPage(newPage)}
-        onPageSizeChange={(newLimit) => {
-          setLimit(newLimit);
-          setPage(1);
-        }}
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
         searchValue={search}
@@ -108,6 +105,10 @@ function Sale() {
             options: paymentMethodOptions,
           },
         ]}
+        dateFilter={{
+          startDateKey: "startDate",
+          endDateKey: "endDate",
+        }}
       />
     </div>
   );

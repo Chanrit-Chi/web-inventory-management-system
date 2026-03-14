@@ -3,8 +3,9 @@
 import { SharedLayout } from "@/components/shared-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";
+import { useCountUp } from "@/hooks/useCountUp";
 import { useGetSales } from "@/hooks/useSale";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
@@ -32,10 +33,6 @@ function fmt(val: number | string | null | undefined) {
   })}`;
 }
 
-const statusStyle: Record<string, string> = {
-  COMPLETED: "bg-green-50 text-green-700 border-green-200",
-  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-};
 
 // ── sub-components ──────────────────────────────────────────────────────────
 
@@ -45,27 +42,40 @@ function MetricCard({
   value,
   sub,
   color,
+  delay = 0,
+  countTarget,
 }: {
   readonly icon: React.ElementType;
   readonly label: string;
   readonly value: string | number;
   readonly sub?: string;
   readonly color: string;
+  readonly delay?: number;
+  readonly countTarget?: number;
 }) {
+  const animated = useCountUp(countTarget ?? 0);
+  const displayValue = countTarget === undefined ? value : animated;
   return (
-    <div className={`rounded-xl p-5 flex justify-between items-start ${color}`}>
-      <div className="flex flex-col gap-1">
+    <div
+      className={`animate-dash-enter relative overflow-hidden rounded-xl p-5 flex flex-col justify-between items-start min-h-30 ${color}`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="flex flex-col gap-1 z-10 w-full">
         <span className="text-xs font-medium text-white/80 uppercase tracking-wide">
           {label}
         </span>
-        <span className="text-2xl font-bold text-white">{value}</span>
+        <span className="text-2xl font-bold text-white leading-tight">
+          {displayValue}
+        </span>
+      </div>
+      <div className="z-10 w-full mt-auto">
         {sub && (
-          <span className="text-xs text-white/70 bg-white/15 px-2 py-0.5 rounded-full w-max">
+          <span className="text-[10px] sm:text-xs text-white/80 bg-white/20 px-2 py-0.5 rounded-full w-max flex items-center gap-1.5 backdrop-blur-sm">
             {sub}
           </span>
         )}
       </div>
-      <Icon className="h-10 w-10 text-white/40 shrink-0" />
+      <Icon className="absolute -right-4 -top-4 h-24 w-24 text-white/15 shrink-0 rotate-12" />
     </div>
   );
 }
@@ -76,20 +86,25 @@ function QuickAction({
   description,
   href,
   color,
+  delay = 0,
 }: {
   readonly icon: React.ElementType;
   readonly label: string;
   readonly description: string;
   readonly href: string;
   readonly color: string;
+  readonly delay?: number;
 }) {
   return (
     <Link href={href}>
-      <div className="group p-4 bg-card rounded-xl border hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer h-full">
+      <div
+        className="animate-dash-enter group p-4 bg-card rounded-xl border h-full"
+        style={{ animationDelay: `${delay}ms` }}
+      >
         <div
-          className={`size-9 rounded-lg flex items-center justify-center mb-3 ${color}`}
+          className={`size-10 rounded-xl flex items-center justify-center mb-4 shadow-sm border transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${color}`}
         >
-          <Icon className="size-4" />
+          <Icon className="size-5" />
         </div>
         <div className="flex items-center justify-between">
           <div>
@@ -142,7 +157,7 @@ function RecentSalesTable({
         </thead>
         <tbody className="divide-y">
           {orders.map((order) => (
-            <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+            <tr key={order.id} className="hover:bg-accent transition-colors">
               <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                 #{order.id}
               </td>
@@ -156,12 +171,7 @@ function RecentSalesTable({
                 {fmt(order.totalPrice as unknown as number)}
               </td>
               <td className="px-4 py-2.5 text-center">
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] ${statusStyle[order.status] ?? "bg-muted text-muted-foreground"}`}
-                >
-                  {order.status.charAt(0) + order.status.slice(1).toLowerCase()}
-                </Badge>
+                <StatusBadge status={order.status} />
               </td>
             </tr>
           ))}
@@ -246,6 +256,7 @@ export default function SaleDashboardPage() {
             value={fmt(todayRevenue)}
             sub={`${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`}
             color="bg-[#fe9f43]"
+            delay={0}
           />
           <MetricCard
             icon={ClipboardList}
@@ -253,6 +264,8 @@ export default function SaleDashboardPage() {
             value={todayOrders.length}
             sub={`Completed ${todayCompletedOrders} + Pending ${todayPendingOrders}`}
             color="bg-[#0e9384]"
+            delay={80}
+            countTarget={todayOrders.length}
           />
           <MetricCard
             icon={Clock}
@@ -260,6 +273,8 @@ export default function SaleDashboardPage() {
             value={pendingOrders}
             sub={pendingOrders > 0 ? "needs attention" : "all clear"}
             color={pendingOrders > 0 ? "bg-[#e53e3e]" : "bg-[#092c4c]"}
+            delay={160}
+            countTarget={pendingOrders}
           />
           <MetricCard
             icon={TrendingUp}
@@ -267,6 +282,7 @@ export default function SaleDashboardPage() {
             value={fmt(monthRevenue)}
             sub={format(new Date(), "MMMM yyyy")}
             color="bg-[#155eef]"
+            delay={240}
           />
         </div>
 
@@ -283,42 +299,48 @@ export default function SaleDashboardPage() {
               label="New Sale"
               description="Create a sales order"
               href="/sales/new-sale"
-              color="bg-orange-100 text-orange-600"
+              color="bg-orange-500/10 text-orange-600 border-orange-500/20"
+              delay={0}
             />
             <QuickAction
               icon={ClipboardList}
               label="All Sales"
               description="View & manage orders"
               href="/sales/all-sale"
-              color="bg-teal-100 text-teal-600"
+              color="bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+              delay={60}
             />
             <QuickAction
               icon={Users}
               label="Customers"
               description="Customer directory"
               href="/customer"
-              color="bg-blue-100 text-blue-600"
+              color="bg-blue-500/10 text-blue-600 border-blue-500/20"
+              delay={120}
             />
             <QuickAction
               icon={FileText}
               label="Invoices"
               description="Billing & invoices"
               href="/sales/invoice"
-              color="bg-purple-100 text-purple-600"
+              color="bg-purple-500/10 text-purple-600 border-purple-500/20"
+              delay={180}
             />
             <QuickAction
               icon={Package}
               label="Quotations"
               description="Draft quotations"
               href="/sales/quotations"
-              color="bg-indigo-100 text-indigo-600"
+              color="bg-indigo-500/10 text-indigo-600 border-indigo-500/20"
+              delay={240}
             />
             <QuickAction
               icon={CheckCircle2}
               label="Stock"
               description="Check inventory"
               href="/stock/adjust"
-              color="bg-green-100 text-green-600"
+              color="bg-rose-500/10 text-rose-600 border-rose-500/20"
+              delay={300}
             />
           </div>
         </div>

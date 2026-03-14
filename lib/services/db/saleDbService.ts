@@ -30,6 +30,7 @@ const saleSelectFields = {
           id: true,
           sku: true,
           stock: true,
+          costPrice: true,
           attributes: {
             include: {
               value: {
@@ -157,6 +158,8 @@ export const saleService = {
     filters?: {
       status?: string;
       customerId?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ) => {
     const skip = (page - 1) * limit;
@@ -172,6 +175,18 @@ export const saleService = {
         status: filters.status as Prisma.EnumorderStatusFilter,
       }),
       ...(filters?.customerId && { customerId: filters.customerId }),
+      ...((filters?.startDate || filters?.endDate) && {
+        createdAt: {
+          ...(filters?.startDate && { gte: new Date(filters.startDate) }),
+          ...(filters?.endDate && {
+            lte: (() => {
+              const d = new Date(filters.endDate);
+              d.setHours(23, 59, 59, 999);
+              return d;
+            })(),
+          }),
+        },
+      }),
     };
 
     const [total, data] = await Promise.all([

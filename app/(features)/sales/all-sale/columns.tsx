@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StatusBadge } from "@/components/StatusBadge";
 
 // Actions Cell Component (needs hooks, so separate from column definition)
 function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
@@ -65,14 +66,14 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
           onClick={() => setViewOpen(true)}
           title="View Order"
         >
-          <Eye className="h-4 w-4 text-sky-600" />
+          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         </Button>
 
         {/* View Invoice */}
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-neutral-100"
+          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 dark:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           onClick={handleOpenView}
           title="View Invoice"
         >
@@ -91,7 +92,7 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
                 onClick={() => router.push(`/sales/edit/${order.id}`)}
                 title="Edit Order"
               >
-                <Edit className="h-4 w-4 text-amber-600" />
+                <Edit className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -108,7 +109,7 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+                  className="h-8 w-8 p-0 cursor-pointer text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                   onClick={() => setCompleteOpen(true)}
                   disabled={updateSale.isPending || !can("sale:update")}
                   title="Mark as Completed"
@@ -247,19 +248,7 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
     },
     cell: ({ row }) => {
       const status: string = row.getValue("status");
-      let statusClass = "";
-      if (status === "COMPLETED") {
-        statusClass = "bg-green-100 text-green-800";
-      } else if (status === "PENDING") {
-        statusClass = "bg-yellow-100 text-yellow-800";
-      } else {
-        statusClass = "bg-red-100 text-red-800";
-      }
-      return (
-        <span className={`px-2 py-1 rounded text-xs ${statusClass}`}>
-          {status}
-        </span>
-      );
+      return <StatusBadge status={status} />;
     },
   },
   {

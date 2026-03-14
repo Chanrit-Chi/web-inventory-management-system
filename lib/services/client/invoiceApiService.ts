@@ -12,6 +12,8 @@ export const invoiceApiService = {
 
     if (search) params.append("search", search);
     if (filters?.status) params.append("status", filters.status);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
 
     const res = await fetch(`/api/invoices?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to fetch invoices");

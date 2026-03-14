@@ -1,5 +1,6 @@
 import {
   ExpenseCategoryCreateSchema,
+  ExpenseCategoryUpdateSchema,
   ExpenseCreateSchema,
   ExpenseUpdateSchema,
 } from "@/schemas/expense.schema";
@@ -7,6 +8,7 @@ import {
   Expense,
   ExpenseCategory,
   ExpenseCategoryCreate,
+  ExpenseCategoryUpdate,
   ExpenseCreate,
   ExpenseUpdate,
 } from "@/schemas/type-export.schema";
@@ -129,15 +131,13 @@ export const expenseApiService = {
 
   UpdateExpenseCategory: async (
     id: number,
-    data: Pick<ExpenseCategoryCreate, "name" | "description">,
+    data: ExpenseCategoryUpdate,
   ): Promise<ExpenseCategory> => {
+    const validated = ExpenseCategoryUpdateSchema.parse(data);
     const res = await fetch(`/api/expenses/categories/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.name,
-        description: data.description ?? null,
-      }),
+      body: JSON.stringify(validated),
     });
 
     if (!res.ok) {

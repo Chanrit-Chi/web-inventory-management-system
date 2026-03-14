@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getServerSession } from "@/lib/getServerSession";
 import { Role } from "@prisma/client";
 import { generatePassword } from "@/lib/password-generator";
+import { auditPermissionChange } from "@/lib/services/permission-service";
 
 // ─── Role Hierarchy Helpers ───────────────────────────────────────────────────
 
@@ -229,6 +230,20 @@ export const userDbService = {
       },
     });
 
+    // Audit log for user creation
+    await auditPermissionChange({
+      action: "user_created",
+      targetType: "user",
+      targetId: result.user.id,
+      targetName: userData.name,
+      reason: `User created with role: ${userData.role}`,
+      metadata: {
+        role: userData.role,
+        permissionGroupId: userData.permissionGroupId || null,
+      },
+      createdBy: currentUserId || "system",
+    });
+
     return updatedUser;
   },
 
@@ -256,7 +271,17 @@ export const userDbService = {
       await validateRoleHierarchy(currentUserRole, data.role, "assign");
     }
 
-    return prisma.user.update({
+    // Get current user data for comparison before update
+    const currentUserData = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        role: true,
+        permissionGroupId: true,
+      },
+    });
+
+    const updatedUser = await prisma.user.update({
       where: { id },
       data: {
         ...data,
@@ -286,6 +311,46 @@ export const userDbService = {
         },
       },
     });
+
+    // Logging role or group changes
+    if (currentUserData) {
+      if (data.role && data.role !== currentUserData.role) {
+        await auditPermissionChange({
+          action: "role_changed",
+          targetType: "user",
+          targetId: id,
+          targetName: updatedUser.name,
+          reason: `Role changed from ${currentUserData.role} to ${data.role}`,
+          metadata: {
+            oldRole: currentUserData.role,
+            newRole: data.role,
+          },
+          createdBy: currentUserId || "system",
+        });
+      }
+
+      if (
+        Object.hasOwn(data, "permissionGroupId") &&
+        data.permissionGroupId !== currentUserData.permissionGroupId
+      ) {
+        await auditPermissionChange({
+          action: data.permissionGroupId ? "group_assigned" : "group_removed",
+          targetType: "user",
+          targetId: id,
+          targetName: updatedUser.name,
+          reason: data.permissionGroupId
+            ? "Assigned to a custom permission group"
+            : "Removed from custom permission group",
+          metadata: {
+            oldGroupId: currentUserData.permissionGroupId,
+            newGroupId: data.permissionGroupId,
+          },
+          createdBy: currentUserId || "system",
+        });
+      }
+    }
+
+    return updatedUser;
   },
 
   deleteUser: async (id: string): Promise<User> => {
@@ -300,7 +365,7 @@ export const userDbService = {
     await enforceLastAdminRule(id);
 
     // Soft delete - set isActive to false and record who deactivated
-    return prisma.user.update({
+    const deactivatedUser = await prisma.user.update({
       where: { id },
       data: {
         isActive: false,
@@ -323,6 +388,18 @@ export const userDbService = {
         deactivatedAt: true,
       },
     });
+
+    // Audit log for deactivation
+    await auditPermissionChange({
+      action: "user_deactivated",
+      targetType: "user",
+      targetId: id,
+      targetName: deactivatedUser.name,
+      reason: "User account deactivated",
+      createdBy: currentUserId || "system",
+    });
+
+    return deactivatedUser;
   },
 
   reactivateUser: async (id: string): Promise<User> => {
@@ -333,7 +410,7 @@ export const userDbService = {
     // Validate: Only SUPER_ADMIN can reactivate privileged users
     await validateTargetUser(currentUserRole, id, "reactivate");
 
-    return prisma.user.update({
+    const reactivatedUser = await prisma.user.update({
       where: { id },
       data: {
         isActive: true,
@@ -357,5 +434,17 @@ export const userDbService = {
         deactivatedAt: true,
       },
     });
+
+    // Audit log for reactivation
+    await auditPermissionChange({
+      action: "user_reactivated",
+      targetType: "user",
+      targetId: id,
+      targetName: reactivatedUser.name,
+      reason: "User account reactivated",
+      createdBy: currentUserId || "system",
+    });
+
+    return reactivatedUser;
   },
 } as const;

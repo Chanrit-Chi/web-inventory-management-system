@@ -18,6 +18,7 @@ import {
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { useSession } from "@/lib/auth-client";
+import { useCurrentUserPermissions } from "@/hooks/useUserPermissionOverrides";
 import {
   Sidebar,
   SidebarContent,
@@ -88,24 +89,6 @@ const data = {
         },
       ],
     },
-
-    {
-      title: "Stock",
-      url: "#",
-      icon: Warehouse,
-      items: [
-        {
-          title: "Adjust Stock",
-          url: "/stock/adjust",
-          permission: "stock:update",
-        },
-        {
-          title: "New Stock",
-          url: "/stock/new",
-          permission: "stock:create",
-        },
-      ],
-    },
     {
       title: "Product",
       url: "#",
@@ -143,6 +126,23 @@ const data = {
         },
       ],
     },
+    {
+      title: "Stock",
+      url: "#",
+      icon: Warehouse,
+      items: [
+        {
+          title: "Adjust Stock",
+          url: "/stock/adjust",
+          permission: "stock:update",
+        },
+        {
+          title: "New Stock",
+          url: "/stock/new",
+          permission: "stock:create",
+        },
+      ],
+    },
 
     {
       title: "Purchase",
@@ -159,11 +159,6 @@ const data = {
           url: "/purchase/order",
           permission: "purchase_order:read",
         },
-        // {
-        //   title: "Supplier",
-        //   url: "/purchase/supplier",
-        //   permission: "supplier:read",
-        // },
       ],
     },
 
@@ -175,7 +170,7 @@ const data = {
         {
           title: "Employee",
           url: "/employee",
-          permission: "employee:read",
+          permission: "user:read",
         },
         {
           title: "Supplier",
@@ -191,12 +186,6 @@ const data = {
     },
   ],
   navSecondary: [
-    // {
-    //   title: "Manage Employee",
-    //   url: "/employee",
-    //   icon: Users,
-    //   permission: "user:read",
-    // },
     {
       title: "Permissions",
       url: "/settings/permissions",
@@ -253,26 +242,40 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
   const userRole = (session?.user as { role?: Role } | undefined)?.role as Role;
 
+  const { data: effectivePermissions } = useCurrentUserPermissions();
+
+  const userHasPermission = React.useCallback(
+    (permissionName: string) => {
+      // If we have effective permissions loaded, check against them
+      if (effectivePermissions) {
+        return effectivePermissions.some((p) => p.name === permissionName);
+      }
+      // Fallback to base role check during initial load
+      if (userRole) {
+        return hasPermission(userRole, permissionName as Permission);
+      }
+      return false;
+    },
+    [effectivePermissions, userRole],
+  );
+
   const filteredNavMain = data.navMain
     .map((item) => {
       if (!item.items) return item;
       const filteredItems = item.items.filter(
         (subItem) =>
-          !subItem.permission ||
-          hasPermission(userRole, subItem.permission as Permission),
+          !subItem.permission || userHasPermission(subItem.permission),
       );
       return { ...item, items: filteredItems };
     })
     .filter((item) => item.items?.length > 0 || !item.items);
 
   const filteredNavSecondary = data.navSecondary.filter(
-    (item) =>
-      !item.permission ||
-      hasPermission(userRole, item.permission as Permission),
+    (item) => !item.permission || userHasPermission(item.permission),
   );
 
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar variant="sidebar" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

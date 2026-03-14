@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { usePermission } from "@/hooks/usePermission";
 
 export function CreateExpenseDialog({
@@ -685,6 +686,7 @@ export function ManageExpenseCategoriesDialog({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
+  const [editingActive, setEditingActive] = useState(true);
 
   const [deleteTarget, setDeleteTarget] = useState<ExpenseCategory | null>(
     null,
@@ -698,12 +700,14 @@ export function ManageExpenseCategoriesDialog({
     setEditingId(category.id);
     setEditingName(category.name);
     setEditingDescription(category.description || "");
+    setEditingActive(category.isActive);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditingName("");
     setEditingDescription("");
+    setEditingActive(true);
   };
 
   const handleCreateCategory = async () => {
@@ -745,6 +749,7 @@ export function ManageExpenseCategoriesDialog({
         data: {
           name: editingName.trim(),
           description: editingDescription.trim() || null,
+          isActive: editingActive,
         },
       });
 
@@ -842,6 +847,19 @@ export function ManageExpenseCategoriesDialog({
                             }
                             placeholder="Optional description"
                           />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id="edit-category-active"
+                              checked={editingActive}
+                              onCheckedChange={setEditingActive}
+                            />
+                            <Label
+                              htmlFor="edit-category-active"
+                              className="text-xs"
+                            >
+                              Active
+                            </Label>
+                          </div>
                           <div className="flex gap-2 justify-end">
                             <Button
                               type="button"

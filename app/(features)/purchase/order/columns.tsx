@@ -15,6 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export type PurchaseOrderDetailRow = {
   id: number;
@@ -68,7 +69,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
           onClick={() => setViewOpen(true)}
           title="View Purchase Order"
         >
-          <Eye className="h-4 w-4 text-sky-600" />
+          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -87,7 +88,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
                   order.status === "COMPLETED" || !can("purchase_order:update")
                 }
               >
-                <Pencil className="h-4 w-4 text-amber-500" />
+                <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -110,7 +111,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
                 }
                 title="Delete Purchase Order"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -186,21 +187,7 @@ export const columns: ColumnDef<PurchaseOrderRow>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => {
-      const status: string = row.getValue("status");
-      let statusClass = "";
-      if (status === "COMPLETED") statusClass = "bg-green-100 text-green-800";
-      else if (status === "PENDING")
-        statusClass = "bg-yellow-100 text-yellow-800";
-      else statusClass = "bg-red-100 text-red-800";
-      return (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${statusClass}`}
-        >
-          {status}
-        </span>
-      );
-    },
+    cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
   },
   {
     accessorKey: "totalAmount",

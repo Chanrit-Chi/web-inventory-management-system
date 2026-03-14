@@ -111,6 +111,8 @@ export type FeaturePermission =
   | "pos:read"
   | "barcode:read"
   | "report:read"
+  | "export:read"
+  | "import:read"
   | "permission:admin";
 
 const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
@@ -121,6 +123,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
     "permission:admin",
   ],
   ADMIN: [
@@ -130,6 +134,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
     "permission:admin",
   ],
   MANAGER: [
@@ -138,6 +144,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
   ],
   SELLER: ["dashboard:sale", "pos:read", "barcode:read", "report:read"],
 };

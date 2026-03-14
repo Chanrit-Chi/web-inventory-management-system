@@ -35,11 +35,13 @@ export async function PATCH(
     const id = parseId(idParam);
 
     const body = await request.json();
-    const name = String(body?.name ?? "").trim();
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
     const description =
       typeof body?.description === "string"
         ? body.description.trim() || null
         : null;
+    const isActive =
+      typeof body?.isActive === "boolean" ? body.isActive : undefined;
 
     if (!name) {
       return NextResponse.json(
@@ -49,8 +51,9 @@ export async function PATCH(
     }
 
     const category = await expenseDbService.updateCategory(id, {
-      name,
+      name: name || undefined,
       description,
+      isActive,
     });
 
     return NextResponse.json(category);

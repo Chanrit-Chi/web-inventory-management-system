@@ -12,7 +12,7 @@ import { usePermission } from "@/hooks/usePermission";
 
 function Quotations() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const { can } = usePermission();
@@ -72,10 +72,6 @@ function Quotations() {
         addNewHref="/sales/new-quotation"
         paginationMeta={quotations?.pagination}
         onPageChange={(newPage) => setPage(newPage)}
-        onPageSizeChange={(newLimit) => {
-          setLimit(newLimit);
-          setPage(1);
-        }}
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
         searchValue={search}
@@ -94,6 +90,10 @@ function Quotations() {
             ],
           },
         ]}
+        dateFilter={{
+          startDateKey: "startDate",
+          endDateKey: "endDate",
+        }}
       />
     </div>
   );

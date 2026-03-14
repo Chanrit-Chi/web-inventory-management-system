@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useGetProducts } from "@/hooks/useProduct";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { useCountUp } from "@/hooks/useCountUp";
 
 type VariantItem = {
   id: number;
@@ -61,6 +62,11 @@ export default function InventorySummary() {
   );
   const totalStockValue = products.reduce((sum, p) => sum + totalStock(p), 0);
 
+  const animActive = useCountUp(activeProducts);
+  const animLowStock = useCountUp(lowStockProducts.length);
+  const animOutOfStock = useCountUp(outOfStockProducts.length);
+  const animTotalUnits = useCountUp(totalStockValue);
+
   if (productsLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -73,54 +79,66 @@ export default function InventorySummary() {
     <div className="space-y-6">
       {/* Inventory Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card rounded-lg border p-4">
+        <div
+          className="animate-dash-enter bg-card rounded-lg border p-4"
+          style={{ animationDelay: "0ms" }}
+        >
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 dark:bg-blue-900/30 p-2.5 rounded-lg">
               <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Active Products</p>
-              <p className="text-2xl font-bold">{activeProducts}</p>
+              <p className="text-xs">Active Products</p>
+              <p className="text-2xl font-bold">{animActive}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border p-4">
+        <div
+          className="animate-dash-enter bg-card rounded-lg border p-4"
+          style={{ animationDelay: "80ms" }}
+        >
           <div className="flex items-center gap-3">
             <div className="bg-amber-100 dark:bg-amber-900/30 p-2.5 rounded-lg">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Low Stock</p>
+              <p className="text-xs">Low Stock</p>
               <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {lowStockProducts.length}
+                {animLowStock}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border p-4">
+        <div
+          className="animate-dash-enter bg-card rounded-lg border p-4"
+          style={{ animationDelay: "160ms" }}
+        >
           <div className="flex items-center gap-3">
             <div className="bg-red-100 dark:bg-red-900/30 p-2.5 rounded-lg">
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Out of Stock</p>
+              <p className="text-xs">Out of Stock</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {outOfStockProducts.length}
+                {animOutOfStock}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border p-4">
+        <div
+          className="animate-dash-enter bg-card rounded-lg border p-4"
+          style={{ animationDelay: "240ms" }}
+        >
           <div className="flex items-center gap-3">
             <div className="bg-green-100 dark:bg-green-900/30 p-2.5 rounded-lg">
               <Archive className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total Units</p>
-              <p className="text-2xl font-bold">{totalStockValue}</p>
+              <p className="text-xs">Total Units</p>
+              <p className="text-2xl font-bold">{animTotalUnits}</p>
             </div>
           </div>
         </div>
@@ -155,7 +173,7 @@ export default function InventorySummary() {
                   return (
                     <tr
                       key={product.id}
-                      className="hover:bg-muted/50 transition-colors"
+                      className="hover:bg-accent transition-colors"
                     >
                       <td className="p-3">
                         <div className="flex items-center gap-3">

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useGetQuotationById } from "@/hooks/useQuotation";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   FileText,
   Calendar,
@@ -56,20 +56,6 @@ export default function ViewQuotationPage({
     );
   }
 
-  const getStatusVariant = (status: string) => {
-    const variants: Record<
-      string,
-      "secondary" | "info" | "success" | "destructive" | "warning" | "default"
-    > = {
-      DRAFT: "secondary",
-      SENT: "info",
-      ACCEPTED: "success",
-      REJECTED: "destructive",
-      EXPIRED: "warning",
-      CONVERTED: "default",
-    };
-    return variants[status] || "default";
-  };
 
   return (
     <SharedLayout>
@@ -209,12 +195,10 @@ export default function ViewQuotationPage({
                 <CardTitle className="text-lg">Status</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Badge
-                  className="w-fit text-sm py-1 px-3"
-                  variant={getStatusVariant(quotation.status)}
-                >
-                  {quotation.status}
-                </Badge>
+                <StatusBadge 
+                  status={quotation.status} 
+                  className="w-fit text-[11px] py-1 px-4"
+                />
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <Calendar className="h-4 w-4" />
                   Valid Until:{" "}

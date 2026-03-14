@@ -16,7 +16,12 @@ export async function GET(request: Request) {
 
     const filters: Record<string, string> = {};
     const status = searchParams.get("status");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
     if (status) filters.status = status;
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
 
     const result = await quotationService.fetchQuotations(
       page,

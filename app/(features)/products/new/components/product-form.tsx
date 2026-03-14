@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 
 const ProductFormSchema = ProductCreateSchema.extend({
+  productType: z.enum(["single", "variable"]).default("single"),
   attributeSelections: z.array(
     z.object({
       attributeId: z.number(),
@@ -89,6 +90,11 @@ export default function ProductForm({
       variants: initialData?.variants || [],
       attributeSelections: initialData?.attributeSelections || [],
       productAttributes: initialData?.productAttributes || [],
+      productType:
+        initialData?.attributeSelections &&
+        initialData.attributeSelections.length > 0
+          ? "variable"
+          : "single",
     },
   });
 
@@ -129,14 +135,29 @@ export default function ProductForm({
     if (categoryId) setValue("categoryId", categoryId);
     if (unitId) setValue("unitId", unitId);
     if (variants) setValue("variants", variants);
-    if (attributeSelections)
+    if (attributeSelections) {
       setValue("attributeSelections", attributeSelections);
+      setValue(
+        "productType",
+        attributeSelections.length > 0 ? "variable" : "single",
+      );
+    }
     if (productAttributes) setValue("productAttributes", productAttributes);
   }, [initialData, setValue, setImagePreview]);
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     try {
-      const { attributeSelections, ...productData } = data;
+      const { attributeSelections, productType, ...productData } = data;
+
+      // Sanitize data based on product type
+      if (productType === "single") {
+        productData.productAttributes = [];
+        productData.variants = productData.variants?.slice(0, 1) || [];
+        // Ensure single product variant doesn't have attributes
+        if (productData.variants[0]) {
+          productData.variants[0].attributes = [];
+        }
+      }
 
       if (isEdit && productId) {
         await updateProduct.mutateAsync({
@@ -147,7 +168,8 @@ export default function ProductForm({
       } else {
         await addProduct.mutateAsync({
           productData,
-          attributeSelections: attributeSelections || [],
+          attributeSelections:
+            productType === "variable" ? attributeSelections || [] : [],
         });
 
         // Confirm upload only after successful product creation

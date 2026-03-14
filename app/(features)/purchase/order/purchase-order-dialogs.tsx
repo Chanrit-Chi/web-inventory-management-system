@@ -5,6 +5,7 @@ import { ConfirmDialog, BaseDialog } from "@/components/dialog-template";
 import { Button } from "@/components/ui/button";
 import { usePurchaseOrderMutations } from "@/hooks/usePurchaseOrder";
 import type { PurchaseOrderRow } from "./columns";
+import { StatusBadge } from "@/components/StatusBadge";
 
 // ============================================
 // View Purchase Order Dialog
@@ -19,7 +20,7 @@ export function ViewPurchaseOrderDialog({
   open,
   onOpenChange,
   order,
-}: ViewPurchaseOrderDialogProps) {
+}: Readonly<ViewPurchaseOrderDialogProps>) {
   const total = Number(order.totalAmount);
 
   return (
@@ -50,19 +51,8 @@ export function ViewPurchaseOrderDialog({
           </div>
           <div>
             <p className="font-semibold text-muted-foreground">Order Info</p>
-            <p>
-              Status:{" "}
-              <span
-                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  order.status === "COMPLETED"
-                    ? "bg-green-100 text-green-800"
-                    : order.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
-                }`}
-              >
-                {order.status}
-              </span>
+            <p className="flex items-center gap-2">
+              Status: <StatusBadge status={order.status} />
             </p>
             <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
           </div>
@@ -156,7 +146,7 @@ export function DeletePurchaseOrderDialog({
   open,
   onOpenChange,
   order,
-}: DeletePurchaseOrderDialogProps) {
+}: Readonly<DeletePurchaseOrderDialogProps>) {
   const { deletePurchaseOrder } = usePurchaseOrderMutations();
 
   return (

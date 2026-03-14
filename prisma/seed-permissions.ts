@@ -116,6 +116,8 @@ type FeaturePermission =
   | "pos:read"
   | "barcode:read"
   | "report:read"
+  | "export:read"
+  | "import:read"
   | "permission:admin";
 
 const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
@@ -126,6 +128,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
     "permission:admin",
   ],
   ADMIN: [
@@ -135,6 +139,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
     "permission:admin",
   ],
   MANAGER: [
@@ -143,6 +149,8 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
   ],
   SELLER: ["dashboard:sale", "pos:read", "barcode:read", "report:read"],
 };
@@ -197,6 +205,8 @@ async function main() {
     "pos:read",
     "barcode:read",
     "report:read",
+    "export:read",
+    "import:read",
     "permission:admin",
   ];
 
@@ -207,6 +217,8 @@ async function main() {
     "pos:read": "Access Point of Sale",
     "barcode:read": "Access Barcode Generator",
     "report:read": "View Reports",
+    "export:read": "Export Data (XLSX/PDF)",
+    "import:read": "Import Data (XLSX)",
     "permission:admin": "Manage Permissions",
   };
 

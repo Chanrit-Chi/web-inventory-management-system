@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,17 +50,7 @@ export const columns: ColumnDef<InvoiceRow>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = String(row.getValue("status"));
-      const variants: Record<
-        string,
-        "secondary" | "info" | "success" | "destructive" | "warning" | "default"
-      > = {
-        DRAFT: "secondary",
-        SENT: "info",
-        PAID: "success",
-        VOID: "destructive",
-        OVERDUE: "warning",
-      };
-      return <Badge variant={variants[status] || "default"}>{status}</Badge>;
+      return <StatusBadge status={status} />;
     },
   },
   {
@@ -111,7 +101,7 @@ function ActionCell({ row }: { readonly row: { original: InvoiceRow } }) {
           onClick={handleOpenPrint}
           title="Print Invoice"
         >
-          <Printer className="h-4 w-4 text-indigo-600" />
+          <Printer className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
         </Button>
       </div>
 

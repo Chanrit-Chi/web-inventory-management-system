@@ -57,15 +57,15 @@ export default function ManagerDashboard() {
                 icon: ShoppingCart,
                 href: "/sales/new-sale",
                 color: "text-emerald-600",
-                bg: "bg-emerald-50 dark:bg-emerald-950/40",
+                bg: "bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/15 dark:border-emerald-500/25",
               },
               {
                 label: "Products",
                 description: "Manage product catalog",
                 icon: Package,
-                href: "/products",
+                href: "/products/product-list",
                 color: "text-blue-600",
-                bg: "bg-blue-50 dark:bg-blue-950/40",
+                bg: "bg-blue-500/10 border-blue-500/20 dark:bg-blue-500/15 dark:border-blue-500/25",
               },
               {
                 label: "Quotations",
@@ -73,7 +73,7 @@ export default function ManagerDashboard() {
                 icon: FileText,
                 href: "/sales/new-quotation",
                 color: "text-purple-600",
-                bg: "bg-purple-50 dark:bg-purple-950/40",
+                bg: "bg-purple-500/10 border-purple-500/20 dark:bg-purple-500/15 dark:border-purple-500/25",
               },
               {
                 label: "Invoices",
@@ -81,7 +81,7 @@ export default function ManagerDashboard() {
                 icon: Receipt,
                 href: "/sales/invoice",
                 color: "text-orange-600",
-                bg: "bg-orange-50 dark:bg-orange-950/40",
+                bg: "bg-orange-500/10 border-orange-500/20 dark:bg-orange-500/15 dark:border-orange-500/25",
               },
               {
                 label: "Customers",
@@ -89,7 +89,7 @@ export default function ManagerDashboard() {
                 icon: Users,
                 href: "/customer",
                 color: "text-sky-600",
-                bg: "bg-sky-50 dark:bg-sky-950/40",
+                bg: "bg-sky-500/10 border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/25",
               },
               {
                 label: "Purchase Orders",
@@ -97,7 +97,7 @@ export default function ManagerDashboard() {
                 icon: TruckIcon,
                 href: "/purchase/new-order",
                 color: "text-rose-600",
-                bg: "bg-rose-50 dark:bg-rose-950/40",
+                bg: "bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/15 dark:border-rose-500/25",
               },
               {
                 label: "Stock Adjustment",
@@ -105,7 +105,7 @@ export default function ManagerDashboard() {
                 icon: Layers,
                 href: "/stock/adjust",
                 color: "text-violet-600",
-                bg: "bg-violet-50 dark:bg-violet-950/40",
+                bg: "bg-violet-500/10 border-violet-500/20 dark:bg-violet-500/15 dark:border-violet-500/25",
               },
               {
                 label: "Reports",
@@ -113,25 +113,32 @@ export default function ManagerDashboard() {
                 icon: BarChart3,
                 href: "/sales/all-sale",
                 color: "text-indigo-600",
-                bg: "bg-indigo-50 dark:bg-indigo-950/40",
+                bg: "bg-indigo-500/10 border-indigo-500/20 dark:bg-indigo-500/15 dark:border-indigo-500/25",
               },
-            ].map(({ label, description, icon: Icon, href, color, bg }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:shadow-md hover:border-primary/30 transition-all group"
-              >
-                <div className={`p-2.5 rounded-lg ${bg}`}>
-                  <Icon className={`size-5 ${color}`} />
-                </div>
-                <div>
-                  <p className="font-medium group-hover:text-primary transition-colors">
-                    {label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{description}</p>
-                </div>
-              </Link>
-            ))}
+            ].map(
+              ({ label, description, icon: Icon, href, color, bg }, idx) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="animate-dash-enter flex items-center gap-4 p-4 bg-card rounded-lg border group"
+                  style={{ animationDelay: `${idx * 70}ms` }}
+                >
+                  <div
+                    className={`size-10 rounded-xl flex items-center justify-center border shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${bg}`}
+                  >
+                    <Icon className={`size-5 ${color}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium group-hover:text-primary transition-colors">
+                      {label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {description}
+                    </p>
+                  </div>
+                </Link>
+              ),
+            )}
           </div>
         </div>
       </div>

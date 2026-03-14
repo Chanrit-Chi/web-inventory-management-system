@@ -9,12 +9,16 @@ export async function GET(request: Request) {
     const pageSize = Number.parseInt(searchParams.get("pageSize") || "10", 10);
     const search = searchParams.get("search") || undefined;
     const status = (searchParams.get("status") as InvoiceStatus) || undefined;
+    const startDate = searchParams.get("startDate") || undefined;
+    const endDate = searchParams.get("endDate") || undefined;
 
     const result = await invoiceService.getInvoices({
       page,
       pageSize,
       search,
       status,
+      startDate,
+      endDate,
     });
 
     return NextResponse.json(result);

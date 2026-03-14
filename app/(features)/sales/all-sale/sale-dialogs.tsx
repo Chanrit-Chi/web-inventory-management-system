@@ -38,7 +38,7 @@ function SaleField({
   icon: Icon,
   label,
   value,
-  className = "text-gray-900",
+  className = "text-foreground",
 }: {
   readonly icon: React.ElementType;
   readonly label?: string;
@@ -47,9 +47,11 @@ function SaleField({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <Icon className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
+      <Icon className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
       <div>
-        {label && <p className="text-xs text-gray-500 font-medium">{label}</p>}
+        {label && (
+          <p className="text-xs text-muted-foreground font-medium">{label}</p>
+        )}
         <div className={`text-sm ${className}`}>{value}</div>
       </div>
     </div>
@@ -67,24 +69,29 @@ function SectionHeader({
 }) {
   return (
     <div className={className}>
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2 mb-3">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-3">
         <Icon className="h-4 w-4" />
         {title}
       </h3>
-      <div className="h-px bg-linear-to-r from-gray-300 via-gray-200 to-transparent mb-3" />
+      <div className="h-px bg-linear-to-r from-border via-border/50 to-transparent mb-3" />
     </div>
   );
 }
 
 function StatusBadge({ status }: { readonly status: string }) {
   const styles = {
-    COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    PENDING: "bg-amber-100 text-amber-700 border-amber-200",
-    CANCELLED: "bg-red-100 text-red-700 border-red-200",
-    DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-    PAID: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    OVERDUE: "bg-red-100 text-red-700 border-red-200",
-    SENT: "bg-blue-100 text-blue-700 border-blue-200",
+    COMPLETED:
+      "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50",
+    PENDING:
+      "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/50",
+    CANCELLED:
+      "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50",
+    DRAFT:
+      "bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600/50",
+    PAID: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50",
+    OVERDUE:
+      "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50",
+    SENT: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50",
   };
 
   const icons = {
@@ -99,7 +106,7 @@ function StatusBadge({ status }: { readonly status: string }) {
 
   const style =
     styles[status as keyof typeof styles] ||
-    "bg-gray-100 text-gray-700 border-gray-200";
+    "bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600/50";
   const Icon = icons[status as keyof typeof styles] || Info;
 
   return (
@@ -117,10 +124,10 @@ const VIEW_SALE_FIELDS = [
   {
     label: "",
     value: (sale: Sale) => (
-      <div className="flex items-center justify-between mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+      <div className="flex items-center justify-between mb-6 bg-muted/30 p-4 rounded-lg border border-border">
         <div>
-          <p className="text-sm text-slate-500 font-medium">Sale ID</p>
-          <p className="text-xl font-bold font-mono text-slate-900">
+          <p className="text-sm text-muted-foreground font-medium">Sale ID</p>
+          <p className="text-xl font-bold font-mono text-foreground">
             #{sale.id}
           </p>
         </div>
@@ -186,25 +193,25 @@ const VIEW_SALE_FIELDS = [
     value: (sale: Sale) => (
       <div className="rounded-md border overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b">
+          <thead className="bg-muted/40 border-b">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-slate-500">
+              <th className="px-4 py-2 text-left font-medium text-muted-foreground">
                 Product
               </th>
-              <th className="px-4 py-2 text-right font-medium text-slate-500">
+              <th className="px-4 py-2 text-right font-medium text-muted-foreground">
                 Price
               </th>
-              <th className="px-4 py-2 text-right font-medium text-slate-500">
+              <th className="px-4 py-2 text-right font-medium text-muted-foreground">
                 Qty
               </th>
-              <th className="px-4 py-2 text-right font-medium text-slate-500">
+              <th className="px-4 py-2 text-right font-medium text-muted-foreground">
                 Total
               </th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {sale.orderDetail?.map((detail, index) => (
-              <tr key={detail.id || index} className="hover:bg-slate-50/50">
+              <tr key={detail.id || index} className="hover:bg-muted/20">
                 <td className="px-4 py-2">
                   <div className="font-medium">
                     {detail.product?.name || "Unknown Product"}
@@ -252,9 +259,9 @@ const VIEW_SALE_FIELDS = [
   {
     label: "",
     value: (sale: Sale) => (
-      <div className="bg-slate-50 rounded-lg p-4 space-y-2 border border-slate-100">
+      <div className="bg-muted/30 rounded-lg p-4 space-y-2 border border-border">
         <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Subtotal</span>
+          <span className="text-muted-foreground">Subtotal</span>
           <span className="font-medium">
             $
             {(
@@ -277,9 +284,9 @@ const VIEW_SALE_FIELDS = [
             <span>+${Number(sale.taxAmount).toFixed(2)}</span>
           </div>
         )}
-        <div className="border-t border-slate-200 my-2 pt-2 flex justify-between items-center">
-          <span className="font-bold text-slate-900">Total Amount</span>
-          <span className="font-bold text-lg text-slate-900">
+        <div className="border-t border-border my-2 pt-2 flex justify-between items-center">
+          <span className="font-bold text-foreground">Total Amount</span>
+          <span className="font-bold text-lg text-foreground">
             ${Number(sale.totalPrice).toFixed(2)}
           </span>
         </div>
@@ -299,16 +306,16 @@ const VIEW_SALE_FIELDS = [
     value: (sale: Sale) => (
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="text-slate-500 mb-1">Created At</p>
+          <p className="text-muted-foreground mb-1">Created At</p>
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-slate-400" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>{new Date(sale.createdAt).toLocaleString()}</span>
           </div>
         </div>
         <div>
-          <p className="text-slate-500 mb-1">Last Updated</p>
+          <p className="text-muted-foreground mb-1">Last Updated</p>
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-slate-400" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
             <span>{new Date(sale.updatedAt).toLocaleString()}</span>
           </div>
         </div>
@@ -493,13 +500,13 @@ export function InvoiceDialog({
           </div>
 
           {autoPrint && isPrinting && (
-            <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-20">
+            <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
               <div className="text-center">
                 <Printer className="h-12 w-12 text-blue-500 animate-bounce mx-auto mb-4" />
-                <p className="text-lg font-medium text-slate-700">
+                <p className="text-lg font-medium text-foreground">
                   Preparing Print Job...
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   The print dialog will open automatically.
                 </p>
               </div>
@@ -539,16 +546,20 @@ export function CompleteSaleDialog({
       }}
       renderItem={(sale: Sale) => (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="p-4 bg-muted/30 rounded-lg border border-border">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-slate-500">Invoice Number</span>
+              <span className="text-sm text-muted-foreground">
+                Invoice Number
+              </span>
               <span className="font-mono font-bold">
                 {sale.invoice?.invoiceNumber}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500">Total Amount</span>
-              <span className="font-bold text-slate-900">
+              <span className="text-sm text-muted-foreground">
+                Total Amount
+              </span>
+              <span className="font-bold text-foreground">
                 ${Number(sale.totalPrice).toFixed(2)}
               </span>
             </div>

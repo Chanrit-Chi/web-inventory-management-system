@@ -1,5 +1,8 @@
 import { expenseApiService } from "@/lib/services/client/expenseApiService";
-import { ExpenseUpdate } from "@/schemas/type-export.schema";
+import {
+  ExpenseCategoryUpdate,
+  ExpenseUpdate,
+} from "@/schemas/type-export.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGetExpenses = () =>
@@ -55,13 +58,8 @@ export const useExpenseMutations = () => {
   });
 
   const updateExpenseCategory = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: { name: string; description?: string | null };
-    }) => expenseApiService.UpdateExpenseCategory(id, data),
+    mutationFn: ({ id, data }: { id: number; data: ExpenseCategoryUpdate }) =>
+      expenseApiService.UpdateExpenseCategory(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expense-categories"] });
     },

@@ -56,16 +56,20 @@ export function CreateUserDialog({
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
 
-  // Filter permission groups based on role hierarchy
+  // Filter permission groups based on role hierarchy and exclude default groups
   const filteredPermissionGroups = useMemo(() => {
     if (!permissionGroups) return [];
-    if (isSuperAdmin) return permissionGroups;
 
-    // ADMIN users cannot see/assign SUPER_ADMIN groups
-    return permissionGroups.filter(
-      (group) =>
-        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN",
-    );
+    return permissionGroups.filter((group) => {
+      // Hide default groups as they are represented by "Base Role" items
+      if (group.isDefault) return false;
+
+      // Hierarchy check: ADMIN users cannot see/assign SUPER_ADMIN groups
+      if (isSuperAdmin) return true;
+      return (
+        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN"
+      );
+    });
   }, [permissionGroups, isSuperAdmin]);
 
   const [generatedPassword, setGeneratedPassword] = useState("");
@@ -481,16 +485,20 @@ export function UpdateUserDialog({
   const isCurrentUser = session?.user?.id === user.id;
   const isSuperAdminSelfEdit = isSuperAdmin && isCurrentUser;
 
-  // Filter permission groups based on role hierarchy
+  // Filter permission groups based on role hierarchy and exclude default groups
   const filteredPermissionGroups = useMemo(() => {
     if (!permissionGroups) return [];
-    if (isSuperAdmin) return permissionGroups;
 
-    // ADMIN users cannot see/assign SUPER_ADMIN groups
-    return permissionGroups.filter(
-      (group) =>
-        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN",
-    );
+    return permissionGroups.filter((group) => {
+      // Hide default groups as they are represented by "Base Role" items
+      if (group.isDefault) return false;
+
+      // Hierarchy check: ADMIN users cannot see/assign SUPER_ADMIN groups
+      if (isSuperAdmin) return true;
+      return (
+        group.baseRole !== Role.SUPER_ADMIN && group.name !== "SUPER_ADMIN"
+      );
+    });
   }, [permissionGroups, isSuperAdmin]);
 
   const {

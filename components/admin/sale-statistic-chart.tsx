@@ -14,6 +14,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { StatusBadge } from "../StatusBadge";
 import { Separator } from "../ui/separator";
 import {
   Select,
@@ -36,7 +37,6 @@ import {
   OrderWithRelations,
   QuotationWithItems,
 } from "@/schemas/type-export.schema";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { format } from "date-fns";
 
@@ -75,15 +75,6 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) =>
   String(CURRENT_YEAR - i),
 );
 
-function getPurchaseStatusClass(status: string) {
-  if (status === "COMPLETED") {
-    return "bg-green-50 text-green-700 border-green-200";
-  }
-  if (status === "PENDING") {
-    return "bg-amber-50 text-amber-700 border-amber-200";
-  }
-  return "bg-red-50 text-red-700 border-red-200";
-}
 
 export default function RevenueExpenseChart() {
   const [selectedYear, setSelectedYear] = useState(String(CURRENT_YEAR));
@@ -305,14 +296,14 @@ export default function RevenueExpenseChart() {
                     stackId="monthly"
                     fill="var(--color-revenue)"
                     radius={[6, 6, 0, 0]}
-                    maxBarSize={48}
+                    maxBarSize={40}
                   />
                   <Bar
                     dataKey="expense"
                     stackId="monthly"
                     fill="var(--color-expense)"
-                    radius={[0, 0, 6, 6]}
-                    maxBarSize={48}
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={40}
                   />
                 </BarChart>
               </ChartContainer>
@@ -325,10 +316,10 @@ export default function RevenueExpenseChart() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Recent Transactions</CardTitle>
-              <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md bg-background min-w-30">
+              <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md bg-card min-w-30">
                 <Link
                   href={viewAllHrefMap[activeTab]}
-                  className="text-sm text-primary underline"
+                  className="text-sm underline"
                 >
                   View All
                 </Link>
@@ -349,7 +340,7 @@ export default function RevenueExpenseChart() {
               }
               className="w-full"
             >
-              <TabsList className={"w-full items-stretch"}>
+              <TabsList className="w-full">
                 <TabsTrigger value="sales">Sales</TabsTrigger>
                 <TabsTrigger value="purchase">Purchase</TabsTrigger>
                 <TabsTrigger value="quotation">Quotation</TabsTrigger>
@@ -388,17 +379,7 @@ export default function RevenueExpenseChart() {
                               <span className="font-semibold">
                                 ${Number(order.totalPrice ?? 0).toFixed(2)}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${
-                                  order.status === "COMPLETED"
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}
-                              >
-                                {order.status.charAt(0) +
-                                  order.status.slice(1).toLowerCase()}
-                              </Badge>
+                                <StatusBadge status={order.status} />
                               <span className="text-xs text-muted-foreground w-16 text-right">
                                 {format(new Date(order.createdAt), "MMM dd")}
                               </span>
@@ -442,13 +423,7 @@ export default function RevenueExpenseChart() {
                               <span className="font-semibold">
                                 ${Number(purchase.totalAmount ?? 0).toFixed(2)}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${getPurchaseStatusClass(purchase.status)}`}
-                              >
-                                {purchase.status.charAt(0) +
-                                  purchase.status.slice(1).toLowerCase()}
-                              </Badge>
+                                <StatusBadge status={purchase.status} />
                               <span className="text-xs text-muted-foreground w-16 text-right">
                                 {format(new Date(purchase.createdAt), "MMM dd")}
                               </span>
@@ -493,12 +468,7 @@ export default function RevenueExpenseChart() {
                               <span className="font-semibold">
                                 ${Number(q.totalAmount ?? 0).toFixed(2)}
                               </span>
-                              <span className="text-xs text-muted-foreground w-16 text-right">
-                                {format(
-                                  new Date(q.createdAt as unknown as string),
-                                  "MMM dd",
-                                )}
-                              </span>
+                                <StatusBadge status={q.status || "DRAFT"} />
                             </div>
                           </div>
                         ))}
@@ -536,9 +506,7 @@ export default function RevenueExpenseChart() {
                               </span>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="font-semibold text-red-600 dark:text-red-400">
-                                -${Number(expense.amount ?? 0).toFixed(2)}
-                              </span>
+                                <StatusBadge status="EXPENSE" className="bg-red-500/10 text-red-600 border-red-500/20" />
                               <span className="text-xs text-muted-foreground w-16 text-right">
                                 {format(
                                   new Date(expense.expenseDate),
@@ -588,17 +556,7 @@ export default function RevenueExpenseChart() {
                               <span className="font-semibold">
                                 ${Number(inv.totalPrice ?? 0).toFixed(2)}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${
-                                  inv.status === "COMPLETED"
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}
-                              >
-                                {inv.status.charAt(0) +
-                                  inv.status.slice(1).toLowerCase()}
-                              </Badge>
+                                <StatusBadge status={inv.status} />
                               <span className="text-xs text-muted-foreground w-16 text-right">
                                 {format(new Date(inv.createdAt), "MMM dd")}
                               </span>

@@ -47,6 +47,7 @@ export const OrderDetailWithProductSchema = OrderDetailSchema.extend({
   variant: z
     .object({
       sku: z.string().optional().nullable(),
+      costPrice: baseMoneySchema.optional().nullable(),
       product: z
         .object({
           name: z.string().optional().nullable(),

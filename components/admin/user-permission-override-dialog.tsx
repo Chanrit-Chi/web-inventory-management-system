@@ -12,8 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
@@ -131,11 +131,19 @@ export function UserPermissionOverrideDialog({
     if (!canGrantSelected) return;
 
     try {
+      let expiresAtDate: Date | undefined;
+      if (grantExpiresAt) {
+        // Parse input which is "YYYY-MM-DD"
+        // Ensure we set it to the END of that local day
+        const [year, month, day] = grantExpiresAt.split("-").map(Number);
+        expiresAtDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+      }
+
       await grantPermissionsBulk.mutateAsync({
         userId,
         permissionIds: selectedGrantPermissions,
         reason: grantReason.trim(),
-        expiresAt: grantExpiresAt ? new Date(grantExpiresAt) : undefined,
+        expiresAt: expiresAtDate,
       });
 
       setSelectedGrantPermissions([]);

@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
 import { AlertTriangle, ArrowLeft, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCurrentUserPermissions } from "@/hooks/useUserPermissionOverrides";
+import { hasPermission, Permission } from "@/lib/rbac";
+import { Role } from "@prisma/client";
 
 type User = {
   role?: string;
@@ -14,6 +17,8 @@ export default function UnauthorizedPage() {
   const RequiredRole = ["SUPER_ADMIN", "ADMIN", "MANAGER"];
   const router = useRouter();
 
+  const { data: effectivePermissions } = useCurrentUserPermissions();
+
   if (isPending) {
     return null;
   }
@@ -22,22 +27,41 @@ export default function UnauthorizedPage() {
     router.back();
   };
 
+  const userHasPermission = (permissionName: string) => {
+    if (effectivePermissions) {
+      return effectivePermissions.some((p) => p.name === permissionName);
+    }
+    if (userRole && userRole !== "GUEST") {
+      return hasPermission(userRole as Role, permissionName as Permission);
+    }
+    return false;
+  };
+
   const handleGoHome = () => {
-    // Redirect based on user role
-    switch (userRole) {
-      case "SELLER":
-        router.push("/dashboard/sale");
-        break;
-      case "MANAGER":
-        router.push("/dashboard/manager");
-        break;
-      case "ADMIN":
-      case "SUPER_ADMIN":
-        router.push("/dashboard/admin");
-        break;
-      default:
-        router.push("/dashboard");
-        break;
+    // Route to the most privileged dashboard they have access to
+    if (userHasPermission("dashboard:admin")) {
+      router.push("/dashboard/admin");
+    } else if (userHasPermission("dashboard:manager")) {
+      router.push("/dashboard/manager");
+    } else if (userHasPermission("dashboard:sale")) {
+      router.push("/dashboard/sale");
+    } else {
+      // Fallback
+      switch (userRole) {
+        case "SELLER":
+          router.push("/dashboard/sale");
+          break;
+        case "MANAGER":
+          router.push("/dashboard/manager");
+          break;
+        case "ADMIN":
+        case "SUPER_ADMIN":
+          router.push("/dashboard/admin");
+          break;
+        default:
+          router.push("/dashboard");
+          break;
+      }
     }
   };
 

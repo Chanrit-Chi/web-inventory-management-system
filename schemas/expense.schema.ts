@@ -66,3 +66,5 @@ export const ExpenseCategoryCreateSchema = ExpenseCategorySchema.omit({
   createdAt: true,
   updatedAt: true,
 });
+
+export const ExpenseCategoryUpdateSchema = ExpenseCategoryCreateSchema.partial();

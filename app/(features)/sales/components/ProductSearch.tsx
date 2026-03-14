@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useGetProducts } from "@/hooks/useProduct";
 import { usePermission } from "@/hooks/usePermission";
+import { Input } from "@/components/ui/input";
 import { lookupVariantByCode } from "@/lib/barcode-scan";
 import { Product } from "@/schemas/type-export.schema";
 
@@ -346,12 +347,12 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
                   </div>
                   <div className="flex gap-1">
                     {product.stock <= 0 && (
-                      <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider whitespace-nowrap">
+                      <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider whitespace-nowrap">
                         Out of Stock
                       </span>
                     )}
                     {product.stock > 0 && product.stock <= 5 && (
-                      <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider whitespace-nowrap">
+                      <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider whitespace-nowrap">
                         Low Stock
                       </span>
                     )}
@@ -392,12 +393,12 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Products</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <h2 className="text-lg font-semibold shrink-0">Products</h2>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {canUseScanner && (
-            <>
-              <input
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <Input
                 ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
@@ -412,8 +413,8 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
                     void handleBarcodeSubmit();
                   }
                 }}
-                placeholder="Search barcode or enter SKU"
-                className="h-9 w-56 rounded-md border bg-background px-3 text-sm"
+                placeholder="Search barcode or SKU"
+                className="flex-1 sm:w-56 min-w-40"
               />
               <Button
                 type="button"
@@ -422,7 +423,7 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
                 disabled={isScanning}
                 className="px-3"
               >
-                {isScanning ? "Searching..." : "Search"}
+                {isScanning ? "..." : "Search"}
               </Button>
               <Button
                 type="button"
@@ -432,6 +433,7 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
                   setScanMode((prev) => !prev);
                   barcodeInputRef.current?.focus();
                 }}
+                className="shrink-0"
                 aria-label={
                   scanMode
                     ? "Disable laser scan mode"
@@ -440,11 +442,11 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
               >
                 <ScanLine className="size-4" />
               </Button>
-            </>
+            </div>
           )}
           <Button
             onClick={() => setShowProductSearch(!showProductSearch)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
           >
             Add Product
           </Button>

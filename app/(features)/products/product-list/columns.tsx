@@ -33,6 +33,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StatusBadge } from "@/components/StatusBadge";
 
 // Actions Cell Component (needs hooks, so separate from column definition)
 function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
@@ -57,7 +58,7 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
             className="cursor-pointer"
             onClick={() => setViewOpen(true)}
           >
-            <Eye className="mr-2 h-4 w-4" />
+            <Eye className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
             View Details
           </DropdownMenuItem>
           <Tooltip>
@@ -68,7 +69,7 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
                   disabled={!can("product:update")}
                   onClick={() => router.push(`/products/edit/${product.id}`)}
                 >
-                  <Edit className="mr-2 h-4 w-4" />
+                  <Edit className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
                   Edit Product
                 </DropdownMenuItem>
               </span>
@@ -88,12 +89,12 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
                 >
                   {product.isActive === "ACTIVE" ? (
                     <>
-                      <CircleSlash className="mr-2 h-4 w-4" />
+                      <CircleSlash className="mr-2 h-4 w-4 text-red-500 dark:text-red-400" />
                       Deactivate Product
                     </>
                   ) : (
                     <>
-                      <CircleCheck className="mr-2 h-4 w-4" />
+                      <CircleCheck className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       Reactivate Product
                     </>
                   )}
@@ -353,19 +354,9 @@ export const columns: ColumnDef<ProductWithVariants>[] = [
     },
     cell: ({ row }) => {
       const isActive: string = row.getValue("isActive");
-      let statusClass = "";
-      if (isActive == "ACTIVE") {
-        statusClass =
-          "text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded text-xs";
-      } else {
-        statusClass =
-          "text-red-600 font-medium bg-red-100 px-2 py-0.5 rounded text-xs";
-      }
       return (
         <div className="px-2">
-          <span className={statusClass}>
-            {isActive == "ACTIVE" ? "Active" : "Inactive"}
-          </span>
+          <StatusBadge status={isActive} />
         </div>
       );
     },

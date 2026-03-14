@@ -28,6 +28,7 @@ import {
   ResetPasswordDialog,
 } from "./user-dialogs";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { UserPermissionOverrideDialog } from "@/components/admin/user-permission-override-dialog";
 import { Role } from "@prisma/client";
 
@@ -62,7 +63,7 @@ function ActionsCell({ user }: { readonly user: User }) {
     <>
       <div className="flex justify-center items-center">
         <Eye
-          className="size-5 cursor-pointer hover:text-blue-600 transition-colors"
+          className="size-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-blue-500 dark:text-blue-400/80"
           onClick={() => setViewOpen(true)}
         />
         <Tooltip>
@@ -71,7 +72,7 @@ function ActionsCell({ user }: { readonly user: User }) {
               <SquarePen
                 className={`size-5 transition-colors ${
                   canEditTargetUser
-                    ? "cursor-pointer hover:text-green-600"
+                    ? "cursor-pointer text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                     : "opacity-40 cursor-not-allowed pointer-events-none"
                 }`}
                 onClick={
@@ -96,7 +97,7 @@ function ActionsCell({ user }: { readonly user: User }) {
               <KeyRound
                 className={`size-5 transition-colors ${
                   canEditTargetUser && user.isActive
-                    ? "cursor-pointer hover:text-orange-600"
+                    ? "cursor-pointer text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
                     : "opacity-40 cursor-not-allowed pointer-events-none"
                 }`}
                 onClick={
@@ -125,7 +126,7 @@ function ActionsCell({ user }: { readonly user: User }) {
               <Shield
                 className={`size-5 transition-colors ${
                   canManagePermissionTarget
-                    ? "cursor-pointer hover:text-purple-600"
+                    ? "cursor-pointer text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
                     : "opacity-40 cursor-not-allowed pointer-events-none"
                 }`}
                 onClick={
@@ -151,8 +152,8 @@ function ActionsCell({ user }: { readonly user: User }) {
                 <Ban
                   className={`size-5 transition-colors ${
                     canDeleteTargetUser && !isCurrentUser
-                      ? "text-red-600 cursor-pointer hover:text-red-800"
-                      : "text-red-300 cursor-not-allowed pointer-events-none"
+                      ? "text-red-500 dark:text-red-400 cursor-pointer hover:text-red-700 dark:hover:text-red-300"
+                      : "text-red-300 dark:text-red-900/40 cursor-not-allowed pointer-events-none"
                   }`}
                   onClick={
                     canDeleteTargetUser && !isCurrentUser
@@ -179,8 +180,8 @@ function ActionsCell({ user }: { readonly user: User }) {
                 <RotateCcw
                   className={`size-5 transition-colors ${
                     canEditTargetUser
-                      ? "text-green-600 cursor-pointer hover:text-green-800"
-                      : "text-green-300 cursor-not-allowed pointer-events-none"
+                      ? "text-emerald-600 dark:text-emerald-400 cursor-pointer hover:text-emerald-800 dark:hover:text-emerald-200"
+                      : "text-emerald-300 dark:text-emerald-900/40 cursor-not-allowed pointer-events-none"
                   }`}
                   onClick={
                     canEditTargetUser
@@ -282,18 +283,7 @@ export const columns: ColumnDef<User>[] = [
     header: "Role",
     cell: ({ row }) => {
       const role = row.original.role;
-      let variant: "destructive" | "default" | "secondary" = "secondary";
-      let displayText: string = role;
-
-      if (role === "SUPER_ADMIN") {
-        variant = "destructive";
-        displayText = "SUPER ADMIN";
-      } else if (role === "ADMIN") {
-        variant = "destructive";
-      } else if (role === "MANAGER") {
-        variant = "default";
-      }
-      return <Badge variant={variant}>{displayText}</Badge>;
+      return <StatusBadge status={role} />;
     },
   },
   {
@@ -336,11 +326,8 @@ export const columns: ColumnDef<User>[] = [
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => {
-      return (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Active" : "Inactive"}
-        </Badge>
-      );
+      const isActive = row.original.isActive;
+      return <StatusBadge status={isActive ? "ACTIVE" : "INACTIVE"} />;
     },
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id);

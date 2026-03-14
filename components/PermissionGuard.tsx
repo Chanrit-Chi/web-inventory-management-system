@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/requirePermission";
+import { requirePermissionDB } from "@/lib/requirePermissionDB";
 import { Permission } from "@/lib/rbac";
 
 /**
@@ -12,6 +12,6 @@ export default async function PermissionGuard({
   permission: Permission;
   children: React.ReactNode;
 }>) {
-  await requirePermission(permission);
+  await requirePermissionDB(permission);
   return <>{children}</>;
 }
