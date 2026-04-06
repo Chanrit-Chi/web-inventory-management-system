@@ -177,7 +177,7 @@ export function QuotationForm({
 
     if (mode === "edit") {
       updateQuotation.mutate(
-        { id: quotationId!, ...payload },
+        { id: quotationId!, ...(payload as unknown as Partial<QuotationWithItems>) },
         {
           onSuccess: () => {
             toast.success("Quotation updated successfully");
@@ -187,7 +187,7 @@ export function QuotationForm({
         },
       );
     } else {
-      addQuotation.mutate(payload as QuotationWithItems, {
+      addQuotation.mutate(payload as unknown as QuotationWithItems, {
         onSuccess: () => {
           toast.success("Quotation created successfully");
           onSuccess?.();

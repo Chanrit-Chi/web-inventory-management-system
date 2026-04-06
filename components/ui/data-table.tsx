@@ -72,6 +72,7 @@ interface DataTableProps<TData, TValue> {
   // Server-side pagination
   readonly paginationMeta?: PaginationMeta;
   readonly onPageChange?: (page: number) => void;
+  readonly onPageSizeChange?: (pageSize: number) => void;
   // Row filters - filter rows based on column values
   readonly rowFilters?: ColumnFilter[];
   // Server-side search and filtering

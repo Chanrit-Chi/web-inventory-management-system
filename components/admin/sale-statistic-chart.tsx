@@ -75,7 +75,6 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) =>
   String(CURRENT_YEAR - i),
 );
 
-
 export default function RevenueExpenseChart() {
   const [selectedYear, setSelectedYear] = useState(String(CURRENT_YEAR));
   const [activeTab, setActiveTab] = useState<
@@ -157,14 +156,16 @@ export default function RevenueExpenseChart() {
   const netRevenue = totalRevenue - totalExpense;
   return (
     <div className="grid auto-rows-min gap-4 lg:grid-cols-2">
-      <div className="w-auto min-h-screen">
+      <div className="min-w-0">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Monthly Revenue & Expenses</CardTitle>
+            <div className="flex justify-between items-center gap-2">
+              <CardTitle className="text-base sm:text-lg truncate">
+                Monthly Revenue & Expenses
+              </CardTitle>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-auto min-w-30">
-                  <div className="flex items-center gap-2">
+                <SelectTrigger className="w-auto min-w-22.5 h-8 sm:h-10 text-xs sm:text-sm">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <CalendarDays className="h-4 w-4" />
                     <SelectValue />
                   </div>
@@ -311,21 +312,24 @@ export default function RevenueExpenseChart() {
           </CardContent>
         </Card>
       </div>
-      <div className="w-auto min-h-screen">
+      <div className="min-w-0">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Recent Transactions</CardTitle>
-              <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md bg-card min-w-30">
-                <Link
-                  href={viewAllHrefMap[activeTab]}
-                  className="text-sm underline"
-                >
-                  View All
-                </Link>
-              </div>
+            <div className="flex flex-row justify-between items-center gap-2 w-full max-w-full px-1 pt-1 flex-wrap">
+              <CardTitle className="text-base sm:text-lg truncate max-w-[70%]">
+                Recent Transactions
+              </CardTitle>
+              <Link
+                href={viewAllHrefMap[activeTab]}
+                className="h-8 sm:h-10 flex items-center justify-center px-3 py-1 sm:py-2 border rounded-md bg-card shrink-0 text-xs sm:text-sm font-medium whitespace-nowrap"
+                style={{ minWidth: "auto", maxWidth: "100%" }}
+              >
+                View All
+              </Link>
             </div>
             <Separator className="my-2" />
+          </CardHeader>
+          <CardContent className="pt-0">
             <Tabs
               value={activeTab}
               onValueChange={(value) =>
@@ -340,13 +344,15 @@ export default function RevenueExpenseChart() {
               }
               className="w-full"
             >
-              <TabsList className="w-full">
-                <TabsTrigger value="sales">Sales</TabsTrigger>
-                <TabsTrigger value="purchase">Purchase</TabsTrigger>
-                <TabsTrigger value="quotation">Quotation</TabsTrigger>
-                <TabsTrigger value="expense">Expense</TabsTrigger>
-                <TabsTrigger value="invoice">Invoice</TabsTrigger>
-              </TabsList>
+              <div className="w-full max-w-full overflow-x-auto pb-1 mb-2 scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none]">
+                <TabsList className="min-w-max inline-flex gap-0">
+                  <TabsTrigger value="sales">Sales</TabsTrigger>
+                  <TabsTrigger value="purchase">Purchase</TabsTrigger>
+                  <TabsTrigger value="quotation">Quotation</TabsTrigger>
+                  <TabsTrigger value="expense">Expense</TabsTrigger>
+                  <TabsTrigger value="invoice">Invoice</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="sales">
                 {salesLoading ? (
@@ -365,22 +371,27 @@ export default function RevenueExpenseChart() {
                         {recentOrders.map((order) => (
                           <div
                             key={order.id}
-                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                            className="flex recent-transaction-row w-full items-center justify-between gap-1 sm:gap-4 py-2 border-b last:border-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
+                            <div className="flex flex-col min-w-0 flex-1 pr-1">
+                              <span className="font-medium truncate text-[11px] sm:text-sm">
                                 {order.customer?.name ?? "Guest"}
                               </span>
-                              <span className="text-xs text-muted-foreground font-mono">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
                                 #{order.id}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
                                 ${Number(order.totalPrice ?? 0).toFixed(2)}
                               </span>
-                                <StatusBadge status={order.status} />
-                              <span className="text-xs text-muted-foreground w-16 text-right">
+                              <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
+                                <StatusBadge
+                                  status={order.status}
+                                  className="text-[9px] sm:text-xs px-1 sm:px-2 py-0"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 whitespace-nowrap text-right">
                                 {format(new Date(order.createdAt), "MMM dd")}
                               </span>
                             </div>
@@ -409,22 +420,27 @@ export default function RevenueExpenseChart() {
                         {recentPurchaseOrders.map((purchase) => (
                           <div
                             key={purchase.id}
-                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                            className="flex recent-transaction-row w-full items-center justify-between gap-1 sm:gap-4 py-2 border-b last:border-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
+                            <div className="flex flex-col min-w-0 flex-1 pr-1">
+                              <span className="font-medium truncate text-[11px] sm:text-sm">
                                 {purchase.supplier?.name ?? "Unknown Supplier"}
                               </span>
-                              <span className="text-xs text-muted-foreground font-mono">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
                                 #PO-{purchase.id}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
                                 ${Number(purchase.totalAmount ?? 0).toFixed(2)}
                               </span>
-                                <StatusBadge status={purchase.status} />
-                              <span className="text-xs text-muted-foreground w-16 text-right">
+                              <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
+                                <StatusBadge
+                                  status={purchase.status}
+                                  className="text-[9px] sm:text-xs px-1 sm:px-2 py-0"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 whitespace-nowrap text-right">
                                 {format(new Date(purchase.createdAt), "MMM dd")}
                               </span>
                             </div>
@@ -453,22 +469,27 @@ export default function RevenueExpenseChart() {
                         {recentQuotations.map((q) => (
                           <div
                             key={q.id}
-                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                            className="flex recent-transaction-row w-full items-center justify-between gap-1 sm:gap-4 py-2 border-b last:border-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
+                            <div className="flex flex-col min-w-0 flex-1 pr-1">
+                              <span className="font-medium truncate text-[11px] sm:text-sm">
                                 {(q as { customer?: { name?: string } })
                                   .customer?.name ?? "Guest"}
                               </span>
-                              <span className="text-xs text-muted-foreground font-mono">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
                                 #{q.quotationNumber ?? q.id}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
                                 ${Number(q.totalAmount ?? 0).toFixed(2)}
                               </span>
-                                <StatusBadge status={q.status || "DRAFT"} />
+                              <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
+                                <StatusBadge
+                                  status={q.status || "DRAFT"}
+                                  className="text-[9px] sm:text-xs px-1 sm:px-2 py-0"
+                                />
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -495,19 +516,24 @@ export default function RevenueExpenseChart() {
                         {recentExpenses.slice(0, 8).map((expense) => (
                           <div
                             key={expense.id}
-                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                            className="flex recent-transaction-row w-full items-center justify-between gap-1 sm:gap-4 py-2 border-b last:border-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
+                            <div className="flex flex-col min-w-0 flex-1 pr-1">
+                              <span className="font-medium truncate text-[11px] sm:text-sm">
                                 {expense.description}
                               </span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
                                 {expense.category?.name ?? "Uncategorized"}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <StatusBadge status="EXPENSE" className="bg-red-500/10 text-red-600 border-red-500/20" />
-                              <span className="text-xs text-muted-foreground w-16 text-right">
+                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
+                                <StatusBadge
+                                  status="EXPENSE"
+                                  className="bg-red-500/10 text-red-600 border-red-500/20 text-[9px] sm:text-xs px-1 sm:px-2 py-0"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 whitespace-nowrap text-right">
                                 {format(
                                   new Date(expense.expenseDate),
                                   "MMM dd",
@@ -539,25 +565,30 @@ export default function RevenueExpenseChart() {
                         {recentInvoices.map((inv) => (
                           <div
                             key={inv.id}
-                            className="flex items-center justify-between py-2 border-b last:border-0 text-sm"
+                            className="flex recent-transaction-row w-full items-center justify-between gap-1 sm:gap-4 py-2 border-b last:border-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
+                            <div className="flex flex-col min-w-0 flex-1 pr-1">
+                              <span className="font-medium truncate text-[11px] sm:text-sm">
                                 {inv.customer?.name ?? "Guest"}
                               </span>
-                              <span className="text-xs text-muted-foreground font-mono">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
                                 #
                                 {inv.invoiceNumber
                                   ? `${inv.invoiceNumber}`
                                   : "###"}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
                                 ${Number(inv.totalPrice ?? 0).toFixed(2)}
                               </span>
-                                <StatusBadge status={inv.status} />
-                              <span className="text-xs text-muted-foreground w-16 text-right">
+                              <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
+                                <StatusBadge
+                                  status={inv.status}
+                                  className="text-[9px] sm:text-xs px-1 sm:px-2 py-0"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 whitespace-nowrap text-right">
                                 {format(new Date(inv.createdAt), "MMM dd")}
                               </span>
                             </div>
@@ -569,7 +600,7 @@ export default function RevenueExpenseChart() {
                 )}
               </TabsContent>
             </Tabs>
-          </CardHeader>
+          </CardContent>
         </Card>
       </div>
     </div>

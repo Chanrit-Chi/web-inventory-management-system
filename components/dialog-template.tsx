@@ -16,7 +16,6 @@ import {
   useForm,
   FieldValues,
   Path,
-  Resolver,
   DefaultValues,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -107,7 +106,8 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
     formState: { errors },
     reset,
   } = useForm<z.infer<TSchema>>({
-    resolver: zodResolver(schema) as Resolver<z.infer<TSchema>>,
+    // @ts-expect-error - zodResolver type mapping issue
+    resolver: zodResolver(schema),
     defaultValues: defaultValues as DefaultValues<z.infer<TSchema>>,
   });
 
@@ -161,7 +161,8 @@ export function FormDialog<TSchema extends z.ZodType<FieldValues>>({
         </>
       }
     >
-      <form id="generic-form" onSubmit={handleSubmit(onSubmit)}>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <form id="generic-form" onSubmit={handleSubmit(onSubmit as any)}>
         <div className="grid gap-4 py-4">
           {fields.map((field) => (
             <div key={field.name} className="grid gap-2">

@@ -80,30 +80,30 @@ export default function InventorySummary() {
       {/* Inventory Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
-          className="animate-dash-enter bg-card rounded-lg border p-4"
+          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-blue-500/30"
           style={{ animationDelay: "0ms" }}
         >
           <div className="flex items-center gap-3">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-2.5 rounded-lg">
+            <div className="bg-blue-500/10 dark:bg-blue-500/20 p-2.5 rounded-xl border border-blue-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
               <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-xs">Active Products</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Active Products</p>
               <p className="text-2xl font-bold">{animActive}</p>
             </div>
           </div>
         </div>
 
         <div
-          className="animate-dash-enter bg-card rounded-lg border p-4"
+          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-amber-500/30"
           style={{ animationDelay: "80ms" }}
         >
           <div className="flex items-center gap-3">
-            <div className="bg-amber-100 dark:bg-amber-900/30 p-2.5 rounded-lg">
+            <div className="bg-amber-500/10 dark:bg-amber-500/20 p-2.5 rounded-xl border border-amber-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs">Low Stock</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Low Stock</p>
               <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {animLowStock}
               </p>
@@ -112,15 +112,15 @@ export default function InventorySummary() {
         </div>
 
         <div
-          className="animate-dash-enter bg-card rounded-lg border p-4"
+          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-red-500/30"
           style={{ animationDelay: "160ms" }}
         >
           <div className="flex items-center gap-3">
-            <div className="bg-red-100 dark:bg-red-900/30 p-2.5 rounded-lg">
+            <div className="bg-red-500/10 dark:bg-red-500/20 p-2.5 rounded-xl border border-red-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-xs">Out of Stock</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Out of Stock</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {animOutOfStock}
               </p>
@@ -129,15 +129,15 @@ export default function InventorySummary() {
         </div>
 
         <div
-          className="animate-dash-enter bg-card rounded-lg border p-4"
+          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-green-500/30"
           style={{ animationDelay: "240ms" }}
         >
           <div className="flex items-center gap-3">
-            <div className="bg-green-100 dark:bg-green-900/30 p-2.5 rounded-lg">
+            <div className="bg-green-500/10 dark:bg-green-500/20 p-2.5 rounded-xl border border-green-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
               <Archive className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-xs">Total Units</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Units</p>
               <p className="text-2xl font-bold">{animTotalUnits}</p>
             </div>
           </div>

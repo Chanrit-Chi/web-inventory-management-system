@@ -136,7 +136,7 @@ export function PermissionMatrix({
   );
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-x-auto scrollbar-hide">
       <Table>
         <TableHeader>
           <TableRow>

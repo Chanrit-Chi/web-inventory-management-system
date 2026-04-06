@@ -86,7 +86,7 @@ export function PermissionAuditTable() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="targetType">Target Type</Label>
           <Select
@@ -170,7 +170,7 @@ export function PermissionAuditTable() {
         </Alert>
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto scrollbar-hide">
             <Table>
               <TableHeader>
                 <TableRow>

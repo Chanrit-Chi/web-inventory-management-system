@@ -1,3 +1,19 @@
+/* Responsive: Stack recent transaction rows on mobile */
+@media (max-width: 480px) {
+  .recent-transaction-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.25rem !important;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .recent-transaction-row > div:last-child {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 0.25rem;
+  }
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 

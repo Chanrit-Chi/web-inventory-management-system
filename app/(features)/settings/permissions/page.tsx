@@ -245,20 +245,31 @@ export default function PermissionsPage() {
           </div>
 
           <Tabs defaultValue="groups" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 max-w-2xl">
-              <TabsTrigger value="groups">
-                <Shield className="mr-2 h-4 w-4" />
-                Permission Groups
-              </TabsTrigger>
-              <TabsTrigger value="users">
-                <Users className="mr-2 h-4 w-4" />
-                User Assignments
-              </TabsTrigger>
-              <TabsTrigger value="audit">
-                <History className="mr-2 h-4 w-4" />
-                Audit Log
-              </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto pb-1 scrollbar-hide">
+              <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 flex-nowrap gap-1 bg-muted/30 backdrop-blur-lg border-border/50">
+                <TabsTrigger
+                  value="groups"
+                  className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-500/20 dark:data-[state=active]:text-emerald-400"
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Permission Groups
+                </TabsTrigger>
+                <TabsTrigger
+                  value="users"
+                  className="data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-500/20 dark:data-[state=active]:text-blue-400"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  User Assignments
+                </TabsTrigger>
+                <TabsTrigger
+                  value="audit"
+                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-400"
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  Audit Log
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="groups" className="space-y-4">
               <Card>
