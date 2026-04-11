@@ -198,7 +198,7 @@ export function SaleForm({
 
       if (existingIndex >= 0) {
         const updated = [...current];
-        const item = updated[existingIndex];
+        const item = { ...updated[existingIndex] };
         const maxQuantity = item.stock ?? Infinity;
 
         if (item.quantity < maxQuantity) {
@@ -209,6 +209,7 @@ export function SaleForm({
             `Maximum available stock reached for ${item.productName}`,
           );
         }
+        updated[existingIndex] = item;
         return updated;
       }
 
@@ -233,7 +234,7 @@ export function SaleForm({
 
     setOrderDetails((current) => {
       const updated = [...current];
-      const item = updated[index];
+      const item = { ...updated[index] };
       const maxQuantity = item.stock ?? Infinity;
 
       if (quantity > maxQuantity) {
@@ -244,6 +245,7 @@ export function SaleForm({
       }
 
       item.subtotal = item.quantity * item.unitPrice;
+      updated[index] = item;
       return updated;
     });
   };

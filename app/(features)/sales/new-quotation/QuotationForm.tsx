@@ -87,9 +87,10 @@ export function QuotationForm({
 
       if (existingIndex >= 0) {
         const updated = [...current];
-        updated[existingIndex].quantity += 1;
-        updated[existingIndex].subtotal =
-          updated[existingIndex].quantity * updated[existingIndex].unitPrice;
+        const item = { ...updated[existingIndex] };
+        item.quantity += 1;
+        item.subtotal = item.quantity * item.unitPrice;
+        updated[existingIndex] = item;
         return updated;
       }
 
@@ -111,8 +112,10 @@ export function QuotationForm({
     if (quantity <= 0) return;
     setOrderDetails((current) => {
       const updated = [...current];
-      updated[index].quantity = quantity;
-      updated[index].subtotal = quantity * updated[index].unitPrice;
+      const item = { ...updated[index] };
+      item.quantity = quantity;
+      item.subtotal = quantity * item.unitPrice;
+      updated[index] = item;
       return updated;
     });
   };

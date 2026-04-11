@@ -11,6 +11,7 @@ import {
   ExportDropdown,
   ExportDateFilters,
 } from "@/components/export-dropdown";
+import { downloadXlsx, downloadPdf } from "@/lib/download";
 
 interface VariantAttribute {
   value: {
@@ -118,7 +119,8 @@ export function ProductExportDropdown({
     worksheet["!cols"] = maxWidths.map((w: number) => ({ wch: w }));
 
     const dateStr = new Date().toISOString().split("T")[0];
-    XLSX.writeFile(workbook, `Products_Export_${dateStr}.xlsx`);
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+    await downloadXlsx(buffer, `Products_Export_${dateStr}.xlsx`);
     toast.success("Products XLSX exported");
   };
 
@@ -236,7 +238,7 @@ export function ProductExportDropdown({
       },
     });
 
-    doc.save(`Inventory_Report_${new Date().toISOString().split("T")[0]}.pdf`);
+    await downloadPdf(doc.output("arraybuffer"), `Inventory_Report_${new Date().toISOString().split("T")[0]}.pdf`);
     toast.success("PDF report generated");
   };
 

@@ -120,20 +120,30 @@ export function AttributeSelector({
 
               {selectedAttr && (
                 <div className="flex flex-wrap gap-2">
-                  {selectedAttr.values.map((value) => (
-                    <button
-                      key={value.id}
-                      type="button"
-                      onClick={() => onToggleValueSelection(attr.id, value.id)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        attr.selectedValueIds.includes(value.id)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-background text-foreground border border-border hover:border-primary"
-                      }`}
-                    >
-                      {value.displayValue || value.value}
-                    </button>
-                  ))}
+                  {selectedAttr.values
+                    .filter(
+                      (value, index, self) =>
+                        index ===
+                        self.findIndex(
+                          (v) =>
+                            (v.displayValue || v.value).toLowerCase() ===
+                            (value.displayValue || value.value).toLowerCase(),
+                        ),
+                    )
+                    .map((value) => (
+                      <button
+                        key={value.id}
+                        type="button"
+                        onClick={() => onToggleValueSelection(attr.id, value.id)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          attr.selectedValueIds.includes(value.id)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background text-foreground border border-border hover:border-primary"
+                        }`}
+                      >
+                        {value.displayValue || value.value}
+                      </button>
+                    ))}
                 </div>
               )}
             </div>

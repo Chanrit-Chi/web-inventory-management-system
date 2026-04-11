@@ -14,6 +14,7 @@ import {
   ExportDropdown,
   ExportDateFilters,
 } from "@/components/export-dropdown";
+import { downloadXlsx, downloadPdf } from "@/lib/download";
 
 interface SaleExportDropdownProps {
   readonly search?: string;
@@ -114,7 +115,8 @@ export function SaleExportDropdown({
     worksheet["!cols"] = maxWidths.map((w: number) => ({ wch: w }));
 
     const dateStr = new Date().toISOString().split("T")[0];
-    XLSX.writeFile(workbook, `Sales_Export_${dateStr}.xlsx`);
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+    await downloadXlsx(buffer, `Sales_Export_${dateStr}.xlsx`);
     toast.success("Sales XLSX exported");
   };
 
@@ -220,7 +222,7 @@ export function SaleExportDropdown({
       styles: { fontSize: 8 },
     });
 
-    doc.save(`Sales_Report_${new Date().toISOString().split("T")[0]}.pdf`);
+    await downloadPdf(doc.output("arraybuffer"), `Sales_Report_${new Date().toISOString().split("T")[0]}.pdf`);
     toast.success("Sales PDF generated");
   };
 

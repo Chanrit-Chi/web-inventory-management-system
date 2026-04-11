@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Minus,
   Plus,
-  ScanLine,
   Search,
   ShoppingCart,
   UserPlus,
@@ -34,6 +33,7 @@ import { useGetCustomers } from "@/hooks/useCustomer";
 import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
 import { useSaleMutations } from "@/hooks/useSale";
 import { lookupVariantByCode, normalizeScannedCode } from "@/lib/barcode-scan";
+import { usePhysicalBarcodeScanner } from "@/hooks/usePhysicalBarcodeScanner";
 import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import type { OrderWithDetails, Product } from "@/schemas/type-export.schema";
 
@@ -255,12 +255,10 @@ const isColorDisabled = (
 
 function PosPageContent() {
   const [search, setSearch] = useState("");
-  const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [scanMode, setScanMode] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const didAutoFocusRef = useRef(false);
-  const scanSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProcessingRef = useRef(false); // prevents concurrent scan submissions
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
     Record<string, number>
@@ -301,14 +299,6 @@ function PosPageContent() {
     barcodeInputRef.current?.focus();
     didAutoFocusRef.current = true;
   }, [canUseScanner]);
-
-  useEffect(() => {
-    return () => {
-      if (scanSubmitTimerRef.current) {
-        clearTimeout(scanSubmitTimerRef.current);
-      }
-    };
-  }, []);
 
   const products = useMemo<PosProduct[]>(() => {
     const rows =
@@ -600,9 +590,15 @@ function PosPageContent() {
       toast.error("You do not have permission to use barcode scanner");
       return;
     }
+    // Lock: prevent concurrent submissions (double-scan guard)
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
 
     const code = normalizeScannedCode(rawCode);
-    if (!code) return;
+    if (!code) {
+      isProcessingRef.current = false;
+      return;
+    }
 
     setIsScanning(true);
     try {
@@ -614,25 +610,26 @@ function PosPageContent() {
       }
 
       addLookupVariantToCart(variant);
-      setBarcodeInput("");
+      // Clear the barcode input via DOM ref (input is uncontrolled)
+      if (barcodeInputRef.current) barcodeInputRef.current.value = "";
       barcodeInputRef.current?.focus();
     } finally {
       setIsScanning(false);
+      // Release lock after a short delay so rapid re-scans still work
+      setTimeout(() => { isProcessingRef.current = false; }, 300);
     }
   };
 
-  const scheduleScanSubmit = (value: string) => {
-    if (!scanMode || isScanning) return;
-
-    if (scanSubmitTimerRef.current) {
-      clearTimeout(scanSubmitTimerRef.current);
-    }
-
-    scanSubmitTimerRef.current = setTimeout(() => {
-      if (!value.trim()) return;
-      void submitBarcodeLookup(value);
-    }, 100);
-  };
+  // Physical HID barcode scanner — listens at document level.
+  // Placed AFTER submitBarcodeLookup so the closure is always current.
+  usePhysicalBarcodeScanner({
+    onScan: (code) => {
+      void submitBarcodeLookup(code);
+    },
+    enabled: canUseScanner,
+    inputRef: barcodeInputRef,
+    keepFocus: true,
+  });
 
   const checkout = () => {
     if (!customerId || !paymentMethodId || cart.length === 0) {
@@ -701,18 +698,7 @@ function PosPageContent() {
                 <div className="flex-1 min-w-52 sm:max-w-sm">
                   <Input
                     ref={barcodeInputRef}
-                    value={barcodeInput}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setBarcodeInput(value);
-                      scheduleScanSubmit(value);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void submitBarcodeLookup(barcodeInput);
-                      }
-                    }}
+                    defaultValue=""
                     placeholder="Scan barcode or SKU"
                     className="w-full"
                   />
@@ -721,26 +707,16 @@ function PosPageContent() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => void submitBarcodeLookup(barcodeInput)}
+                    onClick={() => {
+                      const val = barcodeInputRef.current?.value?.trim() ?? "";
+                      if (val) {
+                        if (barcodeInputRef.current) barcodeInputRef.current.value = "";
+                        void submitBarcodeLookup(val);
+                      }
+                    }}
                     disabled={isScanning}
                   >
                     {isScanning ? "..." : "Scan"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={scanMode ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => {
-                      setScanMode((prev) => !prev);
-                      barcodeInputRef.current?.focus();
-                    }}
-                    aria-label={
-                      scanMode
-                        ? "Disable laser scan mode"
-                        : "Enable laser scan mode"
-                    }
-                  >
-                    <ScanLine className="size-4" />
                   </Button>
                 </div>
               </div>
