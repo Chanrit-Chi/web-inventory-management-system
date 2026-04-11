@@ -209,10 +209,3 @@ The seed script uses `upsert`, so rerunning it updates/ensures required records 
 - This is configured in `lib/auth.ts` with `autoSignIn: true`
 - Make sure you've saved the latest configuration
 
-## Next Steps
-
-- Add email verification
-- Implement password reset
-- Add OAuth providers (Google, GitHub, etc.)
-- Add two-factor authentication
-- Customize user roles and permissions

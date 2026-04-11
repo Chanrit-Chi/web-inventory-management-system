@@ -196,7 +196,7 @@ export default function RevenueExpenseChart() {
                         <CardDescription className="text-green-600 dark:text-green-400 font-semibold">
                           Total Revenue
                         </CardDescription>
-                        <CardTitle className="text-2xl text-green-700 dark:text-green-300">
+                        <CardTitle className="text-lg text-green-700 dark:text-green-300">
                           $
                           {totalRevenue.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -210,7 +210,7 @@ export default function RevenueExpenseChart() {
                         <CardDescription className="text-red-600 dark:text-red-400 font-semibold">
                           Total Expenses
                         </CardDescription>
-                        <CardTitle className="text-2xl text-red-700 dark:text-red-300">
+                        <CardTitle className="text-lg text-red-700 dark:text-red-300">
                           $
                           {totalExpense.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -224,7 +224,7 @@ export default function RevenueExpenseChart() {
                         <CardDescription className="text-purple-600 dark:text-purple-400 font-semibold">
                           Net Revenue
                         </CardDescription>
-                        <CardTitle className="text-2xl text-purple-700 dark:text-purple-300">
+                        <CardTitle className="text-lg text-purple-700 dark:text-purple-300">
                           $
                           {netRevenue.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
