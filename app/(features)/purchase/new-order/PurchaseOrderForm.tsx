@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { cn } from "@/lib/utils";
 
 // ============================================
@@ -452,10 +453,9 @@ export function PurchaseOrderItemsTable({
                 </div>
               </td>
               <td className="px-3 py-2">
-                <input
-                  type="number"
+                <StepperInput
                   min={0}
-                  step={1}
+                  step={0.01}
                   value={item.unitPrice}
                   onChange={(e) =>
                     onPriceChange(
@@ -463,12 +463,11 @@ export function PurchaseOrderItemsTable({
                       Number.parseFloat(e.target.value) || 0,
                     )
                   }
-                  className="w-full text-right border rounded px-2 py-1 bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full text-right"
                 />
               </td>
               <td className="px-3 py-2">
-                <input
-                  type="number"
+                <StepperInput
                   min={1}
                   value={item.quantity}
                   onChange={(e) =>
@@ -477,7 +476,7 @@ export function PurchaseOrderItemsTable({
                       Math.max(1, parseInt(e.target.value) || 1),
                     )
                   }
-                  className="w-full text-right border rounded px-2 py-1 bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full text-right"
                 />
               </td>
               <td className="px-3 py-2 text-right font-medium">

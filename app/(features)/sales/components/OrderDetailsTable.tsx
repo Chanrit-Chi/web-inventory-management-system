@@ -1,6 +1,6 @@
 import { Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import Image from "next/image";
 
 export interface SaleOrderDetail {
@@ -80,21 +80,8 @@ export const OrderDetailsTable = ({
                 </td>
                 <td className="py-3 px-2">
                   <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() =>
-                        onUpdateQuantity(index, detail.quantity - 1)
-                      }
-                      disabled={detail.quantity <= 1}
-                    >
-                      <Minus size={14} />
-                    </Button>
-
-                    <div className="flex items-center">
-                      <Input
-                        type="number"
+                    <div className="flex items-center w-28">
+                      <StepperInput
                         value={detail.quantity}
                         onChange={(e) => {
                           const val = Number.parseInt(e.target.value);
@@ -111,26 +98,10 @@ export const OrderDetailsTable = ({
                             onUpdateQuantity(index, 1);
                           }
                         }}
-                        className="w-12 text-center font-medium bg-transparent border outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        min="1"
+                        min={1}
                         max={detail.stock}
                       />
                     </div>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() =>
-                        onUpdateQuantity(index, detail.quantity + 1)
-                      }
-                      disabled={
-                        detail.stock !== undefined &&
-                        detail.quantity >= detail.stock
-                      }
-                    >
-                      <Plus size={14} />
-                    </Button>
                   </div>
                 </td>
                 <td className="py-3 px-2 text-right font-medium">

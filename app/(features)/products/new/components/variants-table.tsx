@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { ProductVariant } from "@/schemas/type-export.schema";
 
 interface ComputedVariant {
@@ -97,8 +98,7 @@ export function VariantsTable({
                       {variant.variantName}
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="number"
+                      <StepperInput
                         step="0.01"
                         value={
                           currentVariant?.costPrice?.toString() ||
@@ -111,12 +111,11 @@ export function VariantsTable({
                             Number.parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="w-24 h-8 text-sm"
+                        className="w-28 h-8 text-sm"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="number"
+                      <StepperInput
                         step="0.01"
                         value={
                           currentVariant?.sellingPrice?.toString() ||
@@ -129,12 +128,11 @@ export function VariantsTable({
                             Number.parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="w-24 h-8 text-sm"
+                        className="w-28 h-8 text-sm"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="number"
+                      <StepperInput
                         value={currentVariant?.stock ?? variant.stock}
                         onChange={(e) =>
                           onUpdateVariantField(
@@ -143,12 +141,11 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-24 h-8 text-sm"
+                        className="w-28 h-8 text-sm"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="number"
+                      <StepperInput
                         value={
                           currentVariant?.reorderLevel ?? variant.reorderLevel
                         }
@@ -159,12 +156,11 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-24 h-8 text-sm"
+                        className="w-28 h-8 text-sm"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="number"
+                      <StepperInput
                         value={
                           currentVariant?.reservedStock ?? variant.reservedStock
                         }
@@ -175,7 +171,7 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-24 h-8 text-sm"
+                        className="w-28 h-8 text-sm"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">

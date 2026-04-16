@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -39,24 +40,22 @@ export const OrderSummary = ({
       <div className="space-y-4 mb-6">
         <div>
           <Label className="block text-sm font-medium mb-2">Discount (%)</Label>
-          <Input
-            type="number"
+          <StepperInput
             value={discountPercent}
             onChange={(e) => onDiscountChange(Number(e.target.value))}
-            min="0"
-            max="100"
-            step="0.01"
+            min={0}
+            max={100}
+            step={0.01}
           />
         </div>
         <div>
           <Label className="block text-sm font-medium mb-2">Tax (%)</Label>
-          <Input
-            type="number"
+          <StepperInput
             value={taxPercent}
             onChange={(e) => onTaxChange(Number(e.target.value))}
-            min="0"
-            max="100"
-            step="0.01"
+            min={0}
+            max={100}
+            step={0.01}
           />
         </div>
       </div>

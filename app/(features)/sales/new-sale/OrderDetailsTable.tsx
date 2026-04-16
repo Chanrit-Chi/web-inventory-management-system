@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import { Trash2 } from "lucide-react";
+import { StepperInput } from "@/components/ui/stepper-input";
 
 export interface SaleOrderDetail {
   productId: string;
@@ -51,14 +52,13 @@ export const OrderDetailsTable = ({
                   ${detail.unitPrice.toFixed(2)}
                 </td>
                 <td className="py-3 px-2">
-                  <input
-                    type="number"
+                  <StepperInput
                     value={detail.quantity}
                     onChange={(e) =>
                       onUpdateQuantity(index, Number(e.target.value))
                     }
-                    min="1"
-                    className="w-20 mx-auto px-2 py-1 border rounded text-center outline-none focus:ring-2 bg-background"
+                    min={1}
+                    className="w-28 mx-auto"
                   />
                 </td>
                 <td className="py-3 px-2 text-right font-medium">

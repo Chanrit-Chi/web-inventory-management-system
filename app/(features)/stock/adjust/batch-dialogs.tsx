@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -551,8 +552,7 @@ export function BatchStockAdjustmentDialog({
                                   Qty
                                 </FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <StepperInput
                                     className="h-8 text-xs"
                                     {...f}
                                     onChange={(e) =>

@@ -33,6 +33,7 @@ const selectProductFields = {
       id: true,
       productId: true,
       sku: true,
+      barcode: true,
       costPrice: true,
       sellingPrice: true,
       stock: true,

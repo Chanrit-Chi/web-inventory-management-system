@@ -1,5 +1,5 @@
 import { FormField } from "@/components/FormField";
-import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Label } from "@/components/ui/label";
 
 interface DefaultPrices {
@@ -26,8 +26,7 @@ export function VariantDefaultsForm({
       </Label>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <FormField label="Cost Price">
-          <Input
-            type="number"
+          <StepperInput
             step="0.01"
             placeholder="0.00"
             value={defaultPrices.costPrice === 0 ? "" : defaultPrices.costPrice}
@@ -42,8 +41,7 @@ export function VariantDefaultsForm({
         </FormField>
 
         <FormField label="Selling Price">
-          <Input
-            type="number"
+          <StepperInput
             step="0.01"
             placeholder="0.00"
             value={
@@ -60,8 +58,7 @@ export function VariantDefaultsForm({
         </FormField>
 
         <FormField label="Stock">
-          <Input
-            type="number"
+          <StepperInput
             placeholder="0"
             value={defaultPrices.stock}
             onChange={(e) =>
@@ -74,8 +71,7 @@ export function VariantDefaultsForm({
         </FormField>
 
         <FormField label="Reserved Stock">
-          <Input
-            type="number"
+          <StepperInput
             placeholder="0"
             value={defaultPrices.reservedStock}
             onChange={(e) =>
@@ -88,8 +84,7 @@ export function VariantDefaultsForm({
         </FormField>
 
         <FormField label="Reorder Level">
-          <Input
-            type="number"
+          <StepperInput
             placeholder="0"
             value={defaultPrices.reorderLevel}
             onChange={(e) =>

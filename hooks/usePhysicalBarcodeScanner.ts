@@ -126,6 +126,7 @@ export function usePhysicalBarcodeScanner({
       }
 
       // ── Accumulate 
+      buffer += e.key;
       if (inputRef?.current) inputRef.current.value = buffer;
 
       // Reset stale-buffer clear timer (only clears, never submits)

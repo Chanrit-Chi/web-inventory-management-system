@@ -5,6 +5,7 @@ import { useAttributes, useAttributeMutations } from "@/hooks/useAttribute";
 import { usePermission } from "@/hooks/usePermission";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -486,7 +487,7 @@ function AttributesPage() {
             </div>
             <div>
               <Label>Sort Order</Label>
-              <Input
+              <StepperInput
                 value={attrForm.sortOrder}
                 onChange={(e) =>
                   setAttrForm({
@@ -494,8 +495,7 @@ function AttributesPage() {
                     sortOrder: Number(e.target.value),
                   })
                 }
-                type="number"
-                className="mt-1 w-24"
+                className="mt-1 w-32"
               />
             </div>
           </div>
@@ -577,7 +577,7 @@ function AttributesPage() {
             )}
             <div>
               <Label>Sort Order</Label>
-              <Input
+              <StepperInput
                 value={valueForm.sortOrder}
                 onChange={(e) =>
                   setValueForm({
@@ -585,8 +585,7 @@ function AttributesPage() {
                     sortOrder: Number(e.target.value),
                   })
                 }
-                type="number"
-                className="mt-1 w-24"
+                className="mt-1 w-32"
               />
             </div>
           </div>

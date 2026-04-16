@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -410,8 +411,7 @@ export function StockAdjustmentDialog({
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
+                        <StepperInput
                           {...field}
                           onChange={(e) =>
                             field.onChange(Number(e.target.value))

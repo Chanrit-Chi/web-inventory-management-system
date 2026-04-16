@@ -1,5 +1,6 @@
 import { FormField } from "@/components/FormField";
 import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { useFormContext } from "react-hook-form";
 import { Decimal } from "decimal.js";
 import { ProductFormValues } from "./product-form";
@@ -37,16 +38,15 @@ export function SingleProductForm({
         required
         error={errors.variants?.[0]?.costPrice?.message}
       >
-        <Input
-          type="number"
+        <StepperInput
           step="0.01"
           placeholder="0.00"
           value={
             variant.costPrice ? new Decimal(variant.costPrice).toNumber() : ""
           }
           onChange={(e) => {
-            const value = Number.parseFloat(e.target.value) || 0;
-            updateSingleVariant({ costPrice: new Decimal(value) });
+            const val = Number.parseFloat(e.target.value) || 0;
+            updateSingleVariant({ costPrice: new Decimal(val) });
           }}
         />
       </FormField>
@@ -56,8 +56,7 @@ export function SingleProductForm({
         required
         error={errors.variants?.[0]?.sellingPrice?.message}
       >
-        <Input
-          type="number"
+        <StepperInput
           step="0.01"
           placeholder="0.00"
           value={
@@ -66,20 +65,19 @@ export function SingleProductForm({
               : ""
           }
           onChange={(e) => {
-            const value = Number.parseFloat(e.target.value) || 0;
-            updateSingleVariant({ sellingPrice: new Decimal(value) });
+            const val = Number.parseFloat(e.target.value) || 0;
+            updateSingleVariant({ sellingPrice: new Decimal(val) });
           }}
         />
       </FormField>
 
       <FormField label="Stock" error={errors.variants?.[0]?.stock?.message}>
-        <Input
-          type="number"
+        <StepperInput
           placeholder="0"
           value={variant.stock ?? ""}
           onChange={(e) => {
-            const value = Number.parseInt(e.target.value) || 0;
-            updateSingleVariant({ stock: value });
+            const val = Number.parseInt(e.target.value) || 0;
+            updateSingleVariant({ stock: val });
           }}
         />
       </FormField>
@@ -88,13 +86,12 @@ export function SingleProductForm({
         label="Reserved Stock"
         error={errors.variants?.[0]?.reservedStock?.message}
       >
-        <Input
-          type="number"
+        <StepperInput
           placeholder="0"
           value={variant.reservedStock ?? ""}
           onChange={(e) => {
-            const value = Number.parseInt(e.target.value) || 0;
-            updateSingleVariant({ reservedStock: value });
+            const val = Number.parseInt(e.target.value) || 0;
+            updateSingleVariant({ reservedStock: val });
           }}
         />
       </FormField>
@@ -103,13 +100,12 @@ export function SingleProductForm({
         label="Reorder Level"
         error={errors.variants?.[0]?.reorderLevel?.message}
       >
-        <Input
-          type="number"
+        <StepperInput
           placeholder="0"
           value={variant.reorderLevel ?? ""}
           onChange={(e) => {
-            const value = Number.parseInt(e.target.value) || 0;
-            updateSingleVariant({ reorderLevel: value });
+            const val = Number.parseInt(e.target.value) || 0;
+            updateSingleVariant({ reorderLevel: val });
           }}
         />
       </FormField>

@@ -21,6 +21,7 @@ import {
 } from "@/hooks/useExpense";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
+import { StepperInput } from "@/components/ui/stepper-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,11 +201,10 @@ export function CreateExpenseDialog({
           <Label htmlFor="amount">
             Amount <span className="text-red-500">*</span>
           </Label>
-          <Input
+          <StepperInput
             id="amount"
-            type="number"
             step="0.01"
-            min="0"
+            min={0}
             placeholder="0.00"
             {...register("amount", {
               valueAsNumber: true,
@@ -451,11 +451,10 @@ export function UpdateExpenseDialog({
           <Label htmlFor="update-amount">
             Amount <span className="text-red-500">*</span>
           </Label>
-          <Input
+          <StepperInput
             id="update-amount"
-            type="number"
             step="0.01"
-            min="0"
+            min={0}
             placeholder="0.00"
             {...register("amount", {
               valueAsNumber: true,
