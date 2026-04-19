@@ -81,29 +81,26 @@ function ProductStatsHeader({
 
       {/* Status Card */}
       <div
-        className={`rounded-lg p-4 border ${
-          product.isActive === "ACTIVE"
-            ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700/40"
-            : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/40"
-        }`}
+        className={`rounded-lg p-4 border ${product.isActive === "ACTIVE"
+          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700/40"
+          : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/40"
+          }`}
       >
         <div className="flex items-center justify-between">
           <div>
             <p
-              className={`text-xs font-medium uppercase tracking-wide ${
-                product.isActive === "ACTIVE"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
+              className={`text-xs font-medium uppercase tracking-wide ${product.isActive === "ACTIVE"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-red-600 dark:text-red-400"
+                }`}
             >
               Status
             </p>
             <p
-              className={`text-2xl font-bold mt-1 ${
-                product.isActive === "ACTIVE"
-                  ? "text-emerald-900 dark:text-emerald-200"
-                  : "text-red-900 dark:text-red-200"
-              }`}
+              className={`text-2xl font-bold mt-1 ${product.isActive === "ACTIVE"
+                ? "text-emerald-900 dark:text-emerald-200"
+                : "text-red-900 dark:text-red-200"
+                }`}
             >
               {product.isActive === "ACTIVE" ? "Active" : "Inactive"}
             </p>
@@ -132,6 +129,9 @@ function StockOverviewDisplay({
   const lowStockVariants =
     product.variants?.filter((v) => (v.stock || 0) < 10).length || 0;
 
+  const totalStockActive =
+    product.variants?.filter((v) => v.isActive).reduce((sum: number, v) => sum + (v.stock || 0), 0) || 0;
+
   return (
     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
@@ -146,6 +146,13 @@ function StockOverviewDisplay({
         </span>
         <span className="text-sm text-blue-600 dark:text-blue-400">
           {product.unit || "units"}
+        </span>
+        |
+        <span className="text-3xl font-bold text-blue-900 dark:text-blue-200">
+          {totalStockActive}
+        </span>
+        <span className="text-sm text-blue-600 dark:text-blue-400">
+          Active {product.unit || "units"}
         </span>
       </div>
       {lowStockVariants > 0 && (
@@ -358,6 +365,9 @@ function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
             <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
               SKU
             </th>
+            <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+              Barcode
+            </th>
             <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
               Stock
             </th>
@@ -378,20 +388,27 @@ function VariantsTable({ product }: { readonly product: ProductWithVariants }) {
           {variants.map((v) => {
             const attrs =
               v.attributes
-                ?.map((a) =>
-                  typeof a.value === "string" ? a.value : a.value?.value,
-                )
+                ?.map((a) => {
+                  const val = a.value;
+                  if (val && typeof val === "object") {
+                    return val.displayValue || val.value;
+                  }
+                  return String(val || "");
+                })
                 .filter((value): value is string => Boolean(value))
                 .join(" / ") || "Default";
             const isLow = (v.stock ?? 0) < 10;
 
             return (
               <tr key={v.id} className="hover:bg-muted/20 transition-colors">
-                <td className="px-3 py-2 font-medium text-foreground">
+                <td className="px-3 py-2 font-medium text-xs text-foreground">
                   {attrs}
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                   {v.sku}
+                </td>
+                <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
+                  {v.barcode}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <span

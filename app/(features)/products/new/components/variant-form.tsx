@@ -90,6 +90,7 @@ export function VariantForm() {
           attributeName: attribute.name,
           valueId,
           value: value?.value || "",
+          displayValue: value?.displayValue || value?.value || "",
         };
       });
     });
@@ -104,7 +105,7 @@ export function VariantForm() {
       return {
         sku: `${productSku}-${skuSuffix}`,
         barcode: "",
-        variantName: combination.map((attr) => attr.value).join(" / "),
+        variantName: combination.map((attr) => attr.displayValue).join(" / "),
         costPrice: defaultPrices.costPrice,
         sellingPrice: defaultPrices.sellingPrice,
         stock: defaultPrices.stock,
@@ -126,11 +127,29 @@ export function VariantForm() {
         const currentFormVariants = watch("variants") || [];
 
         const variantsForForm = computedVariants.map((v) => {
-          const existing = currentFormVariants.find((ev) => ev.sku === v.sku);
+          // Match existing variant by attribute combination instead of just SKU.
+          // This ensures variants keep their data even if their SKU was customized.
+          const existing = currentFormVariants.find((ev) => {
+            if (!ev.attributes || ev.attributes.length !== v.attributes.length) {
+              return ev.sku === v.sku;
+            }
+
+            const evValueIds = [...ev.attributes]
+              .map((a: { valueId?: number | null }) => a.valueId)
+              .filter((id) => id != null)
+              .sort();
+            const computedValueIds = [...v.attributes]
+              .map((a) => a.valueId)
+              .sort();
+
+            if (evValueIds.length !== computedValueIds.length) return false;
+
+            return evValueIds.every((id, index) => id === computedValueIds[index]);
+          });
 
           return {
             id: existing?.id,
-            sku: v.sku,
+            sku: existing?.sku ?? v.sku, // Prefer existing SKU if it was customized
             barcode: existing?.barcode ?? null,
             costPrice: existing ? existing.costPrice : new Decimal(v.costPrice),
             sellingPrice: existing

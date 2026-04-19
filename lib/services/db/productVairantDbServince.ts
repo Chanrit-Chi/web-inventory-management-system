@@ -39,6 +39,8 @@ const selectVariantListFields = {
         select: {
           id: true,
           value: true,
+          displayValue: true,
+          colorHex: true,
           attributeId: true,
           attribute: {
             select: {
@@ -95,6 +97,8 @@ const selectVariantDetailFields = {
         select: {
           id: true,
           value: true,
+          displayValue: true,
+          colorHex: true,
           attributeId: true,
           attribute: {
             select: {

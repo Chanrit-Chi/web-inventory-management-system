@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Decimal from "decimal.js";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +33,7 @@ import { useGetCustomers } from "@/hooks/useCustomer";
 import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
 import { useSaleMutations } from "@/hooks/useSale";
 import { lookupVariantByCode, normalizeScannedCode } from "@/lib/barcode-scan";
-import { usePhysicalBarcodeScanner } from "@/hooks/usePhysicalBarcodeScanner";
+import { BarcodeScannerInput } from "@/components/barcode-scanner-input";
 import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import type { OrderWithDetails, Product } from "@/schemas/type-export.schema";
 
@@ -84,6 +84,7 @@ type LookupVariant = {
     value?: {
       attribute?: { name?: string | null };
       value?: string | null;
+      displayValue?: string | null;
     };
   }>;
 };
@@ -173,9 +174,9 @@ const getVariantChipLabel = (variant: PosVariant) => {
 
 const getVariantLineLabel = (variant: PosVariant) => {
   const labels: string[] = [];
-  if (variant.sizeLabel) labels.push(`Size: ${variant.sizeLabel}`);
-  if (variant.colorLabel) labels.push(`Color: ${variant.colorLabel}`);
-  return labels.length > 0 ? labels.join(" · ") : "Default variant";
+  if (variant.sizeLabel) labels.push(variant.sizeLabel);
+  if (variant.colorLabel) labels.push(variant.colorLabel);
+  return labels.length > 0 ? labels.join(" / ") : "Default variant";
 };
 
 const getSizeOptions = (variants: PosVariant[]): VariantOption[] => {
@@ -255,10 +256,6 @@ const isColorDisabled = (
 
 function PosPageContent() {
   const [search, setSearch] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
-  const didAutoFocusRef = useRef(false);
-  const isProcessingRef = useRef(false); // prevents concurrent scan submissions
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
     Record<string, number>
@@ -291,14 +288,6 @@ function PosPageContent() {
   const { data: paymentMethods, isLoading: loadingPaymentMethods } =
     useGetPaymentMethods();
   const { addSale } = useSaleMutations();
-  const { can, isPending: permissionPending } = usePermission();
-  const canUseScanner = !permissionPending && can("barcode:read");
-
-  useEffect(() => {
-    if (!canUseScanner || didAutoFocusRef.current) return;
-    barcodeInputRef.current?.focus();
-    didAutoFocusRef.current = true;
-  }, [canUseScanner]);
 
   const products = useMemo<PosProduct[]>(() => {
     const rows =
@@ -514,14 +503,13 @@ function PosPageContent() {
     const labels =
       variant.attributes
         ?.map((attr) => {
-          const name = attr.value?.attribute?.name;
-          const value = attr.value?.value;
-          if (!name || !value) return null;
-          return `${name}: ${value}`;
+          const trimmedDisplayValue = attr.value?.displayValue?.trim();
+          const value = trimmedDisplayValue || attr.value?.value;
+          return value || null;
         })
         .filter((item): item is string => Boolean(item)) ?? [];
 
-    return labels.length > 0 ? labels.join(" · ") : "Default variant";
+    return labels.length > 0 ? labels.join(" / ") : "Default variant";
   };
 
   const addLookupVariantToCart = (variant: LookupVariant) => {
@@ -585,51 +573,29 @@ function PosPageContent() {
     toast.success("Scanned product added");
   };
 
-  const submitBarcodeLookup = async (rawCode: string) => {
-    if (!canUseScanner) {
-      toast.error("You do not have permission to use barcode scanner");
-      return;
-    }
-    // Lock: prevent concurrent submissions (double-scan guard)
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
-
+  const handleBarcodeScan = async (rawCode: string) => {
     const code = normalizeScannedCode(rawCode);
-    if (!code) {
-      isProcessingRef.current = false;
+    if (!code) return;
+
+    const variant = await lookupVariantByCode<LookupVariant & { isActive?: boolean; product?: { isActive?: boolean } }>(code);
+
+    if (!variant) {
+      toast.error("No product variant found for scanned code");
       return;
     }
 
-    setIsScanning(true);
-    try {
-      const variant = await lookupVariantByCode<LookupVariant>(code);
-
-      if (!variant) {
-        toast.error("No product variant found for scanned code");
-        return;
-      }
-
-      addLookupVariantToCart(variant);
-      // Clear the barcode input via DOM ref (input is uncontrolled)
-      if (barcodeInputRef.current) barcodeInputRef.current.value = "";
-      barcodeInputRef.current?.focus();
-    } finally {
-      setIsScanning(false);
-      // Release lock after a short delay so rapid re-scans still work
-      setTimeout(() => { isProcessingRef.current = false; }, 300);
+    if (variant.isActive === false) {
+      toast.error("This product variant is inactive and cannot be sold");
+      return;
     }
-  };
 
-  // Physical HID barcode scanner — listens at document level.
-  // Placed AFTER submitBarcodeLookup so the closure is always current.
-  usePhysicalBarcodeScanner({
-    onScan: (code) => {
-      void submitBarcodeLookup(code);
-    },
-    enabled: canUseScanner,
-    inputRef: barcodeInputRef,
-    keepFocus: true,
-  });
+    if (variant.product && variant.product.isActive === false) {
+      toast.error("This product is inactive and cannot be sold");
+      return;
+    }
+
+    addLookupVariantToCart(variant);
+  };
 
   const checkout = () => {
     if (!customerId || !paymentMethodId || cart.length === 0) {
@@ -693,41 +659,13 @@ function PosPageContent() {
               </div>
             </div>
 
-            {canUseScanner && (
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex-1 min-w-52 sm:max-w-sm">
-                  <Input
-                    ref={barcodeInputRef}
-                    defaultValue=""
-                    placeholder="Scan barcode or SKU"
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const val = barcodeInputRef.current?.value?.trim() ?? "";
-                      if (val) {
-                        if (barcodeInputRef.current) barcodeInputRef.current.value = "";
-                        void submitBarcodeLookup(val);
-                      }
-                    }}
-                    disabled={isScanning}
-                  >
-                    {isScanning ? "..." : "Scan"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {!permissionPending && !canUseScanner && (
-              <p className="text-xs text-muted-foreground">
-                You don&apos;t have permission (`barcode:read`) to use scanner
-                controls.
-              </p>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <BarcodeScannerInput
+                onScan={handleBarcodeScan}
+                placeholder="Scan barcode or SKU"
+                className="w-full pl-9 pr-9 bg-muted/30 focus-visible:ring-1 cursor-default min-w-52 sm:max-w-sm"
+              />
+            </div>
           </div>
 
           {loadingProducts ? (
@@ -742,11 +680,10 @@ function PosPageContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => setSelectedCategory(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                        isActive
+                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${isActive
                           ? "bg-card border border-border shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       {tab.name}
                     </button>
@@ -841,13 +778,12 @@ function PosPageContent() {
                                           selectSize(product, size.key)
                                         }
                                         disabled={disabled}
-                                        className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 flex items-center gap-1.5 ${
-                                          isSelected
+                                        className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 flex items-center gap-1.5 ${isSelected
                                             ? "bg-primary text-primary-foreground border-primary shadow-md scale-105 z-10 font-bold"
                                             : disabled
                                               ? "bg-muted/30 text-muted-foreground/40 border-muted-foreground/5 cursor-not-allowed"
                                               : "bg-background/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                                        }`}
+                                          }`}
                                       >
                                         {isSelected && <Check className="size-3" />}
                                         {size.label}
@@ -873,43 +809,42 @@ function PosPageContent() {
                                         : undefined,
                                     );
                                     const isSelected =
-                                      selectedColorKey === color.key;                                     return (
-                                      <button
-                                        key={color.key}
-                                        type="button"
-                                        onClick={() =>
-                                          selectColor(product, color.key)
-                                        }
-                                        disabled={disabled}
-                                        className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 inline-flex items-center gap-2 ${
-                                          isSelected
-                                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105 z-10 font-bold"
-                                            : disabled
-                                              ? "bg-muted/30 text-muted-foreground/40 border-muted-foreground/5 cursor-not-allowed"
-                                              : "bg-background/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                                        }`}
-                                      >
-                                        <div className="relative">
-                                          <span
-                                            className="block size-3 rounded-full border border-black/10"
-                                            style={
-                                              color.colorHex
-                                                ? {
+                                      selectedColorKey === color.key; return (
+                                        <button
+                                          key={color.key}
+                                          type="button"
+                                          onClick={() =>
+                                            selectColor(product, color.key)
+                                          }
+                                          disabled={disabled}
+                                          className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all duration-200 inline-flex items-center gap-2 ${isSelected
+                                              ? "bg-primary text-primary-foreground border-primary shadow-md scale-105 z-10 font-bold"
+                                              : disabled
+                                                ? "bg-muted/30 text-muted-foreground/40 border-muted-foreground/5 cursor-not-allowed"
+                                                : "bg-background/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                            }`}
+                                        >
+                                          <div className="relative">
+                                            <span
+                                              className="block size-3 rounded-full border border-black/10"
+                                              style={
+                                                color.colorHex
+                                                  ? {
                                                     backgroundColor:
                                                       color.colorHex,
                                                   }
-                                                : undefined
-                                            }
-                                          />
-                                          {isSelected && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                              <Check className="size-2 text-primary-foreground drop-shadow-sm" />
-                                            </div>
-                                          )}
-                                        </div>
-                                        <span>{color.label}</span>
-                                      </button>
-                                    );
+                                                  : undefined
+                                              }
+                                            />
+                                            {isSelected && (
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <Check className="size-2 text-primary-foreground drop-shadow-sm" />
+                                              </div>
+                                            )}
+                                          </div>
+                                          <span>{color.label}</span>
+                                        </button>
+                                      );
 
                                   })}
                                 </div>
@@ -928,24 +863,23 @@ function PosPageContent() {
                                         variant.variantId,
                                       )
                                     }
-                                    className={`text-[10px] px-2 py-1 rounded-full border ${
-                                      selectedVariant?.variantId ===
-                                      variant.variantId
+                                    className={`text-[10px] px-2 py-1 rounded-full border ${selectedVariant?.variantId ===
+                                        variant.variantId
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-background hover:bg-accent"
-                                    }`}
+                                      }`}
                                   >
                                     {getVariantChipLabel(variant)}
                                   </button>
                                 ))}
                               </div>
                             )}
-                             <p className="text-[10px] text-muted-foreground pt-1">
-                               Selected: {selectedVariant ? (
-                                 <span className="text-primary font-bold">{getVariantChipLabel(selectedVariant)}</span>
-                               ) : "None"}
-                             </p>
-                           </div>
+                            <p className="text-[10px] text-muted-foreground pt-1">
+                              Selected: {selectedVariant ? (
+                                <span className="text-primary font-bold">{getVariantChipLabel(selectedVariant)}</span>
+                              ) : "None"}
+                            </p>
+                          </div>
                         ) : (
                           <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 w-max">
                             No variants available

@@ -92,7 +92,7 @@ export default function ProductForm({
       productAttributes: initialData?.productAttributes || [],
       productType:
         initialData?.attributeSelections &&
-        initialData.attributeSelections.length > 0
+          initialData.attributeSelections.length > 0
           ? "variable"
           : "single",
     },
@@ -434,17 +434,6 @@ export default function ProductForm({
                 </h2>
                 <VariantForm />
               </section>
-
-              <Separator className="my-6" />
-
-              {/* Supplier Section */}
-              <section>
-                <h2 className="text-lg font-semibold mb-4">Supplier</h2>
-                <div className="text-sm text-gray-500">
-                  Additional details section is under construction.
-                </div>
-              </section>
-
               {/* Action Buttons */}
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
                 <Button

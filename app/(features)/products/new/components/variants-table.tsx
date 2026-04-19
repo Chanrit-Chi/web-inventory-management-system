@@ -44,31 +44,31 @@ export function VariantsTable({
           <table className="w-full">
             <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap min-w-[150px]">
                   SKU
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Barcode
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Variant
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Cost
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Price
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Stock
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Reorder
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Reserved
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">
                   Active
                 </th>
               </tr>
@@ -78,7 +78,7 @@ export function VariantsTable({
                 const currentVariant = currentVariants[index];
                 return (
                   <tr key={variant.sku} className="hover:bg-muted/40">
-                    <td className="px-4 py-3 text-sm text-foreground font-mono">
+                    <td className="px-4 py-3 text-sm text-foreground font-mono whitespace-nowrap">
                       {variant.sku}
                     </td>
                     <td className="px-4 py-3">
@@ -91,10 +91,15 @@ export function VariantsTable({
                         onChange={(e) =>
                           onUpdateVariantField(index, "barcode", e.target.value)
                         }
-                        className="w-36 h-8 text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="w-36 h-8 text-xs"
                       />
                     </td>
-                    <td className="px-4 py-3 text-sm text-foreground">
+                    <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
                       {variant.variantName}
                     </td>
                     <td className="px-4 py-3">
@@ -111,7 +116,7 @@ export function VariantsTable({
                             Number.parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="w-28 h-8 text-sm"
+                        className="w-28 h-8 text-xs"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -128,7 +133,7 @@ export function VariantsTable({
                             Number.parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="w-28 h-8 text-sm"
+                        className="w-28 h-8 text-xs"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -141,7 +146,7 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-28 h-8 text-sm"
+                        className="w-28 h-8 text-xs"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -156,7 +161,7 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-28 h-8 text-sm"
+                        className="w-28 h-8 text-xs"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -171,7 +176,7 @@ export function VariantsTable({
                             Number.parseInt(e.target.value) || 0,
                           )
                         }
-                        className="w-28 h-8 text-sm"
+                        className="w-28 h-8 text-xs"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">

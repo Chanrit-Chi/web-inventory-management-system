@@ -1,13 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useGetProducts } from "@/hooks/useProduct";
-import { usePermission } from "@/hooks/usePermission";
-import { Input } from "@/components/ui/input";
 import { lookupVariantByCode } from "@/lib/barcode-scan";
-import { usePhysicalBarcodeScanner } from "@/hooks/usePhysicalBarcodeScanner";
+import { BarcodeScannerInput } from "@/components/barcode-scanner-input";
 import { Product } from "@/schemas/type-export.schema";
 
 export interface ProductForSale {
@@ -50,8 +48,10 @@ const getAttributeDisplay = (value: unknown): string => {
     const obj = value as {
       attribute?: { name?: string };
       value?: string;
+      displayValue?: string;
     };
-    return `${obj.attribute?.name}: ${obj.value}`;
+    const val = obj.displayValue || obj.value;
+    return String(val || "");
   }
   return "";
 };
@@ -77,7 +77,7 @@ const processProductsForSale = (products: Product[]): ProductForSale[] => {
           variant.attributes
             ?.map((attr) => getAttributeDisplay(attr.value))
             .filter(Boolean)
-            .join(" ") || "";
+            .join(" / ") || "";
 
         // Create display name: "Product Name - Color: Red Size: M"
         const displayName = variantDescription
@@ -110,19 +110,6 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
   const [searchProduct, setSearchProduct] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showProductSearch, setShowProductSearch] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
-  const didAutoFocusRef = useRef(false);
-  const isProcessingRef = useRef(false);
-  const { can, isPending: permissionPending } = usePermission();
-  const canUseScanner = !permissionPending && can("barcode:read");
-
-  useEffect(() => {
-    if (!canUseScanner || didAutoFocusRef.current) return;
-    barcodeInputRef.current?.focus();
-    didAutoFocusRef.current = true;
-  }, [canUseScanner]);
-
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -189,6 +176,7 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
       value?: {
         attribute?: { name?: string | null };
         value?: string | null;
+        displayValue?: string | null;
       };
     }>;
   }): ProductForSale | null => {
@@ -203,13 +191,13 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
 
     const variantDescription =
       variant.attributes
-        ?.map((attr) =>
-          attr.value
-            ? `${attr.value.attribute?.name}: ${attr.value.value}`
-            : "",
-        )
+        ?.map((attr) => {
+          const displayValue = attr.value?.displayValue?.trim();
+          const attributeValue = displayValue || attr.value?.value;
+          return attributeValue || "";
+        })
         .filter(Boolean)
-        .join(" ") || "";
+        .join(" / ") || "";
 
     const displayName = variantDescription
       ? `${variant.product.name} - ${variantDescription}`
@@ -232,66 +220,41 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
     };
   };
 
-  const handleBarcodeSubmit = async (codeOverride?: string) => {
-    if (!canUseScanner) {
-      toast.error("You do not have permission to use barcode scanner");
-      return;
-    }
-    // Lock: prevent concurrent submissions
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+  const handleBarcodeScan = async (code: string) => {
+    const variant = await lookupVariantByCode<{ isActive?: boolean; product?: { isActive?: boolean } }>(code);
 
-    // Read code from override (scanner) or DOM ref (manual)
-    const code = (codeOverride ?? barcodeInputRef.current?.value ?? "").trim();
-    if (!code) {
-      isProcessingRef.current = false;
+    if (!variant) {
+      toast.error("No product variant found for scanned code");
       return;
     }
 
-    setIsScanning(true);
-    try {
-      const variant = await lookupVariantByCode(code);
-
-      if (!variant) {
-        toast.error("No product variant found for scanned code");
-        return;
-      }
-
-      const product = variantToProductForSale(
-        variant as Parameters<typeof variantToProductForSale>[0],
-      );
-
-      if (!product) {
-        toast.error("Unable to map scanned item to sale product");
-        return;
-      }
-
-      if (product.stock <= 0) {
-        toast.error(`${product.name} is out of stock!`);
-        return;
-      }
-
-      handleAddProduct(product);
-      toast.success("Scanned product added");
-      // Clear the DOM input directly (uncontrolled)
-      if (barcodeInputRef.current) barcodeInputRef.current.value = "";
-      barcodeInputRef.current?.focus();
-    } finally {
-      setIsScanning(false);
-      setTimeout(() => { isProcessingRef.current = false; }, 300);
+    if (variant.isActive === false) {
+      toast.error("This product variant is inactive and cannot be sold");
+      return;
     }
+
+    if (variant.product && variant.product.isActive === false) {
+      toast.error("This product is inactive and cannot be sold");
+      return;
+    }
+
+    const product = variantToProductForSale(
+      variant as Parameters<typeof variantToProductForSale>[0],
+    );
+
+    if (!product) {
+      toast.error("Unable to map scanned item to sale product");
+      return;
+    }
+
+    if (product.stock <= 0) {
+      toast.error(`${product.name} is out of stock!`);
+      return;
+    }
+
+    handleAddProduct(product);
+    toast.success("Scanned product added");
   };
-
-  // Physical HID barcode scanner — placed AFTER handleBarcodeSubmit
-  // so the closure always references the latest function.
-  usePhysicalBarcodeScanner({
-    onScan: (code) => {
-      void handleBarcodeSubmit(code);
-    },
-    enabled: canUseScanner,
-    inputRef: barcodeInputRef,
-    keepFocus: true,
-  });
 
   const renderSearchResults = () => {
     if (isSearching) {
@@ -321,11 +284,10 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
               }
               handleAddProduct(product);
             }}
-            className={`w-full px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground border-b last:border-b-0 transition-colors ${
-              product.stock <= 0
-                ? "opacity-60 cursor-not-allowed bg-red-50/10"
-                : ""
-            }`}
+            className={`w-full px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground border-b last:border-b-0 transition-colors ${product.stock <= 0
+              ? "opacity-60 cursor-not-allowed bg-red-50/10"
+              : ""
+              }`}
           >
             <div className="flex gap-3 items-start">
               {product.image && (
@@ -394,32 +356,7 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h2 className="text-lg font-semibold shrink-0">Products</h2>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          {canUseScanner && (
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <Input
-                ref={barcodeInputRef}
-                type="text"
-                defaultValue=""
-                placeholder="Search barcode or SKU"
-                className="flex-1 sm:w-56 min-w-40"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const val = barcodeInputRef.current?.value?.trim() ?? "";
-                  if (val) {
-                    if (barcodeInputRef.current) barcodeInputRef.current.value = "";
-                    void handleBarcodeSubmit(val);
-                  }
-                }}
-                disabled={isScanning}
-                className="px-3"
-              >
-                {isScanning ? "..." : "Search"}
-              </Button>
-            </div>
-          )}
+          <BarcodeScannerInput onScan={handleBarcodeScan} />
           <Button
             onClick={() => setShowProductSearch(!showProductSearch)}
             className="flex-1 sm:flex-none items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
@@ -428,13 +365,6 @@ export const ProductSearch = ({ onAddProduct }: ProductSearchProps) => {
           </Button>
         </div>
       </div>
-
-      {!permissionPending && !canUseScanner && (
-        <p className="mb-4 text-xs text-muted-foreground">
-          You don&apos;t have permission (`barcode:read`) to use scanner
-          controls.
-        </p>
-      )}
 
       {showProductSearch && (
         <div className="mb-4 relative">

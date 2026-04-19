@@ -38,6 +38,7 @@ interface SaleVariantAttribute {
   value?: {
     attribute?: { name?: string | null } | null;
     value?: string | null;
+    displayValue?: string | null;
   } | null;
 }
 
@@ -112,16 +113,13 @@ const buildVariantDescription = (variant?: SaleVariant | null) => {
 
   const parts = variant.attributes
     .map((attr) => {
-      const attributeName = attr.value?.attribute?.name;
-      const attributeValue = attr.value?.value;
-      if (!attributeName || !attributeValue) {
-        return "";
-      }
-      return `${attributeName}: ${attributeValue}`;
+      const displayValue = attr.value?.displayValue?.trim();
+      const attributeValue = displayValue || attr.value?.value;
+      return attributeValue || "";
     })
     .filter(Boolean);
 
-  return parts.join(" ");
+  return parts.join(" / ");
 };
 
 const mapSaleDetailsToOrderDetails = (

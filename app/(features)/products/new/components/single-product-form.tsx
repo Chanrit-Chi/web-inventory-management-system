@@ -30,6 +30,11 @@ export function SingleProductForm({
           onChange={(e) => {
             updateSingleVariant({ barcode: e.target.value || null });
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
         />
       </FormField>
 
