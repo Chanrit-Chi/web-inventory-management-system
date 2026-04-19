@@ -99,6 +99,12 @@ const ResourceMatrix = {
     MANAGER: "admin",
     SELLER: "none",
   },
+  payment_method: {
+    SUPER_ADMIN: "admin",
+    ADMIN: "admin",
+    MANAGER: "admin",
+    SELLER: "none",
+  },
 } as const satisfies Record<string, Record<Role, AccessLevel>>;
 
 // ─── Feature Permissions (non-CRUD) ──────────────────────────────────────────
@@ -110,7 +116,6 @@ export type FeaturePermission =
   | "dashboard:sale"
   | "pos:read"
   | "barcode:read"
-  | "report:read"
   | "export:read"
   | "import:read"
   | "permission:admin";
@@ -122,7 +127,6 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
     "permission:admin",
@@ -133,7 +137,6 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
     "permission:admin",
@@ -143,11 +146,10 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
   ],
-  SELLER: ["dashboard:sale", "pos:read", "barcode:read", "report:read"],
+  SELLER: ["dashboard:sale", "pos:read", "barcode:read"],
 };
 
 // ─── Permission Types (auto-derived from matrix) ──────────────────────────────

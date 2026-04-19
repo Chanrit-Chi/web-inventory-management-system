@@ -88,20 +88,20 @@ function ActionCell({ row }: { readonly row: { original: InvoiceRow } }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={handleOpenView}
           title="View Invoice"
         >
-          <Eye className="h-4 w-4 text-sky-600" />
+          <Eye className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
           onClick={handleOpenPrint}
           title="Print Invoice"
         >
-          <Printer className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <Printer className="h-4 w-4" />
         </Button>
       </div>
 

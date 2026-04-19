@@ -24,51 +24,56 @@ function ActionsCell({ expense }: { readonly expense: Expense }) {
   const { can } = usePermission();
 
   return (
-    <>
-      <div className="flex justify-center items-center">
-        <Eye
-          className="size-5 cursor-pointer hover:text-blue-600 transition-colors"
-          onClick={() => setViewOpen(true)}
-        />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <SquarePen
-                className={`size-5 transition-colors ${
-                  can("expense:update")
-                    ? "cursor-pointer hover:text-green-600"
-                    : "opacity-40 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  can("expense:update") ? () => setUpdateOpen(true) : undefined
-                }
-              />
-            </span>
-          </TooltipTrigger>
-          {!can("expense:update") && (
-            <TooltipContent>No permission</TooltipContent>
-          )}
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <Trash2
-                className={`size-5 transition-colors ${
-                  can("expense:delete")
-                    ? "text-red-600 cursor-pointer hover:text-red-800"
-                    : "text-red-300 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  can("expense:delete") ? () => setDeleteOpen(true) : undefined
-                }
-              />
-            </span>
-          </TooltipTrigger>
-          {!can("expense:delete") && (
-            <TooltipContent>No permission</TooltipContent>
-          )}
-        </Tooltip>
-      </div>
+    <div className="flex items-center justify-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+        onClick={() => setViewOpen(true)}
+        title="View Expense"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!can("expense:update")}
+              className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+              onClick={() => setUpdateOpen(true)}
+              title="Edit Expense"
+            >
+              <SquarePen className="h-4 w-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!can("expense:update") && (
+          <TooltipContent>No permission</TooltipContent>
+        )}
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!can("expense:delete")}
+              className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              onClick={() => setDeleteOpen(true)}
+              title="Delete Expense"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!can("expense:delete") && (
+          <TooltipContent>No permission</TooltipContent>
+        )}
+      </Tooltip>
 
       <ViewExpenseDialog
         expense={expense}
@@ -85,7 +90,7 @@ function ActionsCell({ expense }: { readonly expense: Expense }) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
       />
-    </>
+    </div>
   );
 }
 

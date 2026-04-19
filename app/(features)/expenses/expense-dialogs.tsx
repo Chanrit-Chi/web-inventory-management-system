@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { SquarePen, Plus, Trash2 } from "lucide-react";
 import {
   Expense,
   ExpenseCategory,
@@ -905,21 +905,21 @@ export function ManageExpenseCategoriesDialog({
                           <div className="flex gap-1">
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
                               onClick={() => startEdit(category)}
                               disabled={!canUpdate}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <SquarePen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </Button>
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
                               onClick={() => setDeleteTarget(category)}
                               disabled={!canDelete}
                             >
-                              <Trash2 className="h-4 w-4 text-red-600" />
+                              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                             </Button>
                           </div>
                         </div>

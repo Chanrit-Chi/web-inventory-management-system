@@ -60,147 +60,146 @@ function ActionsCell({ user }: { readonly user: User }) {
   const canManagePermissionTarget = can("permission:admin") && !isCurrentUser;
 
   return (
-    <>
-      <div className="flex justify-center items-center">
-        <Eye
-          className="size-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-blue-500 dark:text-blue-400/80"
-          onClick={() => setViewOpen(true)}
-        />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <SquarePen
-                className={`size-5 transition-colors ${
-                  canEditTargetUser
-                    ? "cursor-pointer text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
-                    : "opacity-40 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  canEditTargetUser ? () => setUpdateOpen(true) : undefined
-                }
-              />
-            </span>
-          </TooltipTrigger>
-          {!canEditTargetUser && (
-            <TooltipContent>
-              {isCurrentUser
-                ? "Cannot edit yourself here"
+    <div className="flex items-center justify-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+        onClick={() => setViewOpen(true)}
+        title="View User"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canEditTargetUser}
+              className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+              onClick={() => setUpdateOpen(true)}
+              title="Edit User"
+            >
+              <SquarePen className="h-4 w-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!canEditTargetUser && (
+          <TooltipContent>
+            {isCurrentUser
+              ? "Cannot edit yourself here"
+              : !can("user:update")
+                ? "No permission"
+                : "Cannot edit privileged users"}
+          </TooltipContent>
+        )}
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!(canEditTargetUser && user.isActive)}
+              className="h-8 w-8 p-0 cursor-pointer text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20"
+              onClick={() => setResetPasswordOpen(true)}
+              title="Reset Password"
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {user.isActive
+            ? canEditTargetUser
+              ? "Reset Password"
+              : isCurrentUser
+                ? "Cannot reset your own password here"
                 : !can("user:update")
                   ? "No permission"
-                  : "Cannot edit privileged users"}
-            </TooltipContent>
-          )}
-        </Tooltip>
+                  : "Cannot reset password for privileged users"
+            : "User is deactivated"}
+        </TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canManagePermissionTarget}
+              className="h-8 w-8 p-0 cursor-pointer text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20"
+              onClick={() => setPermissionsOpen(true)}
+              title="Manage Permissions"
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {isCurrentUser
+            ? "Cannot manage your own overrides here"
+            : can("permission:admin")
+              ? "Manage Permissions"
+              : "No permission"}
+        </TooltipContent>
+      </Tooltip>
+
+      {user.isActive ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <KeyRound
-                className={`size-5 transition-colors ${
-                  canEditTargetUser && user.isActive
-                    ? "cursor-pointer text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
-                    : "opacity-40 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  canEditTargetUser && user.isActive
-                    ? () => setResetPasswordOpen(true)
-                    : undefined
-                }
-              />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {user.isActive
-              ? canEditTargetUser
-                ? "Reset Password"
-                : isCurrentUser
-                  ? "Cannot reset your own password here"
-                  : !can("user:update")
-                    ? "No permission"
-                    : "Cannot reset password for privileged users"
-              : "User is deactivated"}
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <Shield
-                className={`size-5 transition-colors ${
-                  canManagePermissionTarget
-                    ? "cursor-pointer text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
-                    : "opacity-40 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  canManagePermissionTarget
-                    ? () => setPermissionsOpen(true)
-                    : undefined
-                }
-              />
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!(canDeleteTargetUser && !isCurrentUser)}
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                onClick={() => setDeactivateOpen(true)}
+                title="Deactivate"
+              >
+                <Ban className="h-4 w-4" />
+              </Button>
             </span>
           </TooltipTrigger>
           <TooltipContent>
             {isCurrentUser
-              ? "Cannot manage your own overrides here"
-              : can("permission:admin")
-                ? "Manage Permissions"
-                : "No permission"}
+              ? "Cannot deactivate yourself"
+              : canDeleteTargetUser
+                ? "Deactivate"
+                : !can("user:delete")
+                  ? "No permission"
+                  : "Cannot deactivate privileged users"}
           </TooltipContent>
         </Tooltip>
-        {user.isActive ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex ml-4">
-                <Ban
-                  className={`size-5 transition-colors ${
-                    canDeleteTargetUser && !isCurrentUser
-                      ? "text-red-500 dark:text-red-400 cursor-pointer hover:text-red-700 dark:hover:text-red-300"
-                      : "text-red-300 dark:text-red-900/40 cursor-not-allowed pointer-events-none"
-                  }`}
-                  onClick={
-                    canDeleteTargetUser && !isCurrentUser
-                      ? () => setDeactivateOpen(true)
-                      : undefined
-                  }
-                />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isCurrentUser
-                ? "Cannot deactivate yourself"
-                : canDeleteTargetUser
-                  ? "Deactivate"
-                  : !can("user:delete")
-                    ? "No permission"
-                    : "Cannot deactivate privileged users"}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex ml-4">
-                <RotateCcw
-                  className={`size-5 transition-colors ${
-                    canEditTargetUser
-                      ? "text-emerald-600 dark:text-emerald-400 cursor-pointer hover:text-emerald-800 dark:hover:text-emerald-200"
-                      : "text-emerald-300 dark:text-emerald-900/40 cursor-not-allowed pointer-events-none"
-                  }`}
-                  onClick={
-                    canEditTargetUser
-                      ? () => setReactivateOpen(true)
-                      : undefined
-                  }
-                />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {canEditTargetUser
-                ? "Reactivate"
-                : !can("user:update")
-                  ? "No permission"
-                  : "Cannot reactivate privileged users"}
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!canEditTargetUser}
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                onClick={() => setReactivateOpen(true)}
+                title="Reactivate"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {canEditTargetUser
+              ? "Reactivate"
+              : !can("user:update")
+                ? "No permission"
+                : "Cannot reactivate privileged users"}
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       <ViewUserDialog user={user} open={viewOpen} onOpenChange={setViewOpen} />
       <UpdateUserDialog
@@ -229,7 +228,7 @@ function ActionsCell({ user }: { readonly user: User }) {
         open={permissionsOpen}
         onOpenChange={setPermissionsOpen}
       />
-    </>
+    </div>
   );
 }
 

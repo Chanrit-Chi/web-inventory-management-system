@@ -25,43 +25,50 @@ function ActionsCell({ unit }: { readonly unit: Unit }) {
 
   return (
     <>
-      <div className="flex justify-center items-center">
-        <Eye
-          className="size-5 cursor-pointer hover:text-blue-600 transition-colors"
+      <div className="flex items-center justify-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={() => setViewOpen(true)}
-        />
+          title="View Unit"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <SquarePen
-                className={`size-5 transition-colors ${
-                  can("unit:update")
-                    ? "cursor-pointer hover:text-green-600"
-                    : "opacity-40 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  can("unit:update") ? () => setUpdateOpen(true) : undefined
-                }
-              />
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!can("unit:update")}
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                onClick={() => setUpdateOpen(true)}
+                title="Edit Unit"
+              >
+                <SquarePen className="h-4 w-4" />
+              </Button>
             </span>
           </TooltipTrigger>
           {!can("unit:update") && (
             <TooltipContent>No permission</TooltipContent>
           )}
         </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex ml-4">
-              <Trash2
-                className={`size-5 transition-colors ${
-                  can("unit:delete")
-                    ? "text-red-600 cursor-pointer hover:text-red-800"
-                    : "text-red-300 cursor-not-allowed pointer-events-none"
-                }`}
-                onClick={
-                  can("unit:delete") ? () => setDeleteOpen(true) : undefined
-                }
-              />
+            <span className="inline-flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!can("unit:delete")}
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                onClick={() => setDeleteOpen(true)}
+                title="Delete Unit"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </span>
           </TooltipTrigger>
           {!can("unit:delete") && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, SquarePen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -42,11 +42,11 @@ function ActionsCell({ supplier }: { readonly supplier: SupplierRow }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={() => setViewOpen(true)}
           title="View Supplier"
         >
-          <Eye className="h-4 w-4 text-sky-600" />
+          <Eye className="h-4 w-4" />
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -55,13 +55,13 @@ function ActionsCell({ supplier }: { readonly supplier: SupplierRow }) {
                 variant="ghost"
                 size="sm"
                 disabled={!can("supplier:update")}
-                className="h-8 w-8 p-0 cursor-pointer"
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                 onClick={
                   can("supplier:update") ? () => setEditOpen(true) : undefined
                 }
                 title="Edit Supplier"
               >
-                <Pencil className="h-4 w-4 text-amber-600" />
+                <SquarePen className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -76,13 +76,13 @@ function ActionsCell({ supplier }: { readonly supplier: SupplierRow }) {
                 variant="ghost"
                 size="sm"
                 disabled={!can("supplier:delete")}
-                className="h-8 w-8 p-0 cursor-pointer"
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 onClick={
                   can("supplier:delete") ? () => setDeleteOpen(true) : undefined
                 }
                 title="Delete Supplier"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>

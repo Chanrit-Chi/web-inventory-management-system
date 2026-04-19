@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, SquarePen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -65,11 +65,11 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={() => setViewOpen(true)}
           title="View Purchase Order"
         >
-          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Eye className="h-4 w-4" />
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -77,7 +77,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed"
                 onClick={() => router.push(`/purchase/edit-order/${order.id}`)}
                 title={
                   order.status === "COMPLETED"
@@ -88,7 +88,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
                   order.status === "COMPLETED" || !can("purchase_order:update")
                 }
               >
-                <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <SquarePen className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -103,7 +103,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
                 variant="ghost"
                 size="sm"
                 disabled={!can("purchase_order:delete")}
-                className="h-8 w-8 p-0 cursor-pointer"
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 onClick={
                   can("purchase_order:delete")
                     ? () => setDeleteOpen(true)
@@ -111,7 +111,7 @@ function ActionsCell({ order }: { readonly order: PurchaseOrderRow }) {
                 }
                 title="Delete Purchase Order"
               >
-                <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>

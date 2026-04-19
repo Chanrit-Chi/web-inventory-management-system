@@ -5,7 +5,7 @@ import {
   ArrowUpDown,
   CircleCheck,
   CircleSlash,
-  Edit,
+  SquarePen,
   Eye,
   MoreHorizontal,
 } from "lucide-react";
@@ -69,7 +69,7 @@ function ActionsCell({ product }: { readonly product: ProductWithVariants }) {
                   disabled={!can("product:update")}
                   onClick={() => router.push(`/products/edit/${product.id}`)}
                 >
-                  <Edit className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <SquarePen className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   Edit Product
                 </DropdownMenuItem>
               </span>

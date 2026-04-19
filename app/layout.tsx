@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Inventory App",
-  description: "Manage your inventory efficiently with our app.",
+  title: "Inventory Master",
+  description: "The ultimate inventory management platform designed for speed, accuracy, and growth.",
 };
 
 export default function RootLayout({

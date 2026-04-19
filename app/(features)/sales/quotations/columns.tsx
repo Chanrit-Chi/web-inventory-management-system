@@ -3,7 +3,7 @@
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
-import { Eye, Edit, Trash, ArrowRightLeft, Printer } from "lucide-react";
+import { Eye, SquarePen, Trash2, ArrowRightLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -98,11 +98,11 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={() => setViewOpen(true)}
           title="View Details"
         >
-          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Eye className="h-4 w-4" />
         </Button>
 
         {/* Edit Quotation */}
@@ -112,7 +112,7 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 cursor-pointer"
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                 asChild={
                   quotation.status !== "CONVERTED" && can("quotation:update")
                 }
@@ -123,12 +123,10 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
               >
                 {quotation.status !== "CONVERTED" && can("quotation:update") ? (
                   <Link href={`/sales/quotations/edit/${quotation.id}`}>
-                    <Edit className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <SquarePen className="h-4 w-4" />
                   </Link>
                 ) : (
-                  <Edit
-                    className={`h-4 w-4 ${quotation.status === "CONVERTED" ? "text-slate-400 dark:text-slate-600" : "text-amber-600 dark:text-amber-400"}`}
-                  />
+                  <SquarePen className="h-4 w-4" />
                 )}
               </Button>
             </span>
@@ -142,14 +140,14 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
           onClick={() => {
             setShouldPrint(true);
             setViewOpen(true);
           }}
           title="Print Quotation"
         >
-          <Printer className="h-4 w-4 text-indigo-600" />
+          <Printer className="h-4 w-4" />
         </Button>
 
         {/* Delete */}
@@ -160,10 +158,10 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
                 variant="ghost"
                 size="sm"
                 disabled={!can("quotation:delete")}
-                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 title="Delete Quotation"
               >
-                <Trash className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -181,7 +179,7 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
                   variant="ghost"
                   size="sm"
                   disabled={!can("quotation:update")}
-                  className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+                  className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                   onClick={
                     can("quotation:update")
                       ? () => setConvertOpen(true)

@@ -5,11 +5,15 @@ import {
   Banknote,
   BookUser,
   ChartNoAxesCombined,
+  CreditCard,
   FileChartColumnIncreasing,
   FolderKanban,
   LayoutDashboard,
+  LayoutGrid,
   NotebookText,
+  Package,
   PackageSearch,
+  Settings2,
   Shield,
   WalletCards,
   Warehouse,
@@ -119,11 +123,11 @@ const data = {
           url: "/products/attributes",
           permission: "product:read",
         },
-        {
-          title: "Barcode",
-          url: "/products/barcode",
-          permission: "barcode:read",
-        },
+        // {
+        //   title: "Barcode",
+        //   url: "/products/barcode",
+        //   permission: "barcode:read",
+        // },
       ],
     },
     {
@@ -136,11 +140,11 @@ const data = {
           url: "/stock/adjust",
           permission: "stock:update",
         },
-        {
-          title: "New Stock",
-          url: "/stock/new",
-          permission: "stock:create",
-        },
+        // {
+        //   title: "New Stock",
+        //   url: "/stock/new",
+        //   permission: "stock:create",
+        // },
       ],
     },
 
@@ -184,6 +188,18 @@ const data = {
         },
       ],
     },
+    {
+      title: "Others",
+      url: "#",
+      icon: LayoutGrid,
+      items: [
+        {
+          title: "Payment Methods",
+          url: "/payment-method",
+          permission: "payment_method:read",
+        },
+      ],
+    }
   ],
   navSecondary: [
     {
@@ -192,51 +208,7 @@ const data = {
       icon: Shield,
       permission: "permission:admin",
     },
-    {
-      title: "Sale Report",
-      url: "/sale/report",
-      icon: ChartNoAxesCombined,
-      permission: "report:read",
-    },
-    {
-      title: "Expense Report",
-      url: "/expense/report",
-      icon: FileChartColumnIncreasing,
-      permission: "report:read",
-    },
-    {
-      title: "Stock Report",
-      url: "/stock/report",
-      icon: FolderKanban,
-      permission: "report:read",
-    },
-    {
-      title: "Product Report",
-      url: "/product/report",
-      icon: FileChartColumnIncreasing,
-      permission: "report:read",
-    },
   ],
-  // Reports: [
-  //   {
-  //     name: "Sale Report",
-  //     url: "/sale/report",
-  //     icon: ChartNoAxesCombined,
-  //     permission: "report:read",
-  //   },
-  //   {
-  //     name: "Stock Report",
-  //     url: "/stock/report",
-  //     icon: FolderKanban,
-  //     permission: "report:read",
-  //   },
-  //   {
-  //     name: "Product Report",
-  //     url: "/product/report",
-  //     icon: FileChartColumnIncreasing,
-  //     permission: "report:read",
-  //   },
-  // ],
 };
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
@@ -281,12 +253,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg ">
-                  <NotebookText className="size-4" />
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
+                  <Package className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">CC Inventory</span>
-                  <span className="truncate text-xs">Inventory Management</span>
+                  <span className="truncate font-bold text-base tracking-tight">
+                    Inventory <span className="text-primary">Master</span>
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -107,6 +107,12 @@ const ResourceMatrix = {
     MANAGER: "admin",
     SELLER: "none",
   },
+  payment_method: {
+    SUPER_ADMIN: "admin",
+    ADMIN: "admin",
+    MANAGER: "admin",
+    SELLER: "none",
+  },
 } as const satisfies Record<string, Record<Role, AccessLevel>>;
 
 type FeaturePermission =
@@ -115,7 +121,6 @@ type FeaturePermission =
   | "dashboard:sale"
   | "pos:read"
   | "barcode:read"
-  | "report:read"
   | "export:read"
   | "import:read"
   | "permission:admin";
@@ -127,7 +132,6 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
     "permission:admin",
@@ -138,7 +142,6 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
     "permission:admin",
@@ -148,11 +151,10 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
   ],
-  SELLER: ["dashboard:sale", "pos:read", "barcode:read", "report:read"],
+  SELLER: ["dashboard:sale", "pos:read", "barcode:read"],
 };
 
 // ─── Seed Script ──────────────────────────────────────────────────────────────
@@ -204,7 +206,6 @@ async function main() {
     "dashboard:sale",
     "pos:read",
     "barcode:read",
-    "report:read",
     "export:read",
     "import:read",
     "permission:admin",
@@ -216,7 +217,6 @@ async function main() {
     "dashboard:sale": "Access Sales Dashboard",
     "pos:read": "Access Point of Sale",
     "barcode:read": "Access Barcode Generator",
-    "report:read": "View Reports",
     "export:read": "Export Data (XLSX/PDF)",
     "import:read": "Import Data (XLSX)",
     "permission:admin": "Manage Permissions",

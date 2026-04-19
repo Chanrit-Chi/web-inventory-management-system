@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Printer, CheckCircle2, Edit, Eye } from "lucide-react";
+import { ArrowUpDown, Printer, CheckCircle2, SquarePen, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrderWithRelations } from "@/schemas/type-export.schema";
 import { useRouter } from "next/navigation";
@@ -62,18 +62,18 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="h-8 w-8 p-0 cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
           onClick={() => setViewOpen(true)}
           title="View Order"
         >
-          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Eye className="h-4 w-4" />
         </Button>
 
         {/* View Invoice */}
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 dark:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          className="h-8 w-8 p-0 cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
           onClick={handleOpenView}
           title="View Invoice"
         >
@@ -88,11 +88,11 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
                 variant="ghost"
                 size="sm"
                 disabled={order.status === "COMPLETED" || !can("sale:update")}
-                className="h-8 w-8 p-0 cursor-pointer"
+                className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                 onClick={() => router.push(`/sales/edit/${order.id}`)}
                 title="Edit Order"
               >
-                <Edit className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <SquarePen className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>
