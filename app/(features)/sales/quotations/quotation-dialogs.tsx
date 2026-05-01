@@ -34,8 +34,8 @@ import { Switch } from "@/components/ui/switch";
 import { QuotationWithItems } from "@/schemas/type-export.schema";
 import { useReactToPrint } from "react-to-print";
 import { format } from "date-fns";
-import { DocumentLayout } from "@/app/(features)/sales/components/documents/DocumentLayout";
-import { DocumentTable } from "@/app/(features)/sales/components/documents/DocumentTable";
+import { DocumentLayout } from "@/components/sales/documents/DocumentLayout";
+import { DocumentTable } from "@/components/sales/documents/DocumentTable";
 
 type Quotation = QuotationWithItems;
 
@@ -168,10 +168,17 @@ export function ConvertQuotationDialog({
 }
 const QuotationContent = forwardRef<
   HTMLDivElement,
-  { quotation: Quotation}
->(({ quotation}, ref) => {
+  { quotation: Quotation }
+>(({ quotation }, ref) => {
   return (
-    <div ref={ref}>
+    <div ref={ref} className="relative">
+      {quotation.status === "REVISED" && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center overflow-hidden pointer-events-none print:flex">
+          <div className="rotate-[-45deg] text-[120px] font-black text-red-500/15 select-none whitespace-nowrap">
+            REVISED
+          </div>
+        </div>
+      )}
       <DocumentLayout
         title="Quotation"
         documentNumber={quotation.quotationNumber}
@@ -262,7 +269,11 @@ export function ViewQuotationDialog({
                 <h2 className="text-xl font-semibold">
                   Quotation {quotation.quotationNumber}
                 </h2>
-                
+                {quotation.version > 1 && (
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                    Version {quotation.version}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -295,7 +306,7 @@ export function ViewQuotationDialog({
             <QuotationContent
               ref={contentRef}
               quotation={quotation}
-              
+
             />
           </div>
         </div>
@@ -312,6 +323,62 @@ export function ViewQuotationDialog({
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function DeleteQuotationDialog({
+  open,
+  onOpenChange,
+  quotationId,
+  quotationNumber,
+}: {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly quotationId: string;
+  readonly quotationNumber: string;
+}) {
+  const { deleteQuotation } = useQuotationMutations();
+
+  const handleDelete = () => {
+    const toastId = toast.loading("Deleting quotation...");
+    deleteQuotation.mutate(quotationId, {
+      onSuccess: () => {
+        toast.success("Quotation deleted successfully", { id: toastId });
+        onOpenChange(false);
+      },
+      onError: (err: Error) => {
+        toast.error(`Failed to delete: ${err.message}`, { id: toastId });
+      },
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-red-600 flex items-center gap-2">
+            <XCircle className="h-5 w-5" />
+            Delete Quotation
+          </DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete Quotation #{quotationNumber}? This action cannot be undone and will permanently remove the record.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleteQuotation.isPending}
+          >
+            {deleteQuotation.isPending && <Spinner className="mr-2 h-4 w-4" />}
+            Delete Permanently
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

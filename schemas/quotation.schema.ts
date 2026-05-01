@@ -8,6 +8,8 @@ import { QuotationStatusEnum } from "./enums.schema";
 export const QuotationSchema = z.object({
   id: cuidSchema,
   quotationNumber: z.string().min(1, "Quotation number is required"),
+  version: z.number().int().default(1),
+  originalId: z.string().nullable().optional(),
   customerId: cuidSchema,
   issueDate: z.date(),
   validUntil: z.date(),
@@ -34,6 +36,8 @@ export const QuotationCreateSchema = QuotationSchema.omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  version: z.number().int().default(1),
+  originalId: z.string().nullable().optional(),
   issueDate: z.date().default(() => new Date()),
   subtotal: moneySchema,
   discountPercent: z.number().int().min(0).max(100).default(0),
@@ -41,7 +45,7 @@ export const QuotationCreateSchema = QuotationSchema.omit({
   taxPercent: z.number().int().min(0).max(100).default(0),
   taxAmount: moneySchema,
   totalAmount: moneySchema,
-  status: QuotationStatusEnum.default("DRAFT"),
+  status: QuotationStatusEnum.default("SENT"),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

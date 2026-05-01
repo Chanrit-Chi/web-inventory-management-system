@@ -24,6 +24,7 @@ export const InvoiceSchema = z.object({
   discountPercent: positiveInt.max(100),
   discountAmount: baseMoneySchema,
   totalAmount: baseMoneySchema,
+  amountPaid: baseMoneySchema,
   notes: z.string().nullable().optional(),
   terms: z.string().nullable().optional(),
   createdBy: z.string().nullable().optional(),
@@ -47,6 +48,7 @@ export const InvoiceCreateSchema = InvoiceSchema.omit({
   discountPercent: positiveInt.max(100).default(0),
   discountAmount: moneySchema,
   totalAmount: moneySchema,
+  amountPaid: z.any().optional(), // Or map to a money schema if we pass it, but normally defaults to 0 in DB
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

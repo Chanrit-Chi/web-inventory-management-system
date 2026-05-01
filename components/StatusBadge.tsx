@@ -31,6 +31,7 @@ export function StatusBadge({
       case "SENT":
       case "INITIAL":
       case "ADJUSTMENT":
+      case "PARTIAL":
         return "warning";
 
       // Info cases
@@ -52,6 +53,8 @@ export function StatusBadge({
       case "ADMIN":
       case "MANAGER":
         return "secondary";
+      // Neutral cases
+      case "REVISED":
       case "SELLER":
         return "neutral";
 

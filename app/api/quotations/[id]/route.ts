@@ -57,4 +57,33 @@ export async function PUT(
   }
 }
 
-// Optional: Add DELETE if needed in schema/logic
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const existing = await quotationService.getQuotationById(id);
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Quotation not found" },
+        { status: 404 },
+      );
+    }
+    if (existing.status !== "DRAFT") {
+      return NextResponse.json(
+        { error: "Only DRAFT quotations can be deleted." },
+        { status: 403 },
+      );
+    }
+
+    await quotationService.deleteQuotation(id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting quotation:", error);
+    return NextResponse.json(
+      { error: "Failed to delete quotation" },
+      { status: 500 },
+    );
+  }
+}

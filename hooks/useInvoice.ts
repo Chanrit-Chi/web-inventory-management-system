@@ -1,5 +1,5 @@
 import { invoiceApiService } from "@/lib/services/client/invoiceApiService";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGetInvoices = (
   page: number = 1,
@@ -14,7 +14,33 @@ export const useGetInvoices = (
 
 export const useGetInvoiceById = (id: string) =>
   useQuery({
-    queryKey: ["invoices", id],
+    queryKey: ["invoice", id],
     queryFn: () => invoiceApiService.GetInvoiceById(id),
     enabled: !!id,
   });
+
+export const useInvoiceMutation = () => {
+  const queryClient = useQueryClient();
+
+  const recordPayment = useMutation({
+    mutationFn: ({
+      invoiceId,
+      data,
+    }: {
+      invoiceId: string;
+      data: {
+        paymentDate: string;
+        paymentMethod: string;
+        amountPaid: number;
+        referenceNo?: string;
+        note?: string;
+      };
+    }) => invoiceApiService.RecordPayment(invoiceId, data),
+    onSuccess: (_, { invoiceId }) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+    },
+  });
+
+  return { recordPayment };
+};

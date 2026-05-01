@@ -124,7 +124,7 @@ export default function ViewQuotationPage({
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {quotation.quotationItems.map((item, index) => (
+                      {quotation.quotationItems.map((item: any, index: number) => (
                         <tr
                           key={item.id || index}
                           className="hover:bg-slate-50/50"

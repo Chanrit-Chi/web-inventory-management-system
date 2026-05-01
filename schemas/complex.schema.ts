@@ -26,10 +26,12 @@ export const OrderWithDetailsSchema = OrderCreateSchema.extend({
   orderDetails: z
     .array(OrderDetailCreateSchema)
     .min(1, "At least one order item is required"),
+  amountPaid: z.number().optional(),
 });
 
 export const OrderWithDetailsUpdateSchema = OrderUpdateSchema.extend({
   orderDetails: z.array(OrderDetailCreateSchema).optional(),
+  amountPaid: z.number().optional(),
 });
 
 // Order with relations (for API responses)

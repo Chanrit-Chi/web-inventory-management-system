@@ -1,11 +1,10 @@
-import { OrderCreateSchema } from "@/schemas/order.schema";
-import { OrderWithDetailsUpdateSchema } from "@/schemas/complex.schema";
+import { OrderWithDetailsSchema, OrderWithDetailsUpdateSchema } from "@/schemas/complex.schema";
 import { Order, OrderWithDetails } from "@/schemas/type-export.schema";
 
 export const saleApiService = {
   AddSale: async (sale: OrderWithDetails): Promise<Order> => {
-    // Validate order header
-    const validatedOrder = OrderCreateSchema.parse(sale);
+    // Validate order header and details
+    const validatedOrder = OrderWithDetailsSchema.parse(sale);
 
     // Convert Decimal values to numbers for JSON serialization
     const payload = {
@@ -13,12 +12,14 @@ export const saleApiService = {
       totalPrice: validatedOrder.totalPrice.toNumber(),
       discountAmount: validatedOrder.discountAmount.toNumber(),
       taxAmount: validatedOrder.taxAmount.toNumber(),
-      orderDetails: sale.orderDetails.map((detail) => {
+      orderDetails: validatedOrder.orderDetails.map((detail) => {
         const data: Record<string, unknown> = {
           ...detail,
         };
-        if (detail.unitPrice != null) {
-          data.unitPrice = detail.unitPrice.toNumber();
+        if (detail.unitPrice != null && typeof detail.unitPrice !== 'number') {
+           if ('toNumber' in detail.unitPrice && typeof detail.unitPrice.toNumber === 'function') {
+             data.unitPrice = detail.unitPrice.toNumber();
+           }
         }
         return data;
       }),

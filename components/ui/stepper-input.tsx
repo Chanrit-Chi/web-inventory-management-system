@@ -4,7 +4,7 @@ import { Input } from "./input"
 import { Button } from "./button"
 import { cn } from "@/lib/utils"
 
-export interface StepperInputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type StepperInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 export const StepperInput = React.forwardRef<HTMLInputElement, StepperInputProps>(
   ({ className, value, onChange, step = 1, min, max, ...props }, ref) => {

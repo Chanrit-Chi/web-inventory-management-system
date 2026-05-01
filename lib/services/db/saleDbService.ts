@@ -60,6 +60,12 @@ const saleSelectFields = {
     },
   },
   paymentMethod: { select: { name: true } },
+  invoice: {
+    select: {
+      amountPaid: true,
+      status: true,
+    },
+  },
 };
 
 /**
@@ -221,11 +227,23 @@ export const saleService = {
   createSale: async (data: OrderWithDetails): Promise<Order> => {
     const result = await prisma.$transaction(async (tx) => {
       // Separate orderDetails from order data
-      const { orderDetails, ...orderData } = data;
+      const { orderDetails, amountPaid, ...orderData } = data;
+
+      let paymentStatus: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | "UNPAID" | "PARTIAL" | "PAID" = "UNPAID";
+      if (amountPaid !== undefined) {
+        if (amountPaid >= Number(orderData.totalPrice)) {
+          paymentStatus = "PAID";
+        } else if (amountPaid > 0) {
+          paymentStatus = "PARTIAL";
+        }
+      }
 
       // Create the order without orderDetails
       const order = await tx.order.create({
-        data: orderData,
+        data: {
+          ...orderData,
+          paymentStatus,
+        },
       });
 
       // 1. Create Order Detail records
@@ -260,7 +278,8 @@ export const saleService = {
 
     try {
       // Generate invoice asynchronously after sale creation
-      await invoiceService.generateInvoiceFromSale(result.id);
+      const amountPaid = data.amountPaid !== undefined ? data.amountPaid : undefined;
+      await invoiceService.generateInvoiceFromSale(result.id, amountPaid);
     } catch (error) {
       console.error("Failed to generate invoice for new sale:", error);
     }
@@ -285,12 +304,26 @@ export const saleService = {
       const existingOrderDetails = existingOrder.orderDetail;
 
       // Separate orderDetails from update data
-      const { orderDetails, ...updateData } = data;
+      const { orderDetails, amountPaid, ...updateData } = data;
+
+      let paymentStatus = existingOrder.paymentStatus;
+      if (amountPaid !== undefined) {
+        if (amountPaid >= Number(updateData.totalPrice ?? existingOrder.totalPrice)) {
+          paymentStatus = "PAID";
+        } else if (amountPaid > 0) {
+          paymentStatus = "PARTIAL";
+        } else {
+          paymentStatus = "UNPAID";
+        }
+      }
 
       // Update Order Header
       const updatedOrder = await tx.order.update({
         where: { id },
-        data: updateData as Prisma.OrderUpdateInput,
+        data: {
+          ...updateData,
+          paymentStatus,
+        } as Prisma.OrderUpdateInput,
       });
 
       console.log("Order header updated");
@@ -377,7 +410,8 @@ export const saleService = {
 
     try {
       // Regenerate invoice asynchronously after sale update
-      await invoiceService.generateInvoiceFromSale(result.id);
+      const amountPaid = data.amountPaid !== undefined ? data.amountPaid : undefined;
+      await invoiceService.generateInvoiceFromSale(result.id, amountPaid);
     } catch (error) {
       console.error("Failed to update invoice for updated sale:", error);
     }

@@ -18,12 +18,12 @@ import {
 import {
   ProductSearch,
   type ProductForSale,
-} from "../components/ProductSearch";
+} from "../../../../components/sales/ProductSearch";
 import {
   OrderDetailsTable,
   type SaleOrderDetail,
-} from "../components/OrderDetailsTable";
-import { OrderSummary } from "../components/OrderSummary";
+} from "../../../../components/sales/OrderDetailsTable";
+import { OrderSummary } from "../../../../components/sales/OrderSummary";
 import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import { useGetCustomers } from "@/hooks/useCustomer";
 import { useGetPaymentMethods } from "@/hooks/usePaymentMethod";
@@ -184,6 +184,7 @@ export function SaleForm({
     () =>
       mode === "edit" && sale ? (sale.status ?? "COMPLETED") : "COMPLETED",
   );
+  const [amountPaid, setAmountPaid] = useState<number | null>(null);
   const [openCreateCustomer, setOpenCreateCustomer] = useState(false);
 
   const handleAddProduct = (product: ProductForSale) => {
@@ -280,6 +281,7 @@ export function SaleForm({
     setOrderDetails([]);
     setDiscountPercent(0);
     setTaxPercent(0);
+    setAmountPaid(null);
   };
 
   const handleSubmit = () => {
@@ -304,6 +306,7 @@ export function SaleForm({
       discountAmount: new Decimal(discountAmount),
       taxPercent,
       taxAmount: new Decimal(taxAmount),
+      amountPaid: amountPaid !== null ? amountPaid : total,
       orderDetails: orderDetails.map((detail) => ({
         productId: detail.productId,
         variantId: detail.variantId,
@@ -536,8 +539,10 @@ export function SaleForm({
               discount={discountAmount}
               tax={taxAmount}
               total={total}
+              amountPaid={amountPaid !== null ? amountPaid : total}
               onDiscountChange={setDiscountPercent}
               onTaxChange={setTaxPercent}
+              onAmountPaidChange={setAmountPaid}
               onSubmit={handleSubmit}
               isValid={isFormValid}
               ctaLabel={ctaLabel}

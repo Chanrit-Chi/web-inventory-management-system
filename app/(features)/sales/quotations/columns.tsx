@@ -3,11 +3,12 @@
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
-import { Eye, SquarePen, Trash2, ArrowRightLeft, Printer } from "lucide-react";
+import { Eye, SquarePen, Trash2, ArrowRightLeft, Printer, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
   ConvertQuotationDialog,
+  DeleteQuotationDialog,
   ViewQuotationDialog,
 } from "./quotation-dialogs";
 import { useGetQuotationById } from "@/hooks/useQuotation";
@@ -34,7 +35,16 @@ export type QuotationListing = {
 export const columns: ColumnDef<QuotationListing>[] = [
   {
     accessorKey: "quotationNumber",
-    header: "Quotation #",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 hover:bg-transparent"
+      >
+        Quotation #
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => (
       <span className="font-mono font-medium">
         {row.getValue("quotationNumber")}
@@ -47,7 +57,16 @@ export const columns: ColumnDef<QuotationListing>[] = [
   },
   {
     accessorKey: "issueDate",
-    header: "Date",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 hover:bg-transparent"
+      >
+        Date
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) =>
       format(new Date(row.getValue("issueDate")), "dd MMM yyyy"),
   },
@@ -84,12 +103,15 @@ export const columns: ColumnDef<QuotationListing>[] = [
 function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
   const [convertOpen, setConvertOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [shouldPrint, setShouldPrint] = useState(false);
   const quotation = row.original;
   const { can } = usePermission();
 
   // Fetch full quotation data for the dialog
   const { data: fullQuotation } = useGetQuotationById(quotation.id);
+
+
 
   return (
     <>
@@ -114,14 +136,14 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
                 size="sm"
                 className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                 asChild={
-                  quotation.status !== "CONVERTED" && can("quotation:update")
+                  quotation.status !== "CONVERTED" && quotation.status !== "REVISED" && can("quotation:update")
                 }
                 disabled={
-                  quotation.status === "CONVERTED" || !can("quotation:update")
+                  quotation.status === "CONVERTED" || quotation.status === "REVISED" || !can("quotation:update")
                 }
                 title="Edit Quotation"
               >
-                {quotation.status !== "CONVERTED" && can("quotation:update") ? (
+                {quotation.status !== "CONVERTED" && quotation.status !== "REVISED" && can("quotation:update") ? (
                   <Link href={`/sales/quotations/edit/${quotation.id}`}>
                     <SquarePen className="h-4 w-4" />
                   </Link>
@@ -131,7 +153,7 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
               </Button>
             </span>
           </TooltipTrigger>
-          {!can("quotation:update") && quotation.status !== "CONVERTED" && (
+          {!can("quotation:update") && quotation.status !== "CONVERTED" && quotation.status !== "REVISED" && (
             <TooltipContent>No permission</TooltipContent>
           )}
         </Tooltip>
@@ -157,21 +179,30 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={!can("quotation:delete")}
+                disabled={!can("quotation:delete") || quotation.status !== "DRAFT"}
                 className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 title="Delete Quotation"
+                onClick={
+                  can("quotation:delete") && quotation.status === "DRAFT"
+                    ? () => setDeleteOpen(true)
+                    : undefined
+                }
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </span>
           </TooltipTrigger>
-          {!can("quotation:delete") && (
-            <TooltipContent>No permission</TooltipContent>
+          {(!can("quotation:delete") || quotation.status !== "DRAFT") && (
+            <TooltipContent>
+              {!can("quotation:delete")
+                ? "No permission"
+                : "Only DRAFT quotations can be deleted"}
+            </TooltipContent>
           )}
         </Tooltip>
 
         {/* Convert to Sale */}
-        {quotation.status !== "CONVERTED" && (
+        {quotation.status !== "CONVERTED" && quotation.status !== "REVISED" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex">
@@ -211,6 +242,13 @@ function ActionCell({ row }: { readonly row: Row<QuotationListing> }) {
       <ConvertQuotationDialog
         open={convertOpen}
         onOpenChange={setConvertOpen}
+        quotationId={quotation.id}
+        quotationNumber={quotation.quotationNumber}
+      />
+
+      <DeleteQuotationDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
         quotationId={quotation.id}
         quotationNumber={quotation.quotationNumber}
       />

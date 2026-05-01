@@ -9,6 +9,8 @@ export const quotationService = {
     limit: number = 10,
     search?: string,
     filters?: Record<string, string>,
+    sortBy: string = "createdAt",
+    sortOrder: "asc" | "desc" = "desc",
   ) => {
     const skip = (page - 1) * limit;
     const where: Prisma.QuotationWhereInput = {};
@@ -44,7 +46,7 @@ export const quotationService = {
           customer: true,
           quotationItems: true,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { [sortBy]: sortOrder },
         take: limit,
         skip: skip,
       }),
@@ -73,20 +75,12 @@ export const quotationService = {
   },
 
   createQuotation: async (data: QuotationWithItems): Promise<Quotation> => {
-    // Generate Quotation Number: QUO-{YEAR}-{COUNTER}
-    // For simplicity, we can use a basic random or timestamp logic,
-    // but ideally we should have a sequence. Using Date for now.
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
-
-    // Simple ID generation for now.
-    // In a real app, you'd want to query the last ID or use a dedicated sequence table.
     const count = await prisma.quotation.count();
     const quotationNumber = `QUO-${year}${month}-${String(count + 1).padStart(4, "0")}`;
-
     const { quotationItems, ...quotationData } = data;
-    // Sanitize data to avoid Prisma relation errors
     const sanitizedData = { ...quotationData } as Record<string, unknown>;
     if ("customer" in sanitizedData) delete sanitizedData.customer;
 
@@ -110,43 +104,99 @@ export const quotationService = {
   },
 
   updateQuotation: async (id: string, data: Partial<QuotationWithItems>) => {
+    const existingQuotation = await prisma.quotation.findUnique({
+      where: { id },
+      include: { quotationItems: true }
+    });
+
+    if (!existingQuotation) throw new Error("Quotation not found");
+
     const { quotationItems, ...quotationData } = data;
     // Sanitize data to avoid Prisma relation errors
     const sanitizedData = { ...quotationData } as Record<string, unknown>;
     if ("customer" in sanitizedData) delete sanitizedData.customer;
 
     return await prisma.$transaction(async (tx) => {
-      const quotation = await tx.quotation.update({
+      // 1. Mark existing as REVISED
+      await tx.quotation.update({
         where: { id },
-        data: sanitizedData as Prisma.QuotationUncheckedUpdateInput,
+        data: { status: "REVISED" }
       });
 
-      if (quotationItems) {
-        // Replace items
-        await tx.quotationItem.deleteMany({ where: { quotationId: id } });
-        await tx.quotationItem.createMany({
-          data: quotationItems.map((item) => ({
-            quotationId: id,
-            productId: item.productId,
-            productName: item.productName,
-            variantId: item.variantId,
-            sku: item.sku,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            lineTotal: item.lineTotal,
-          })),
-        });
-      }
+      // 2. Generate new version number
+      const newVersion = existingQuotation.version + 1;
+      const baseNumber = existingQuotation.quotationNumber.split('-v')[0];
+      const newQuotationNumber = `${baseNumber}-v${newVersion}`;
+      const originalId = existingQuotation.originalId || existingQuotation.id;
+
+      // 3. Prepare merged data
+      const {
+        id: _oldId,
+        quotationItems: _oldItems,
+        createdAt: _oldCreated,
+        updatedAt: _oldUpdated,
+        quotationNumber: _oldNum,
+        version: _oldVer,
+        originalId: _oldOrigId,
+        status: _oldStatus,
+        ...baseExisting
+      } = existingQuotation;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+
+      const mergedData = {
+        ...baseExisting,
+        ...sanitizedData
+      };
+
+      // 4. Create new quotation
+      const quotation = await tx.quotation.create({
+        data: {
+          customerId: mergedData.customerId as string,
+          issueDate: new Date(mergedData.issueDate as string | number | Date),
+          validUntil: new Date(mergedData.validUntil as string | number | Date),
+          subtotal: mergedData.subtotal as Prisma.Decimal | number,
+          discountPercent: mergedData.discountPercent as number,
+          discountAmount: mergedData.discountAmount as Prisma.Decimal | number,
+          taxPercent: mergedData.taxPercent as number,
+          taxAmount: mergedData.taxAmount as Prisma.Decimal | number,
+          totalAmount: mergedData.totalAmount as Prisma.Decimal | number,
+          notes: mergedData.notes as string | null,
+          terms: mergedData.terms as string | null,
+          createdBy: mergedData.createdBy as string | null,
+          convertedOrderId: null, // Revisions are never pre-converted
+
+          quotationNumber: newQuotationNumber,
+          version: newVersion,
+          originalId: originalId,
+          status: (sanitizedData.status as QuotationStatus) || existingQuotation.status,
+
+          quotationItems: {
+            create: quotationItems ? quotationItems.map((item) => ({
+              productId: item.productId,
+              productName: item.productName,
+              variantId: item.variantId,
+              sku: item.sku,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              lineTotal: item.lineTotal,
+            })) : existingQuotation.quotationItems.map(item => ({
+              productId: item.productId,
+              productName: item.productName,
+              variantId: item.variantId,
+              sku: item.sku,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              lineTotal: item.lineTotal,
+            })),
+          },
+        },
+      });
+
       return quotation;
     });
   },
 
-  /**
-   * Converts a Quotation to a Sale (Order).
-   * 1. Validates quotation status.
-   * 2. Creates an Order using saleDbService.
-   * 3. Updates Quotation status to CONVERTED and links the Order.
-   */
+
   convertToSale: async (quotationId: string, paymentMethodId: number) => {
     const quotation = await prisma.quotation.findUnique({
       where: { id: quotationId },
@@ -177,11 +227,6 @@ export const quotationService = {
       })),
     };
 
-    // Use saleService to create the order (handles inventory, validation, invoice gen, etc.)
-    // Note: We need to handle the case where variantId might be null in Quotation but required in Order
-    // If your logic allows null variants in Quotation, you need to ensure they are valid for Order.
-    // Based on schema, OrderDetail `variantId` is Int (required). QuotationItem `variantId` is Int? (optional).
-    // If variantId is missing, we can't create an order.
 
     const validOrderDetails = orderData.orderDetails.filter(
       (od) => od.variantId !== null,

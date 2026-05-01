@@ -13,7 +13,7 @@ export const StockMovementTypeEnum = z.enum([
 
 export const OrderStatusEnum = z.enum(["PENDING", "COMPLETED", "CANCELLED"]);
 
-export const InvoiceStatusEnum = z.enum(["DRAFT", "SENT", "PAID", "OVERDUE"]);
+export const InvoiceStatusEnum = z.enum(["DRAFT", "SENT", "PARTIAL", "PAID", "OVERDUE"]);
 
 export const QuotationStatusEnum = z.enum([
   "DRAFT",
@@ -22,6 +22,7 @@ export const QuotationStatusEnum = z.enum([
   "REJECTED",
   "EXPIRED",
   "CONVERTED",
+  "REVISED",
 ]);
 
 export const AttributeTypeEnum = z.enum(["SELECT", "COLOR", "TEXT"]);

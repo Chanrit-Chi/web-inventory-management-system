@@ -18,12 +18,12 @@ import {
 import {
   ProductSearch,
   type ProductForSale,
-} from "../components/ProductSearch";
+} from "../../../../components/sales/ProductSearch";
 import {
   OrderDetailsTable,
   type SaleOrderDetail,
-} from "../components/OrderDetailsTable";
-import { OrderSummary } from "../components/OrderSummary";
+} from "../../../../components/sales/OrderDetailsTable";
+import { OrderSummary } from "../../../../components/sales/OrderSummary";
 import { CreateCustomerDialog } from "../../customer/customer-dialogs";
 import { useGetCustomers } from "@/hooks/useCustomer";
 import { useQuotationMutations } from "@/hooks/useQuotation";
@@ -52,13 +52,13 @@ export function QuotationForm({
   const [orderDetails, setOrderDetails] = useState<SaleOrderDetail[]>(() =>
     mode === "edit" && quotation
       ? quotation.quotationItems.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId || 0,
-          productName: item.productName,
-          unitPrice: Number(item.unitPrice),
-          quantity: item.quantity,
-          subtotal: Number(item.lineTotal),
-        }))
+        productId: item.productId,
+        variantId: item.variantId || 0,
+        productName: item.productName,
+        unitPrice: Number(item.unitPrice),
+        quantity: item.quantity,
+        subtotal: Number(item.lineTotal),
+      }))
       : [],
   );
   const [discountPercent, setDiscountPercent] = useState<number>(() =>
@@ -180,7 +180,7 @@ export function QuotationForm({
 
     if (mode === "edit") {
       updateQuotation.mutate(
-        { id: quotationId!, ...(payload as unknown as Partial<QuotationWithItems>) },
+        { id: quotationId!, data: payload as any },
         {
           onSuccess: () => {
             toast.success("Quotation updated successfully");

@@ -153,58 +153,42 @@ function ActionsCell({ order }: { readonly order: OrderWithRelations }) {
 export const columns: ColumnDef<OrderWithRelations>[] = [
   {
     accessorKey: "index",
-    header: ({ column }) => {
-      return (
-        <Button
-          size={undefined}
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "desc")}
-        >
-          No
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "#",
     cell: ({ row }) => {
-      return <div className="px-4">{row.index + 1}</div>;
+      return <div className="text-center">{row.index + 1}</div>;
     },
+    size: 40,
   },
   {
     accessorKey: "id",
-    header: ({ column }) => {
-      return (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "desc")}
-        >
-          Invoice No
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      return <div className="px-4">{row.original.id}</div>;
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "desc")}
+        className="-ml-3"
+      >
+        Inv #
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.original.id}</div>,
+    size: 80,
   },
   {
     accessorKey: "customer.name",
-    header: ({ column }) => {
-      return (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Customer
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      return <div className="px-4">{row.original.customer?.name}</div>;
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="-ml-3"
+      >
+        Customer
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="truncate max-w-[120px]">{row.original.customer?.name}</div>,
   },
   {
     accessorKey: "totalPrice",
@@ -216,6 +200,36 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
         currency: "USD",
       }).format(amount);
       return formatted;
+    },
+  },
+  {
+    id: "paidAmount",
+    header: "Paid",
+    cell: ({ row }) => {
+      const invoice = row.original.invoice;
+      const amount = invoice ? Number(invoice.amountPaid) : 0;
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(amount);
+    },
+  },
+  {
+    id: "balanceAmount",
+    header: "Balance",
+    cell: ({ row }) => {
+      const total = Number(row.original.totalPrice);
+      const invoice = row.original.invoice;
+      const paid = invoice ? Number(invoice.amountPaid) : 0;
+      const balance = total - paid;
+      return (
+        <span className={balance > 0 ? "text-amber-600 font-medium" : ""}>
+          {new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+          }).format(balance)}
+        </span>
+      );
     },
   },
   {
@@ -233,19 +247,17 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
   },
   {
     accessorKey: "status",
-    header: ({ column }) => {
-      return (
-        <Button
-          size={undefined}
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="-ml-3"
+      >
+        Status
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const status: string = row.getValue("status");
       return <StatusBadge status={status} />;
@@ -254,45 +266,41 @@ export const columns: ColumnDef<OrderWithRelations>[] = [
   {
     accessorKey: "paymentMethod.name",
     id: "paymentMethod.name",
-    header: ({ column }) => {
-      return (
-        <Button
-          size={undefined}
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Payment Via
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      return <div className="px-4">{row.original.paymentMethod?.name}</div>;
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="-ml-3"
+      >
+        Via
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="text-xs">{row.original.paymentMethod?.name}</div>,
+    size: 80,
     filterFn: (row, id, value) => {
       return row.original.paymentMethod?.name === value;
     },
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => {
-      return (
-        <Button
-          size={undefined}
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="-ml-3"
+      >
+        Date
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
-      return date.toLocaleDateString();
+      return <div className="text-xs whitespace-nowrap">{date.toLocaleDateString()}</div>;
     },
+    size: 90,
   },
   {
     id: "actions",

@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
-import { Eye, Printer } from "lucide-react";
+import { Eye, Printer, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { InvoiceDialog } from "../all-sale/sale-dialogs";
@@ -12,10 +12,12 @@ import {
   Invoice,
   OrderWithRelations,
 } from "@/schemas/type-export.schema";
+import { RecordPaymentDialog } from "./record-payment-dialog";
+import { Banknote } from "lucide-react";
 
 type Sale = OrderWithRelations;
 
-type InvoiceRow = Invoice & {
+export type InvoiceRow = Invoice & {
   customer?: Customer | null;
   order?: OrderWithRelations | null;
 };
@@ -23,7 +25,16 @@ type InvoiceRow = Invoice & {
 export const columns: ColumnDef<InvoiceRow>[] = [
   {
     accessorKey: "invoiceNumber",
-    header: "Invoice #",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 hover:bg-transparent"
+      >
+        Invoice #
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
     accessorKey: "customer.name",
@@ -31,7 +42,16 @@ export const columns: ColumnDef<InvoiceRow>[] = [
   },
   {
     accessorKey: "issuedDate",
-    header: "Issue Date",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 hover:bg-transparent"
+      >
+        Issue Date
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("issuedDate"));
       return <span>{format(date, "PPP")}</span>;
@@ -41,8 +61,30 @@ export const columns: ColumnDef<InvoiceRow>[] = [
     accessorKey: "totalAmount",
     header: "Total",
     cell: ({ row }) => {
-      const amount = Number.parseFloat(row.getValue("totalAmount"));
+      const amount = Number.parseFloat(row.getValue("totalAmount")?.toString() || "0");
       return <div className="font-medium">${amount.toFixed(2)}</div>;
+    },
+  },
+  {
+    accessorKey: "amountPaid",
+    header: "Paid",
+    cell: ({ row }) => {
+      const amount = Number.parseFloat(row.getValue("amountPaid")?.toString() || "0");
+      return <div className="font-medium text-emerald-600">${amount.toFixed(2)}</div>;
+    },
+  },
+  {
+    id: "balance",
+    header: "Balance",
+    cell: ({ row }) => {
+      const total = Number.parseFloat(row.getValue("totalAmount")?.toString() || "0");
+      const paid = Number.parseFloat(row.getValue("amountPaid")?.toString() || "0");
+      const balance = total - paid;
+      return (
+        <div className={`font-medium ${balance > 0 ? "text-amber-600" : ""}`}>
+          ${balance.toFixed(2)}
+        </div>
+      );
     },
   },
   {
@@ -63,6 +105,7 @@ export const columns: ColumnDef<InvoiceRow>[] = [
 
 function ActionCell({ row }: { readonly row: { original: InvoiceRow } }) {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [shouldPrint, setShouldPrint] = useState(false);
   const invoice = row.original;
 
@@ -103,6 +146,17 @@ function ActionCell({ row }: { readonly row: { original: InvoiceRow } }) {
         >
           <Printer className="h-4 w-4" />
         </Button>
+        {invoice.status !== "PAID" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+            onClick={() => setPaymentOpen(true)}
+            title="Record Payment"
+          >
+            <Banknote className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {invoiceOpen && (
@@ -111,6 +165,14 @@ function ActionCell({ row }: { readonly row: { original: InvoiceRow } }) {
           open={invoiceOpen}
           onOpenChange={setInvoiceOpen}
           autoPrint={shouldPrint}
+        />
+      )}
+
+      {paymentOpen && (
+        <RecordPaymentDialog
+          invoice={invoice}
+          open={paymentOpen}
+          onOpenChange={setPaymentOpen}
         />
       )}
     </>

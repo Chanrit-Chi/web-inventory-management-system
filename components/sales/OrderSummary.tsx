@@ -11,8 +11,10 @@ interface OrderSummaryProps {
   discount: number;
   tax: number;
   total: number;
+  amountPaid?: number;
   onDiscountChange: (value: number) => void;
   onTaxChange: (value: number) => void;
+  onAmountPaidChange?: (value: number) => void;
   onSubmit: () => void;
   isValid: boolean;
   isPending: boolean;
@@ -27,8 +29,10 @@ export const OrderSummary = ({
   discount,
   tax,
   total,
+  amountPaid,
   onDiscountChange,
   onTaxChange,
+  onAmountPaidChange,
   onSubmit,
   isValid,
   isPending,
@@ -85,6 +89,54 @@ export const OrderSummary = ({
           ${total.toFixed(2)}
         </span>
       </div>
+
+      {amountPaid !== undefined && onAmountPaidChange !== undefined && (
+        <div className="mt-4 pt-4 border-t space-y-3 mb-6">
+          <div>
+            <Label className="block text-sm font-medium mb-2">Amount Paid / Tendered</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={amountPaid === 0 && total === 0 ? "" : amountPaid}
+                  onChange={(e) => onAmountPaidChange(Number(e.target.value))}
+                  className="pl-7"
+                />
+              </div>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => onAmountPaidChange(total)}
+                className="px-3"
+                title="Full Payment"
+              >
+                Full
+              </Button>
+            </div>
+          </div>
+          
+          {amountPaid > 0 && amountPaid < total && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Balance Due:</span>
+              <span className="font-medium text-amber-600">
+                ${(total - amountPaid).toFixed(2)}
+              </span>
+            </div>
+          )}
+          
+          {amountPaid > total && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Change:</span>
+              <span className="font-medium text-blue-600">
+                ${(amountPaid - total).toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <Button
         onClick={onSubmit}

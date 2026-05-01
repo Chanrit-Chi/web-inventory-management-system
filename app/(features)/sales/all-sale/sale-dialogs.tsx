@@ -25,8 +25,8 @@ import { Button } from "@/components/ui/button";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
-import { DocumentLayout } from "@/app/(features)/sales/components/documents/DocumentLayout";
-import { DocumentTable } from "@/app/(features)/sales/components/documents/DocumentTable";
+import { DocumentLayout } from "@/components/sales/documents/DocumentLayout";
+import { DocumentTable } from "@/components/sales/documents/DocumentTable";
 
 // Use Zod-inferred type
 type Sale = OrderWithRelations;
@@ -456,9 +456,8 @@ export function InvoiceDialog({
           {/* Header with Close and Print buttons */}
           <div className="sticky top-0 bg-background/95 backdrop-blur-md border-b py-4 px-6 z-10">
             <div
-              className={`flex items-center justify-between gap-4 ${
-                autoPrint && isPrinting ? "opacity-0" : "opacity-100"
-              }`}
+              className={`flex items-center justify-between gap-4 ${autoPrint && isPrinting ? "opacity-0" : "opacity-100"
+                }`}
             >
               <h2 className="text-xl font-semibold">
                 Invoice #{sale.invoice?.invoiceNumber ?? sale.id}

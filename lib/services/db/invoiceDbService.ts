@@ -1,13 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { InvoiceStatus, Prisma } from "@prisma/client";
+import { InvoiceStatus, Prisma, PaymentStatus, orderStatus } from "@prisma/client";
 
 export const invoiceService = {
-  /**
-   * Generates or updates an invoice for a given sale (order).
-   * If an invoice already exists for the order, it updates it.
-   * If not, it creates a new one.
-   */
-  generateInvoiceFromSale: async (orderId: number) => {
+  generateInvoiceFromSale: async (orderId: number, initialPaymentAmount?: number) => {
     // 1. Fetch the Order with all necessary details
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -41,10 +36,26 @@ export const invoiceService = {
 
     // Determine status
     let status: InvoiceStatus = InvoiceStatus.DRAFT;
-    if (order.status === "COMPLETED") {
-      status = InvoiceStatus.PAID;
-    } else if (order.status === "PENDING") {
-      status = InvoiceStatus.SENT; // or DRAFT
+    let amountPaid = new Prisma.Decimal(0);
+
+    if (initialPaymentAmount !== undefined) {
+      amountPaid = new Prisma.Decimal(initialPaymentAmount);
+      if (amountPaid.gte(order.totalPrice)) {
+        status = InvoiceStatus.PAID;
+      } else if (amountPaid.gt(0)) {
+        status = InvoiceStatus.PARTIAL;
+      } else if (order.status === orderStatus.PENDING || order.status === orderStatus.COMPLETED) {
+        status = InvoiceStatus.SENT;
+      }
+    } else {
+      if (order.status === orderStatus.COMPLETED || order.paymentStatus === PaymentStatus.PAID) {
+        status = InvoiceStatus.PAID;
+        amountPaid = order.totalPrice;
+      } else if (order.paymentStatus === PaymentStatus.PARTIAL) {
+        status = InvoiceStatus.PARTIAL;
+      } else if (order.status === orderStatus.PENDING) {
+        status = InvoiceStatus.SENT;
+      }
     }
 
     const invoiceData = {
@@ -52,13 +63,14 @@ export const invoiceService = {
       customerId: order.customerId,
       status: status,
       issuedDate: order.createdAt,
-      dueDate: order.createdAt, // Default to immediate payment for POS sales
+      dueDate: order.createdAt,
       subtotal: subtotal,
       taxPercent: order.taxPercent,
       taxAmount: order.taxAmount,
       discountPercent: order.discountPercent,
       discountAmount: order.discountAmount,
       totalAmount: order.totalPrice,
+      amountPaid: amountPaid,
       notes: `Generated from Sale #${order.id}`,
     };
 
@@ -102,6 +114,19 @@ export const invoiceService = {
             unitPrice: detail.unitPrice,
             lineTotal: detail.unitPrice.mul(detail.quantity),
           })),
+        });
+      }
+
+      // Record initial payment if applicable
+      if (initialPaymentAmount !== undefined && initialPaymentAmount > 0) {
+        await tx.invoicePayment.create({
+          data: {
+            invoiceId: invoice.id,
+            amount: new Prisma.Decimal(initialPaymentAmount),
+            paymentDate: invoice.issuedDate,
+            paymentMethodId: order.paymentMethodId,
+            notes: "Initial payment during sale creation",
+          },
         });
       }
 
@@ -212,6 +237,74 @@ export const invoiceService = {
           },
         },
       },
+    });
+  },
+
+  recordInvoicePayment: async (
+    invoiceId: string,
+    data: {
+      amount: number;
+      paymentMethodId: number;
+      paymentDate?: Date;
+      referenceNo?: string;
+      notes?: string;
+      createdBy?: string;
+    }
+  ) => {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Create Payment
+      const payment = await tx.invoicePayment.create({
+        data: {
+          invoiceId,
+          amount: new Prisma.Decimal(data.amount),
+          paymentMethodId: data.paymentMethodId,
+          paymentDate: data.paymentDate || new Date(),
+          referenceNo: data.referenceNo,
+          notes: data.notes,
+          createdBy: data.createdBy,
+        },
+      });
+
+      // 2. Recalculate amountPaid
+      const allPayments = await tx.invoicePayment.findMany({
+        where: { invoiceId },
+      });
+      const totalPaid = allPayments.reduce((acc, p) => acc.plus(p.amount), new Prisma.Decimal(0));
+
+      // 3. Get invoice to check totalAmount
+      const invoice = await tx.invoice.findUniqueOrThrow({
+        where: { id: invoiceId },
+      });
+
+      let newStatus: InvoiceStatus = InvoiceStatus.PARTIAL;
+      let orderPaymentStatus: PaymentStatus = PaymentStatus.PARTIAL;
+
+      if (totalPaid.gte(invoice.totalAmount)) {
+        newStatus = InvoiceStatus.PAID;
+        orderPaymentStatus = PaymentStatus.PAID;
+      }
+
+      // 4. Update Invoice
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          amountPaid: totalPaid,
+          status: newStatus,
+        },
+      });
+
+      // 5. Update Order
+      if (invoice.orderId) {
+        await tx.order.update({
+          where: { id: invoice.orderId },
+          data: {
+            paymentStatus: orderPaymentStatus,
+            ...(orderPaymentStatus === PaymentStatus.PAID ? { status: orderStatus.COMPLETED, pendingReason: null } : {}),
+          },
+        });
+      }
+
+      return updatedInvoice;
     });
   },
 };
