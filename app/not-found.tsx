@@ -5,24 +5,35 @@ import { Home, ArrowLeft, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 
-function getDashboardByRole(role) {
+
+
+const userRoleType = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ADMIN: "ADMIN",
+  MANAGER: "MANAGER",
+  SELLER: "SELLER",
+};
+
+function getDashboardByRole(role: keyof typeof userRoleType) {
   switch (role) {
-    case "SUPER_ADMIN":
-    case "ADMIN":
+    case userRoleType.SUPER_ADMIN:
+    case userRoleType.ADMIN:
       return "/dashboard/admin";
-    case "MANAGER":
+    case userRoleType.MANAGER:
       return "/dashboard/manager";
-    case "SELLER":
+    case userRoleType.SELLER:
       return "/dashboard/sale";
     default:
       return "/";
   }
 }
 
+
+
 export default function NotFound() {
   const router = useRouter();
   const { data: session } = useSession();
-  const userRole = session?.user?.role;
+  const userRole = session?.user?.role as keyof typeof userRoleType;
   const dashboard = getDashboardByRole(userRole);
 
   const handleGoHome = () => {

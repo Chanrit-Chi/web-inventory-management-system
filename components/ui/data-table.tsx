@@ -272,12 +272,7 @@ export function DataTable<TData, TValue>({
     setPendingRange(range);
 
     // ONLY apply if we have a full range (from AND to) OR it's being cleared (completely undefined)
-    // We also check that from and to are different to avoid 1-click filtering being triggered
-    // by some calendar versions that set 'to' equal to 'from' on the first click.
-    const isSelectionComplete =
-      !!range?.from &&
-      !!range?.to &&
-      range.from.getTime() !== range.to.getTime();
+    const isSelectionComplete = !!range?.from && !!range?.to;
     const isSelectionCleared = range === undefined;
 
     if (isSelectionComplete || isSelectionCleared) {
