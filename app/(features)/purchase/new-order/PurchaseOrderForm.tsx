@@ -23,9 +23,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { StepperInput } from "@/components/ui/stepper-input";
 import { cn } from "@/lib/utils";
 
-// ============================================
-// Types
-// ============================================
+
 export interface ProductSearchResult {
   id: string;
   name: string;
@@ -59,9 +57,7 @@ function extractCostPrice(costPrice: unknown): number {
   return 0;
 }
 
-// ============================================
-// Product Selection Dialog
-// ============================================
+
 interface ProductSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -326,9 +322,7 @@ function ProductSelectionDialog({
   );
 }
 
-// ============================================
-// Product Selector (trigger + dialog)
-// ============================================
+
 interface ProductSelectorProps {
   selectedVariantIds: number[];
   onSelect: (
@@ -369,9 +363,7 @@ export function ProductSelector({
   );
 }
 
-// ============================================
-// Order Items Table
-// ============================================
+
 export interface PurchaseOrderItem {
   productId: string;
   variantId: number;

@@ -63,7 +63,6 @@ export async function PATCH(
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id: _, ...updateData } = validatedData;
 
     // Default displayValue to value if empty

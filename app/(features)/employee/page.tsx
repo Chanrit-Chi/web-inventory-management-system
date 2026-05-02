@@ -5,7 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useGetUsers } from "@/hooks/useUser";
 import { columns } from "./columns";
 import { SharedLayout } from "@/components/shared-layout";
-import { CreateUserDialog } from "./user-dialogs";
+import { CreateUserDialog } from "@/components/employee";
 import { useState, useMemo } from "react";
 import { usePermission } from "@/hooks/usePermission";
 import { useSession } from "@/lib/auth-client";
@@ -16,7 +16,7 @@ function EmployeeList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { can } = usePermission();
   const { data: session } = useSession();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const currentUserId = session?.user?.id;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;

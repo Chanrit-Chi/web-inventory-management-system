@@ -17,9 +17,8 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function SecuritySettings({ userId }: { readonly userId: string }) {
-  // userId is available for future use (e.g., logging, analytics)
   const [isUpdating, setIsUpdating] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);

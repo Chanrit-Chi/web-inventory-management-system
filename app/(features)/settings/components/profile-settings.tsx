@@ -55,7 +55,6 @@ export function ProfileSettings({ user }: { readonly user: UserProfile }) {
 
       toast.success("Profile updated successfully");
 
-      // Refresh the page to update session data
       setTimeout(() => {
         router.refresh();
       }, 1000);

@@ -1,4 +1,4 @@
-//implementation of sale api route
+
 import { saleService } from "@/lib/services/db/saleDbService";
 import { NextResponse } from "next/server";
 

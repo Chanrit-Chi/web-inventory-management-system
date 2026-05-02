@@ -31,9 +31,7 @@ import type { PurchaseOrderDetailRow } from "../../order/columns";
 
 type OrderStatus = "PENDING" | "COMPLETED" | "CANCELLED";
 
-// ============================================
-// Inner form – receives pre-loaded order data
-// ============================================
+
 interface EditFormProps {
   orderId: number;
   initialSupplierId: string;
@@ -73,7 +71,7 @@ function EditPurchaseOrderForm({
         variant.costPrice !== null &&
         variant.costPrice !== undefined &&
         typeof (variant.costPrice as { toNumber?: unknown }).toNumber ===
-          "function"
+        "function"
       ) {
         cost = (variant.costPrice as { toNumber: () => number }).toNumber();
       } else {
@@ -302,9 +300,7 @@ function EditPurchaseOrderForm({
   );
 }
 
-// ============================================
-// Page – loads order then renders form
-// ============================================
+
 function EditPurchaseOrderContent() {
   const router = useRouter();
   const params = useParams();

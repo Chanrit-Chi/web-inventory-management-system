@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Animates a number from 0 to `target` over `duration` milliseconds.
- * Returns the current animated value.
- */
+
 export function useCountUp(target: number, duration = 1100): number {
   const [value, setValue] = useState(0);
   const rafRef = useRef<number>(0);

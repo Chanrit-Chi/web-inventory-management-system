@@ -55,7 +55,6 @@ export async function PATCH(req: NextRequest) {
     });
 
     // Step 3: Create new account with properly hashed password using better-auth's API
-    // We'll create a temporary user, then move the account to the original user
     const tempEmail = `temp_${Date.now()}_${user.email}`;
 
     const tempUser = await auth.api.signUpEmail({

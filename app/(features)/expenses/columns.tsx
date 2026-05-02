@@ -15,7 +15,7 @@ import {
   ViewExpenseDialog,
   UpdateExpenseDialog,
   DeleteExpenseDialog,
-} from "./expense-dialogs";
+} from "@/components/expense";
 
 function ActionsCell({ expense }: { readonly expense: Expense }) {
   const [viewOpen, setViewOpen] = useState(false);

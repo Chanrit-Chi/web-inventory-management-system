@@ -1,8 +1,7 @@
 import { prisma } from "./prisma";
 import { Role } from "@prisma/client";
 
-// ─── Permission Cache ─────────────────────────────────────────────────────────
-// Simple in-memory cache to reduce database queries
+
 
 interface CacheEntry {
   permissions: Set<string>;
@@ -39,7 +38,7 @@ export function clearPermissionCache(userId?: string): void {
   }
 }
 
-// ─── Helper Functions ─────────────────────────────────────────────────────────
+
 
 async function fetchUserWithPermissions(userId: string) {
   return await prisma.user.findUnique({
@@ -120,8 +119,6 @@ function applyPermissionOverrides(
   return basePermissions;
 }
 
-// ─── Permission Checker ───────────────────────────────────────────────────────
-
 /**
  * Check if a user has a specific permission (database-driven)
  *
@@ -168,9 +165,7 @@ export async function hasPermissionDB(
   }
 }
 
-/**
- * Get all effective permissions for a user
- */
+
 export async function getUserPermissions(userId: string): Promise<string[]> {
   try {
     // Check cache first
@@ -190,9 +185,7 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
   }
 }
 
-/**
- * Check if user has any of the specified permissions
- */
+
 export async function hasAnyPermissionDB(
   userId: string,
   permissions: string[],
@@ -205,9 +198,7 @@ export async function hasAnyPermissionDB(
   return false;
 }
 
-/**
- * Check if user has all of the specified permissions
- */
+
 export async function hasAllPermissionsDB(
   userId: string,
   permissions: string[],
@@ -220,27 +211,21 @@ export async function hasAllPermissionsDB(
   return true;
 }
 
-/**
- * Get permission details for a specific permission name
- */
+
 export async function getPermissionDetails(permissionName: string) {
   return await prisma.permission.findUnique({
     where: { name: permissionName },
   });
 }
 
-/**
- * Get all available permissions
- */
+
 export async function getAllPermissions() {
   return await prisma.permission.findMany({
     orderBy: [{ category: "asc" }, { resource: "asc" }, { action: "asc" }],
   });
 }
 
-/**
- * Get all permission groups
- */
+
 export async function getAllPermissionGroups() {
   return await prisma.permissionGroup.findMany({
     include: {

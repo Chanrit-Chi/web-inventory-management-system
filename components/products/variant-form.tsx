@@ -251,8 +251,7 @@ export function VariantForm() {
 
   const handleProductTypeChange = (type: "single" | "variable") => {
     setValue("productType", type);
-    // Data is no longer cleared here to prevent data loss.
-    // It will be sanitized on submission in product-form.tsx.
+
   };
 
   const addAttribute = () => {

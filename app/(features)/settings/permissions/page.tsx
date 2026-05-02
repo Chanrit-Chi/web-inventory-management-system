@@ -47,7 +47,6 @@ export default function PermissionsPage() {
   const { data: groups, isPending: loadingGroups } = usePermissionGroups();
   const { deleteGroup } = usePermissionGroupMutations();
   const { data: session } = useSession();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
 

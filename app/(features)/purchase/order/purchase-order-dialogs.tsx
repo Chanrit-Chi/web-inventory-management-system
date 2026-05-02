@@ -7,9 +7,7 @@ import { usePurchaseOrderMutations } from "@/hooks/usePurchaseOrder";
 import type { PurchaseOrderRow } from "./columns";
 import { StatusBadge } from "@/components/StatusBadge";
 
-// ============================================
-// View Purchase Order Dialog
-// ============================================
+
 interface ViewPurchaseOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -133,9 +131,7 @@ export function ViewPurchaseOrderDialog({
   );
 }
 
-// ============================================
-// Delete Purchase Order Dialog
-// ============================================
+
 interface DeletePurchaseOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

@@ -8,7 +8,7 @@ import { columns } from "./columns";
 import {
   CreateExpenseDialog,
   ManageExpenseCategoriesDialog,
-} from "./expense-dialogs";
+} from "@/components/expense";
 import { SharedLayout } from "@/components/shared-layout";
 import { usePermission } from "@/hooks/usePermission";
 import { Button } from "@/components/ui/button";

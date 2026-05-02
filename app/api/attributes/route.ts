@@ -4,7 +4,7 @@ import { getServerSession } from "@/lib/getServerSession";
 import { AttributeCreateSchema } from "@/schemas/attribute.schema";
 import { requirePermissionDBForAPI } from "@/lib/requirePermissionDB";
 
-// GET - List all attributes with their values
+
 export async function GET() {
   try {
     const session = await getServerSession();

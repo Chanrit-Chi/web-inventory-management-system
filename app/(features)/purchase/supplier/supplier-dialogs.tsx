@@ -13,9 +13,7 @@ import {
 import { useSupplierMutations } from "@/hooks/useSupplier";
 import type { SupplierRow } from "./columns";
 
-// ============================================
-// Create Supplier Dialog
-// ============================================
+
 interface CreateSupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -80,9 +78,7 @@ export function CreateSupplierDialog({
   );
 }
 
-// ============================================
-// View Supplier Dialog
-// ============================================
+
 interface ViewSupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -123,9 +119,7 @@ export function ViewSupplierDialog({
   );
 }
 
-// ============================================
-// Update Supplier Dialog
-// ============================================
+
 interface UpdateSupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -201,9 +195,8 @@ export function UpdateSupplierDialog({
   );
 }
 
-// ============================================
-// Delete Supplier Dialog
-// ============================================
+
+
 interface DeleteSupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

@@ -26,7 +26,7 @@ import {
   DeactivateUserDialog,
   ReactivateUserDialog,
   ResetPasswordDialog,
-} from "./user-dialogs";
+} from "@/components/employee";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UserPermissionOverrideDialog } from "@/components/admin/user-permission-override-dialog";
@@ -42,7 +42,7 @@ function ActionsCell({ user }: { readonly user: User }) {
   const { can } = usePermission();
   const { data: session } = useSession();
   const isCurrentUser = session?.user?.id === user.id;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const currentUserRole = (session?.user as any)?.role as Role | undefined;
   const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN;
 
