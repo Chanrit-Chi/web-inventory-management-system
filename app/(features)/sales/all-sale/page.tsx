@@ -62,7 +62,9 @@ function Sale() {
         <h1 className="text-2xl font-bold">Sales</h1>
       </div>
       <div className="flex justify-end items-center gap-2">
-        <SaleExportDropdown search={search} filters={filters} />
+        <div className="flex items-center gap-2">
+          <SaleExportDropdown search={search} filters={filters} />
+        </div>
         <Button
           onClick={() => refetch()}
           disabled={isFetching}

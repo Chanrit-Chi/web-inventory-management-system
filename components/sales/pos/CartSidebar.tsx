@@ -74,7 +74,7 @@ export function CartSidebar({
   setOpenCreateCustomer,
 }: CartSidebarProps) {
   return (
-    <div className="space-y-4 self-start pr-1 xl:fixed xl:right-6 xl:top-20 xl:w-[20rem] xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
+    <div className="space-y-4 self-start pr-1 lg:fixed lg:right-0 lg:top-0 lg:w-[22rem] lg:h-screen lg:overflow-y-auto lg:border-l lg:bg-card lg:px-4 lg:py-6">
       <Button asChild variant="outline" className="w-full">
         <Link href="/sales/all-sale">
           <ArrowLeft className="size-4 mr-1" /> Back to Sale

@@ -14,8 +14,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { StatusBadge } from "../StatusBadge";
-import { Separator } from "../ui/separator";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +34,7 @@ import { useGetInvoices } from "@/hooks/useInvoice";
 import { useGetQuotations } from "@/hooks/useQuotation";
 import { useGetExpenses } from "@/hooks/useExpense";
 import {
+  Invoice,
   OrderWithRelations,
   QuotationWithItems,
 } from "@/schemas/type-export.schema";
@@ -110,8 +111,9 @@ export default function RevenueExpenseChart() {
     supplier?: { name?: string | null } | null;
   }>;
   const recentExpenses = expensesData ?? [];
-  const recentInvoices = (invoicesData?.data ?? []) as (OrderWithRelations & {
-    invoiceNumber?: string;
+  const recentInvoices = (invoicesData?.data ?? []) as (Invoice & {
+    customer?: { name: string } | null;
+    order?: OrderWithRelations;
   })[];
   const recentQuotations = (quotationsData?.data ?? []) as QuotationWithItems[];
 
@@ -335,11 +337,11 @@ export default function RevenueExpenseChart() {
               onValueChange={(value) =>
                 setActiveTab(
                   value as
-                    | "sales"
-                    | "purchase"
-                    | "quotation"
-                    | "expense"
-                    | "invoice",
+                  | "sales"
+                  | "purchase"
+                  | "quotation"
+                  | "expense"
+                  | "invoice",
                 )
               }
               className="w-full"
@@ -527,6 +529,9 @@ export default function RevenueExpenseChart() {
                               </span>
                             </div>
                             <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                              <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
+                                ${Number(expense.amount ?? 0).toFixed(2)}
+                              </span>
                               <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
                                 <StatusBadge
                                   status="EXPENSE"
@@ -580,7 +585,7 @@ export default function RevenueExpenseChart() {
                             </div>
                             <div className="flex items-center gap-1 sm:gap-3 shrink-0">
                               <span className="font-semibold text-[11px] sm:text-sm text-right whitespace-nowrap">
-                                ${Number(inv.totalPrice ?? 0).toFixed(2)}
+                                ${Number(inv.totalAmount ?? 0).toFixed(2)}
                               </span>
                               <div className="flex justify-center min-w-12.5 sm:min-w-17.5">
                                 <StatusBadge

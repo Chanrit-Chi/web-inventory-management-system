@@ -140,11 +140,11 @@ const data = {
           url: "/stock/adjust",
           permission: "stock:update",
         },
-        // {
-        //   title: "New Stock",
-        //   url: "/stock/new",
-        //   permission: "stock:create",
-        // },
+        {
+          title: "Alerts",
+          url: "/stock/alerts",
+          permission: "stock:read",
+        },
       ],
     },
 

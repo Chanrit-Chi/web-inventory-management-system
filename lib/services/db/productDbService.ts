@@ -214,6 +214,37 @@ export const productDbService = {
         where.categoryId = categoryId;
       }
 
+      if (filters.stockStatus) {
+        if (filters.stockStatus === "low") {
+          where.isActive = ProductStatus.ACTIVE;
+          where.variants = {
+            some: {
+              isActive: true,
+              stock: { gt: 0, lt: 10 },
+            },
+          };
+        } else if (filters.stockStatus === "out") {
+          where.isActive = ProductStatus.ACTIVE;
+          where.variants = {
+            none: {
+              isActive: true,
+              stock: { gt: 0 },
+            },
+            some: {
+              isActive: true,
+            },
+          };
+        } else if (filters.stockStatus === "alert") {
+          where.isActive = ProductStatus.ACTIVE;
+          where.variants = {
+            some: {
+              isActive: true,
+              stock: { lt: 10 },
+            },
+          };
+        }
+      }
+
       if (filters.startDate || filters.endDate) {
         where.createdAt = {
           ...(filters.startDate && { gte: new Date(filters.startDate) }),

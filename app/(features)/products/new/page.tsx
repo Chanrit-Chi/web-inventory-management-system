@@ -1,5 +1,6 @@
+import ProductForm from "@/components/products/product-form";
 import { SharedLayout } from "@/components/shared-layout";
-import ProductForm from "./components/product-form";
+
 
 export function NewProduct() {
   return (

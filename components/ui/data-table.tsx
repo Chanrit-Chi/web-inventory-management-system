@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { CircleX, Search } from "lucide-react";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -80,6 +80,7 @@ interface DataTableProps<TData, TValue> {
   readonly onFilterChange?: (filters: Record<string, string>) => void;
   readonly searchValue?: string;
   readonly filterValues?: Record<string, string>;
+  readonly baseFilters?: Record<string, string>;
   readonly dateFilter?: {
     startDateKey?: string;
     endDateKey?: string;
@@ -105,6 +106,7 @@ export function DataTable<TData, TValue>({
   onFilterChange,
   searchValue,
   filterValues = {},
+  baseFilters = {},
   dateFilter,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -207,13 +209,13 @@ export function DataTable<TData, TValue>({
     setColumnFilters([]);
     setPendingRange(undefined);
 
-    // Notify parent to clear server-side filters
+    // Notify parent to clear server-side filters, but keep base filters
     if (isServerSidePagination) {
       if (onSearchChange) {
         onSearchChange("");
       }
       if (onFilterChange) {
-        onFilterChange({});
+        onFilterChange(baseFilters);
       }
     }
   };
@@ -299,7 +301,9 @@ export function DataTable<TData, TValue>({
   const hasActiveFilters =
     searchInput ||
     columnFilters.length > 0 ||
-    Object.keys(filterValues).length > 0;
+    Object.keys(filterValues).some(
+      (key) => filterValues[key] !== baseFilters[key],
+    );
 
   return (
     <div className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
@@ -363,10 +367,10 @@ export function DataTable<TData, TValue>({
                   onClick={handleClearFilters}
                   variant="ghost"
                   size="sm"
-                  className="h-10 px-3 w-full sm:w-auto"
+                  className="h-9 border border-primary px-2 sm:px-3 w-auto text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                  title="Clear all filters"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear filters
+                  <CircleX className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -413,9 +417,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   );
                 })}

@@ -18,11 +18,13 @@ export async function GET(request: Request) {
     const filters: Record<string, string> = {};
     const status = searchParams.get("isActive");
     const category = searchParams.get("category");
+    const stockStatus = searchParams.get("stockStatus");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
     if (status) filters.isActive = status;
     if (category) filters.category = category;
+    if (stockStatus) filters.stockStatus = stockStatus;
     if (startDate) filters.startDate = startDate;
     if (endDate) filters.endDate = endDate;
 

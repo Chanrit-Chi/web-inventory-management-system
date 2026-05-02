@@ -8,6 +8,7 @@ import { useGetProducts } from "@/hooks/useProduct";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { useCountUp } from "@/hooks/useCountUp";
+import { DashboardMetricCard } from "../dashboard-cards";
 
 type VariantItem = {
   id: number;
@@ -30,12 +31,17 @@ type ProductItem = {
 };
 
 function lowestStock(product: ProductItem) {
-  if (!product.variants.length) return Infinity;
-  return Math.min(...product.variants.map((v) => v.stock));
+  const activeVariants = product.variants.filter((v) => v.isActive);
+  if (!activeVariants.length) return Infinity;
+  return Math.min(...activeVariants.map((v) => v.stock));
 }
 
 function totalStock(product: ProductItem) {
-  return product.variants.reduce((sum, v) => sum + v.stock, 0);
+  // Only sum stock of active variants if the product is active
+  if (!product.isActive) return 0;
+  return product.variants
+    .filter((v) => v.isActive)
+    .reduce((sum, v) => sum + v.stock, 0);
 }
 
 function getStockClassName(stock: number): string {
@@ -54,11 +60,16 @@ export default function InventorySummary() {
 
   // Calculate metrics
   const activeProducts = products.filter((p) => p.isActive).length;
+
   const lowStockProducts = products.filter((p) =>
-    p.variants.some((v) => v.isActive && v.stock < 10),
+    p.isActive &&
+    p.variants.some((v) => v.isActive && v.stock > 0 && v.stock < 10),
   );
+
   const outOfStockProducts = products.filter((p) =>
-    p.variants.every((v) => !v.isActive || v.stock === 0),
+    p.isActive &&
+    p.variants.some((v) => v.isActive) &&
+    p.variants.filter((v) => v.isActive).every((v) => v.stock === 0),
   );
   const totalStockValue = products.reduce((sum, p) => sum + totalStock(p), 0);
 
@@ -79,69 +90,51 @@ export default function InventorySummary() {
     <div className="space-y-6">
       {/* Inventory Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div
-          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-blue-500/30"
-          style={{ animationDelay: "0ms" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-500/10 dark:bg-blue-500/20 p-2.5 rounded-xl border border-blue-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Active Products</p>
-              <p className="text-2xl font-bold">{animActive}</p>
-            </div>
-          </div>
-        </div>
+        <DashboardMetricCard
+          title="Active Products"
+          value={activeProducts}
+          icon={Package}
+          colorClass=""
+          iconBgClass="bg-blue-500/10 dark:bg-blue-500/20"
+          borderClass="border-blue-500/20"
+          hoverBorderClass="hover:border-blue-500/30"
+          delay={0}
+        />
 
-        <div
-          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-amber-500/30"
-          style={{ animationDelay: "80ms" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-amber-500/10 dark:bg-amber-500/20 p-2.5 rounded-xl border border-amber-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Low Stock</p>
-              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {animLowStock}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DashboardMetricCard
+          title="Low Stock"
+          value={lowStockProducts.length}
+          icon={AlertTriangle}
+          colorClass="text-amber-600 dark:text-amber-400"
+          iconBgClass="bg-amber-500/10 dark:bg-amber-500/20"
+          borderClass="border-amber-500/20"
+          hoverBorderClass="hover:border-amber-500/30"
+          delay={80}
+          href="/stock/alerts"
+        />
 
-        <div
-          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-red-500/30"
-          style={{ animationDelay: "160ms" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-red-500/10 dark:bg-red-500/20 p-2.5 rounded-xl border border-red-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {animOutOfStock}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DashboardMetricCard
+          title="Out of Stock"
+          value={outOfStockProducts.length}
+          icon={TrendingDown}
+          colorClass="text-red-600 dark:text-red-400"
+          iconBgClass="bg-red-500/10 dark:bg-red-500/20"
+          borderClass="border-red-500/20"
+          hoverBorderClass="hover:border-red-500/30"
+          delay={160}
+          href="/stock/alerts"
+        />
 
-        <div
-          className="animate-dash-enter bg-card rounded-xl border p-4 group transition-all duration-300 hover:shadow-md hover:border-green-500/30"
-          style={{ animationDelay: "240ms" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-green-500/10 dark:bg-green-500/20 p-2.5 rounded-xl border border-green-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <Archive className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Units</p>
-              <p className="text-2xl font-bold">{animTotalUnits}</p>
-            </div>
-          </div>
-        </div>
+        <DashboardMetricCard
+          title="Total Units"
+          value={totalStockValue}
+          icon={Archive}
+          colorClass=""
+          iconBgClass="bg-green-500/10 dark:bg-green-500/20"
+          borderClass="border-green-500/20"
+          hoverBorderClass="hover:border-green-500/30"
+          delay={240}
+        />
       </div>
 
       {/* Low Stock Alert Table */}

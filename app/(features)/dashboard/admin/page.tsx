@@ -1,8 +1,8 @@
 "use client";
 
-import DashboardOverview from "@/components/admin/dashboard-overview";
-import ProductInfo from "@/components/admin/product-info";
-import ChartBarStacked from "@/components/admin/sale-statistic-chart";
+import DashboardOverview from "@/components/dashboards/admin/dashboard-overview";
+import ProductInfo from "@/components/dashboards/admin/product-info";
+import ChartBarStacked from "@/components/dashboards/admin/sale-statistic-chart";
 import { SharedLayout } from "@/components/shared-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";

@@ -25,15 +25,15 @@ import {
 import { useGetCategories } from "@/hooks/useCategory";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { CreateCategoryDialog } from "../../category/all-categories/category-dialogs";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { FormField } from "@/components/FormField";
 import { VariantForm } from "./variant-form";
 import { useGetUnits } from "@/hooks/useUnit";
-import { CreateUnitDialog } from "../../unit/unit-dialogs";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
+import { CreateUnitDialog } from "@/app/(features)/products/unit/unit-dialogs";
+import { CreateCategoryDialog } from "@/app/(features)/products/category/all-categories/category-dialogs";
 
 const ProductFormSchema = ProductCreateSchema.extend({
   productType: z.enum(["single", "variable"]).default("single"),

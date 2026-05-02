@@ -21,10 +21,10 @@ import {
   ArrowRight,
   Package,
   Receipt,
+  Wallet,
 } from "lucide-react";
 import { OrderWithRelations } from "@/schemas/type-export.schema";
-
-// ── helpers ────────────────────────────────────────────────────────────────
+import { usePartialPaymentStats } from "@/components/dashboards/dashboard-cards";
 
 function fmt(val: number | string | null | undefined) {
   return `$${Number(val ?? 0).toLocaleString("en-US", {
@@ -33,8 +33,6 @@ function fmt(val: number | string | null | undefined) {
   })}`;
 }
 
-
-// ── sub-components ──────────────────────────────────────────────────────────
 
 function MetricCard({
   icon: Icon,
@@ -150,6 +148,12 @@ function RecentSalesTable({
             <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Total
             </th>
+            <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Paid
+            </th>
+            <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Balance
+            </th>
             <th className="text-center px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Status
             </th>
@@ -170,6 +174,25 @@ function RecentSalesTable({
               <td className="px-4 py-2.5 text-right font-semibold">
                 {fmt(order.totalPrice as unknown as number)}
               </td>
+              <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                {fmt(Number(order.invoice?.amountPaid ?? 0))}
+              </td>
+              <td
+                className={`px-4 py-2.5 text-right font-medium ${Number(order.totalPrice ?? 0) -
+                  Number(order.invoice?.amountPaid ?? 0) >
+                  0
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-muted-foreground"
+                  }`}
+              >
+                {fmt(
+                  Math.max(
+                    0,
+                    Number(order.totalPrice ?? 0) -
+                    Number(order.invoice?.amountPaid ?? 0),
+                  ),
+                )}
+              </td>
               <td className="px-4 py-2.5 text-center">
                 <StatusBadge status={order.status} />
               </td>
@@ -180,8 +203,6 @@ function RecentSalesTable({
     </div>
   );
 }
-
-// ── page ────────────────────────────────────────────────────────────────────
 
 export default function SaleDashboardPage() {
   const { data: session, isPending: sessionPending } = useSession();
@@ -199,7 +220,6 @@ export default function SaleDashboardPage() {
     );
   }
 
-  // ── derived metrics ──────────────────────────────────────────────────────
   const todayOrders = orders.filter((o) => isToday(new Date(o.createdAt)));
   const todayCompletedOrders = todayOrders.filter(
     (o) => o.status === "COMPLETED",
@@ -216,6 +236,8 @@ export default function SaleDashboardPage() {
   const monthRevenue = orders
     .filter((o) => new Date(o.createdAt) >= monthStart)
     .reduce((sum, o) => sum + Number(o.totalPrice ?? 0), 0);
+
+  const { partialOrders, totalBalanceDue } = usePartialPaymentStats(orders);
 
   const recentOrders = [...orders]
     .sort(
@@ -249,7 +271,7 @@ export default function SaleDashboardPage() {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <MetricCard
             icon={Receipt}
             label="Today's Revenue"
@@ -283,6 +305,15 @@ export default function SaleDashboardPage() {
             sub={format(new Date(), "MMMM yyyy")}
             color="bg-[#155eef]"
             delay={240}
+          />
+          <MetricCard
+            icon={Wallet}
+            label="Partial Payments"
+            value={partialOrders.length}
+            sub={`${fmt(totalBalanceDue)} due`}
+            color="bg-[#7c3aed]"
+            delay={320}
+            countTarget={partialOrders.length}
           />
         </div>
 

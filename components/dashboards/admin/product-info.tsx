@@ -9,10 +9,10 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { Boxes, CalendarDays, CircleAlert, ShoppingBag } from "lucide-react";
+} from "@/components/ui/select";
+import { AlertTriangle, Archive, Boxes, CalendarDays, CircleAlert, Package, ShoppingBag, TrendingDown } from "lucide-react";
 import Link from "next/link";
-import { Separator } from "../ui/separator";
+import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { isToday, isThisWeek, isThisMonth, isThisYear, format } from "date-fns";
 import { useGetProducts } from "@/hooks/useProduct";
@@ -20,8 +20,8 @@ import { useGetSales } from "@/hooks/useSale";
 import { OrderWithRelations } from "@/schemas/type-export.schema";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { DashboardMetricCard } from "../dashboard-cards";
 
-// ── types ─────────────────────────────────────────────────────────────────
 
 type VariantItem = {
   id: number;
@@ -44,11 +44,10 @@ type ProductItem = {
   category?: { name: string } | null;
 };
 
-// ── helpers ────────────────────────────────────────────────────────────────
-
 function lowestStock(product: ProductItem) {
-  if (!product.variants.length) return Infinity;
-  return Math.min(...product.variants.map((v) => v.stock));
+  const activeVariants = product.variants.filter((v) => v.isActive);
+  if (!activeVariants.length) return Infinity;
+  return Math.min(...activeVariants.map((v) => v.stock));
 }
 
 function formatDateDisplay(dateString: string) {
@@ -84,8 +83,6 @@ function filterOrdersByDate(
   });
 }
 
-// ── sub-components ──────────────────────────────────────────────────────────
-
 function DateSelect({
   value,
   onChange,
@@ -114,7 +111,6 @@ function DateSelect({
   );
 }
 
-// ── main component ──────────────────────────────────────────────────────────
 
 export default function ProductInfo() {
   const [topFilter, setTopFilter] = useState<DateFilter>("monthly");
@@ -129,10 +125,26 @@ export default function ProductInfo() {
   const products = (productsData?.data ?? []) as ProductItem[];
   const orders = (salesData?.data ?? []) as OrderWithRelations[];
 
-  // Low stock: products where any variant has stock < 10
+  // Low stock: active products where any active variant has 0 < stock < 10
   const lowStockProducts = products
-    .filter((p) => p.variants.some((v) => v.stock < 10))
+    .filter((p) =>
+      p.isActive &&
+      p.variants.some((v) => v.isActive && v.stock > 0 && v.stock < 10),
+    )
     .sort((a, b) => lowestStock(a) - lowestStock(b));
+
+  // Out of stock: active products where all active variants have 0 stock
+  const outOfStockProducts = products.filter((p) =>
+    p.isActive &&
+    p.variants.some((v) => v.isActive) &&
+    p.variants.filter((v) => v.isActive).every((v) => v.stock === 0),
+  );
+
+  const activeProducts = products.filter((p) => p.isActive).length;
+  const totalUnits = products.reduce((sum, p) => {
+    if (!p.isActive) return sum;
+    return sum + p.variants.filter(v => v.isActive).reduce((vSum, v) => vSum + v.stock, 0);
+  }, 0);
 
   // Top selling: count units sold within the selected period from order details
   const topFilteredOrders = filterOrdersByDate(orders, topFilter);
@@ -148,15 +160,64 @@ export default function ProductInfo() {
   });
   const topSelling = [...products]
     .map((p) => ({ ...p, _periodSold: periodSoldMap.get(p.id) ?? 0 }))
-    .filter((p) => p._periodSold > 0)
+    .filter((p) => p.isActive && p._periodSold > 0)
     .sort((a, b) => b._periodSold - a._periodSold);
 
   // Recent sales filtered by date
   const filteredOrders = filterOrdersByDate(orders, salesFilter);
 
   return (
-    <div>
-      <div className="grid auto-rows-min gap-4 lg:grid-cols-3 mt-4">
+    <div className="space-y-6">
+      {/* Inventory Summary Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <DashboardMetricCard
+          title="Active Products"
+          value={activeProducts}
+          icon={Package}
+          colorClass=""
+          iconBgClass="bg-blue-500/10 dark:bg-blue-500/20"
+          borderClass="border-blue-500/20"
+          hoverBorderClass="hover:border-blue-500/30"
+          delay={0}
+        />
+
+        <DashboardMetricCard
+          title="Low Stock"
+          value={lowStockProducts.length}
+          icon={AlertTriangle}
+          colorClass="text-amber-600 dark:text-amber-400"
+          iconBgClass="bg-amber-500/10 dark:bg-amber-500/20"
+          borderClass="border-amber-500/20"
+          hoverBorderClass="hover:border-amber-500/30"
+          delay={80}
+          href="/stock/alerts"
+        />
+
+        <DashboardMetricCard
+          title="Out of Stock"
+          value={outOfStockProducts.length}
+          icon={TrendingDown}
+          colorClass="text-red-600 dark:text-red-400"
+          iconBgClass="bg-red-500/10 dark:bg-red-500/20"
+          borderClass="border-red-500/20"
+          hoverBorderClass="hover:border-red-500/30"
+          delay={160}
+          href="/stock/alerts"
+        />
+
+        <DashboardMetricCard
+          title="Total Units"
+          value={totalUnits}
+          icon={Archive}
+          colorClass=""
+          iconBgClass="bg-green-500/10 dark:bg-green-500/20"
+          borderClass="border-green-500/20"
+          hoverBorderClass="hover:border-green-500/30"
+          delay={240}
+        />
+      </div>
+
+      <div className="grid auto-rows-min gap-4 lg:grid-cols-3">
         {/* Top Selling Products */}
         <div className="p-4 bg-card rounded-lg border">
           <div className="flex justify-between items-center mb-3">
@@ -223,12 +284,12 @@ export default function ProductInfo() {
         <div className="p-4 bg-card rounded-lg border">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
-              <CircleAlert className="h-4 w-4 text-yellow-400" />
-              <h4 className="font-bold">Low Stock Products</h4>
+              <CircleAlert className="h-4 w-4 text-rose-500" />
+              <h4 className="font-bold">Inventory Alerts</h4>
             </div>
             <div className="h-10 flex items-center justify-center px-3 py-2 border rounded-md min-w-30">
-              <Link href="/stock/adjust" className="text-sm underline">
-                Adjust Stock
+              <Link href="/stock/alerts" className="text-sm underline">
+                View All Alerts
               </Link>
             </div>
           </div>
@@ -239,14 +300,54 @@ export default function ProductInfo() {
             </div>
           ) : (
             <>
-              {lowStockProducts.length === 0 && (
+              {(lowStockProducts.length === 0 && outOfStockProducts.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   All products have sufficient stock
                 </p>
               )}
+              
+              {/* Out of Stock Section */}
+              {outOfStockProducts.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-1">Out of Stock</p>
+                  {outOfStockProducts.slice(0, 3).map((product) => (
+                    <div key={product.id} className="flex items-center gap-3">
+                       <div className="size-10 shrink-0">
+                        {product.image ? (
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={40}
+                            height={40}
+                            className="rounded-md object-cover size-10 grayscale"
+                          />
+                        ) : (
+                          <div className="size-10 rounded-md bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
+                            <ShoppingBag className="size-4 text-rose-600" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{`SKU: ${product.sku}`}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]">Empty</Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {outOfStockProducts.length > 3 && (
+                    <p className="text-[10px] text-center text-muted-foreground">+ {outOfStockProducts.length - 3} more out of stock</p>
+                  )}
+                </div>
+              )}
+
+              {/* Low Stock Section */}
               {lowStockProducts.length > 0 && (
                 <div className="space-y-2">
-                  {lowStockProducts.slice(0, 5).map((product) => {
+                  {outOfStockProducts.length > 0 && <Separator className="my-3 opacity-50" />}
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Low Stock</p>
+                  {lowStockProducts.slice(0, 5 - Math.min(3, outOfStockProducts.length)).map((product) => {
                     const minStock = lowestStock(product);
                     return (
                       <div key={product.id} className="flex items-center gap-3">
@@ -266,22 +367,12 @@ export default function ProductInfo() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {`SKU: ${product.sku}`}
-                          </p>
+                          <p className="font-medium text-sm truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{`SKU: ${product.sku}`}</p>
                         </div>
                         <div className="flex flex-col items-end shrink-0">
                           <p className="text-sm font-semibold">Stock</p>
-                          <p
-                            className={`text-xs font-medium ${minStock === 0 ? "text-red-600" : "text-amber-600"}`}
-                          >
-                            {minStock === 0
-                              ? "Out of stock"
-                              : `${minStock} left`}
-                          </p>
+                          <p className="text-xs font-medium text-amber-600">{minStock} left</p>
                         </div>
                       </div>
                     );

@@ -1,7 +1,5 @@
 import { Role } from "@prisma/client";
 
-// ─── Access Levels ────────────────────────────────────────────────────────────
-
 type AccessLevel = "none" | "read" | "write" | "admin";
 
 const AccessActions: Record<AccessLevel, ReadonlyArray<string>> = {
@@ -10,9 +8,6 @@ const AccessActions: Record<AccessLevel, ReadonlyArray<string>> = {
   write: ["create", "read", "update"],
   admin: ["create", "read", "update", "delete"],
 };
-
-// ─── CRUD Resource Matrix ─────────────────────────────────────────────────────
-// To add a new feature: add ONE row here.
 
 const ResourceMatrix = {
   user: {
@@ -107,8 +102,6 @@ const ResourceMatrix = {
   },
 } as const satisfies Record<string, Record<Role, AccessLevel>>;
 
-// ─── Feature Permissions (non-CRUD) ──────────────────────────────────────────
-// One-off flags that don't fit the CRUD model (dashboards, tools, etc.)
 
 export type FeaturePermission =
   | "dashboard:admin"
@@ -152,14 +145,12 @@ const FeatureAccess: Record<Role, ReadonlyArray<FeaturePermission>> = {
   SELLER: ["dashboard:sale", "pos:read", "barcode:read"],
 };
 
-// ─── Permission Types (auto-derived from matrix) ──────────────────────────────
 
 type CrudResource = keyof typeof ResourceMatrix;
 type CrudAction = "create" | "read" | "update" | "delete";
 export type CrudPermission = `${CrudResource}:${CrudAction}`;
 export type Permission = CrudPermission | FeaturePermission;
 
-// ─── hasPermission ────────────────────────────────────────────────────────────
 
 export function hasPermission(role: Role, permission: Permission): boolean {
   const colonIdx = permission.indexOf(":");

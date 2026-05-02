@@ -68,10 +68,7 @@ const saleSelectFields = {
   },
 };
 
-/**
- * Helper function to adjust inventory levels and record stock movements.
- * Handles additions, removals, quantity changes, and status-based adjustments (e.g., cancellations).
- */
+
 async function adjustInventory(
   tx: Prisma.TransactionClient,
   orderId: number,
@@ -164,6 +161,7 @@ export const saleService = {
     filters?: {
       status?: string;
       customerId?: string;
+      "paymentMethod.name"?: string;
       startDate?: string;
       endDate?: string;
     },
@@ -179,6 +177,9 @@ export const saleService = {
       }),
       ...(filters?.status && {
         status: filters.status as Prisma.EnumorderStatusFilter,
+      }),
+      ...(filters?.["paymentMethod.name"] && {
+        paymentMethod: { name: filters["paymentMethod.name"] },
       }),
       ...(filters?.customerId && { customerId: filters.customerId }),
       ...((filters?.startDate || filters?.endDate) && {
@@ -420,8 +421,6 @@ export const saleService = {
   },
 
   deleteSale: async (id: number) => {
-    // Note: Deleting a sale should ideally return stock?
-    // Let's implement stock return on deletion if it was not already cancelled
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id },
@@ -430,19 +429,16 @@ export const saleService = {
 
       if (!order) throw new Error("Order not found");
 
-      // Adjust inventory to return stock if the order was not already cancelled
-      // We treat deletion as effectively cancelling the order for inventory purposes
       await adjustInventory(
         tx,
         id,
-        order.orderDetail, // Old items are the current order details
-        [], // New items are none, as the order is deleted
+        order.orderDetail,
+        [],
         order.status,
-        "CANCELLED", // Force new status to CANCELLED for inventory calculation
+        "CANCELLED",
         `Deletion of Sale #${id}`,
       );
 
-      // Delete invoice items first (cascade handle by prisma if set, but let's be sure)
       await tx.invoiceItem.deleteMany({
         where: { invoice: { orderId: id } },
       });

@@ -4,7 +4,7 @@ import { useGetProductById } from "@/hooks/useProduct";
 import { useParams, useRouter } from "next/navigation";
 import ProductForm, {
   ProductFormValues,
-} from "../../new/components/product-form";
+} from "@/components/products/product-form";
 import { Spinner } from "@/components/ui/spinner";
 import { SharedLayout } from "@/components/shared-layout";
 import { Button } from "@/components/ui/button";

@@ -1,8 +1,8 @@
 "use client";
 
-import ManagerOverview from "@/components/manager/manager-overview";
-import InventorySummary from "@/components/manager/inventory-summary";
-import ChartBarStacked from "@/components/admin/sale-statistic-chart";
+import ManagerOverview from "@/components/dashboards/manager/manager-overview";
+import InventorySummary from "@/components/dashboards/manager/inventory-summary";
+import ChartBarStacked from "@/components/dashboards/admin/sale-statistic-chart";
 import { SharedLayout } from "@/components/shared-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";

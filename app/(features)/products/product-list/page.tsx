@@ -48,9 +48,9 @@ function ProductCard({ product }: { readonly product: ProductWithVariants }) {
     price == null
       ? null
       : new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(Number(price));
+        style: "currency",
+        currency: "USD",
+      }).format(Number(price));
 
   const isActive = product.isActive === "ACTIVE";
 
@@ -115,11 +115,10 @@ function ProductCard({ product }: { readonly product: ProductWithVariants }) {
           </Link>
           <button
             onClick={() => setDeleteOpen(true)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors cursor-pointer ${
-              isActive
-                ? "text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors cursor-pointer ${isActive
+              ? "text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+              }`}
           >
             {isActive ? "Deactivate" : "Reactivate"}
           </button>
@@ -148,7 +147,6 @@ function ProductCard({ product }: { readonly product: ProductWithVariants }) {
   );
 }
 
-// ── Product Grid ───────────────────────────────────────────────────────────
 
 function ProductGrid({
   products,
@@ -164,7 +162,6 @@ function ProductGrid({
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
 
 function ProductList() {
   const [page, setPage] = useState(1);
@@ -174,6 +171,7 @@ function ProductList() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [importOpen, setImportOpen] = useState(false);
   const { can } = usePermission();
+
 
   const {
     data: products,
@@ -195,6 +193,7 @@ function ProductList() {
     [categories],
   );
 
+
   if (isLoading || isLoadingCategories)
     return (
       <div className="items-center justify-center flex min-h-screen w-full">
@@ -214,11 +213,15 @@ function ProductList() {
     setPage(1);
   };
 
+
+
   return (
     <div className="w-full min-h-full flex flex-col px-2 py-2 overflow-hidden">
       <h1 className="text-xl font-bold mb-1">Product List</h1>
       <div className="flex justify-end items-center gap-2 mb-1">
-        <ProductExportDropdown search={search} filters={filters} />
+        <div>
+          <ProductExportDropdown search={search} filters={filters} />
+        </div>
         {can("import:read") ? (
           <Button
             className="btn btn-primary"
@@ -309,6 +312,14 @@ function ProductList() {
                 columnId: "category",
                 label: "Category",
                 options: categoryOptions,
+              },
+              {
+                columnId: "stockStatus",
+                label: "Stock Level",
+                options: [
+                  { value: "low", label: "Low Stock" },
+                  { value: "out", label: "Out of Stock" },
+                ],
               },
             ]}
             dateFilter={{
